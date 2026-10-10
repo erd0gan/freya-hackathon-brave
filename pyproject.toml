@@ -55,3 +55,7 @@ python_version = "3.12"
 plugins = ["pydantic.mypy"]
 strict = true
 files = ["src/builder/schema", "src/builder/optimize", "src/builder/llm"]
+
+[tool.ruff.lint.per-file-ignores]
+# Node-code libraries are concatenated into one snippet; names cross files.
+"builder/fb/nodecode/negotiation_lib.py" = ["F821"]

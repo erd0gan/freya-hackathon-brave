@@ -1,4 +1,4 @@
-"""Turn collections_lib + a call into the source of one code_exec snippet."""
+"""Turn the node-code libraries + a body into the source of one code_exec snippet."""
 
 from __future__ import annotations
 
@@ -6,7 +6,15 @@ import json
 from pathlib import Path
 from typing import Any
 
-LIB = (Path(__file__).parent / "collections_lib.py").read_text()
+LIB_FILES = ("collections_lib.py", "speech_lib.py", "negotiation_lib.py")
+LIB = "\n\n".join((Path(__file__).parent / f).read_text() for f in LIB_FILES)
+
+
+def namespace() -> dict[str, Any]:
+    """The libraries executed the way a code node executes them, for local runs and tests."""
+    ns: dict[str, Any] = {}
+    exec(compile(LIB, "nodecode", "exec"), ns)
+    return ns
 
 
 def config_literal(cfg: dict[str, Any]) -> str:

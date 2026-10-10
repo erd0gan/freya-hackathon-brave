@@ -304,3 +304,28 @@ def normalize_dob(text):
         return datetime.date(y, mo, d).isoformat()
     except Exception:
         return s
+
+
+def find_products(v):
+    """get_account products, wherever the platform put them: the mapped variable, a
+    flattened `<x>.data.products` key, or one flattened key per field."""
+    for key in ["products"] + [k for k in v if str(k).endswith(".data.products")]:
+        got = load_products(v.get(key))
+        if got:
+            return got
+    rows = {}
+    for k in list(v):
+        m = re.search(r"\.data\.products[.\[](\d+)\]?\.(\w+)$", str(k))
+        if m:
+            rows.setdefault(int(m.group(1)), {})[m.group(2)] = v[k]
+    out = []
+    for i in sorted(rows):
+        p = rows[i]
+        for f in ("past_due", "days_late", "minimum_payment", "instalment_amount"):
+            if f in p:
+                try:  # noqa: SIM105  (the sandbox's module list is not documented)
+                    p[f] = float(p[f])
+                except Exception:
+                    pass
+        out.append(p)
+    return out
