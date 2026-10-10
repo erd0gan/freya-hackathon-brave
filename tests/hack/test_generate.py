@@ -24,9 +24,9 @@ def tools_with_identity_renamed():
     return parse_openapi(o)
 
 
-def run_hook(src, body):
+def run_hook(src, body, v=None):
     cfg = {"body": body}
-    exec(compile(src, "hook", "exec"), {"vars": {}, "config": cfg})
+    exec(compile(src, "hook", "exec"), {"vars": v or {}, "config": cfg})
     return cfg["body"]
 
 
@@ -103,3 +103,19 @@ def test_failed_callback_booking_is_not_reported_as_booked():
     node = wf["nodes"]["cb_book"]
     assert [t["target_node"] for t in node["transitions"]] == ["fin_no_callback", "fin_callback"]
     assert node["response_mapping"] == [{"path": "data.ok", "variable": "cb_ok"}]
+
+
+def test_digit_pieces_in_the_heard_order():
+    src = identity_tool(build(SPEC_A, parse_openapi(OPENAPI))[0])["pre_process_code"]
+    body = {"customer_id": "c1", "field": "phone_last4", "answer": "0499"}
+    heard = {"id_heard": "ninety-nine zero-four", "id_last": "zero-four"}
+    assert run_hook(src, dict(body), heard)["answer"] == "9904"
+
+
+def test_a_new_full_answer_is_not_reordered():
+    # PUB-12: 4401 was wrong, now the customer says 4410 in one go; a stale heard value
+    # with the same digits must not undo it
+    src = identity_tool(build(SPEC_A, parse_openapi(OPENAPI))[0])["pre_process_code"]
+    body = {"customer_id": "c1", "field": "phone_last4", "answer": "4410"}
+    heard = {"id_heard": "four four zero one", "id_last": "four four one zero"}
+    assert run_hook(src, dict(body), heard)["answer"] == "4410"

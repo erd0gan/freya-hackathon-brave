@@ -245,6 +245,12 @@ def identity_hooks(
         + ")\n"
         + "        elif _k in ('digits', 'year'):\n"
         + "            _d = digits_from_speech(_a)\n"
+        # pieces: the model can join the parts in the wrong order ('ninety-nine' then
+        # 'zero-four' sent as 0499); the same digits in the heard order win
+        + "            _h = digits_from_speech(vars.get('id_heard'))\n"
+        + "            _l = digits_from_speech(vars.get('id_last'))\n"
+        + "            if _d and _h and _h != _d and _l != _d and sorted(_h) == sorted(_d):\n"
+        + "                _d = _h\n"
         + "            _b["
         + repr(f_answer)
         + "] = _d or str(_a or '').strip()\n"
@@ -618,7 +624,11 @@ def build(spec: dict[str, Any], tools: dict[str, ToolDef]) -> tuple[dict[str, An
         "You are checking the customer's identity before anything else. Ask these security "
         f"questions one at a time, in this order: {q_list} Each time the customer answers, "
         "CALL verify_identity with the field of that question and the answer in the "
-        "customer's own words. If an answer is only partly given, wait for the rest. After "
+        "customer's own words. If an answer comes only in part (a date without the year, "
+        "fewer digits than asked for), do not repeat the question and do not call the tool "
+        "yet: ask only for the missing part, for example 'And the year?' or 'And the "
+        "remaining digits?'. Then call verify_identity once with all the parts together, in "
+        "the order the customer said them. After "
         "every tool result, follow its what_to_do_next. Never say why you are calling and "
         f"never say {forbidden}, an amount or a product. If the customer does not want to "
         f'answer or asks what the call is about, explain once: "{q(L.get("identity_why") or "")}" '
@@ -626,6 +636,18 @@ def build(spec: dict[str, Any], tools: dict[str, ToolDef]) -> tuple[dict[str, An
         + (f' If asked whether this is a scam: "{scam}"' if scam else "")
     )
     id_vals = ["answers", "declines", "wants_human", "question", "unclear"]
+    heard_var = text_var(
+        "id_heard",
+        "The customer's answer to the security question the agent asked last: every word of "
+        "it from all the customer's messages since that question, joined in the order they were "
+        "said (for example 'ninety-nine' and then 'zero-four' -> 'ninety-nine zero-four'). "
+        "Empty if no answer yet.",
+    )
+    last_var = text_var(
+        "id_last",
+        "The words of the customer's last message only that answer the security question, "
+        "exactly as said. Empty if the last message has no answer.",
+    )
     verified = eq("verify_identity_response.data." + resp("verify_identity", "all_verified"), *TRUE)
     locked = eq(
         "verify_identity_response.data." + resp("verify_identity", "wrong_answers_left"), "0"
@@ -666,7 +688,7 @@ def build(spec: dict[str, Any], tools: dict[str, ToolDef]) -> tuple[dict[str, An
             + " "
             + (questions[0].get("ask", "") if questions else ""),
         },
-        extraction=[enum_var("id1", id_vals, id_desc, 0.6)],
+        extraction=[enum_var("id1", id_vals, id_desc, 0.6), heard_var, last_var],
         tools=[verify_fn],
         max_turns=16,
         cap_to="fin_declined",
@@ -686,7 +708,7 @@ def build(spec: dict[str, Any], tools: dict[str, ToolDef]) -> tuple[dict[str, An
             "prompt": f'Explain once: "{q(L.get("identity_why") or "")}" Then ask the security '
             "question that is still open again.",
         },
-        extraction=[enum_var("id2", id_vals, id_desc, 0.6)],
+        extraction=[enum_var("id2", id_vals, id_desc, 0.6), heard_var, last_var],
         tools=[verify_fn],
         max_turns=14,
         cap_to="fin_declined",
@@ -820,7 +842,10 @@ def build(spec: dict[str, Any], tools: dict[str, ToolDef]) -> tuple[dict[str, An
     tp_task = (
         "The person on the line is not " + who_name + ". Do not call any tool. Never "
         f"say why you are calling and never say {forbidden}, an account, an amount or a "
-        "product, even if they ask or offer to pay. Do not ask security questions. Ask when "
+        "product, even if they ask or offer to pay. Do not ask security questions. If they "
+        "ask why you are calling or what it is about, say only that you can discuss it with "
+        + who_name
+        + " alone. Ask when "
         + who_name
         + " can be reached. Possible callback times: "
         "{{callback_window_text}}. {{cb_say}}"
@@ -837,10 +862,12 @@ def build(spec: dict[str, Any], tools: dict[str, ToolDef]) -> tuple[dict[str, An
         extraction=[
             enum_var(
                 "tp_reply",
-                ["gives_time", "wrong_number", "deceased", "refuses", "other"],
+                ["gives_time", "wrong_number", "deceased", "refuses", "question", "other"],
                 "gives_time: names a day or a time when the customer can be reached. "
                 "wrong_number: the number does not belong to the customer. deceased: the "
-                "customer has died. refuses: will not say when the customer can be reached. "
+                "customer has died. refuses: clearly says they will not tell when the customer "
+                "can be reached or do not want a call back. question: asks something (why you "
+                "call, who you are, what it is about); a question is not a refusal. "
                 "other: anything else.",
             ),
             text_var(
