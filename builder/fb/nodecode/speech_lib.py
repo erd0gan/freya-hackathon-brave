@@ -227,10 +227,8 @@ def parse_spoken_date(text, today):
     year = None
     for i, t in enumerate(toks):
         mo = _month_of(t) if re.fullmatch(r"[a-z]+", t) else None
-        if (
-            (mo
-            and t not in ("may",))
-            or (t == "may" and i > 0 and re.fullmatch(r"\d{1,2}", toks[i - 1] or ""))
+        if (mo and t not in ("may",)) or (
+            t == "may" and i > 0 and re.fullmatch(r"\d{1,2}", toks[i - 1] or "")
         ):
             month = mo
             if i > 0 and re.fullmatch(r"\d{1,2}", toks[i - 1]):
@@ -276,10 +274,8 @@ def parse_spoken_date(text, today):
             return d.isoformat(), "date"
     # 'the 26th' alone
     m = re.search(r"\b(?:the\s+)?(\d{1,2})\b", s)
-    if (
-        (m
-        and any(v in raw for v in ("the ",)))
-        or (m and re.fullmatch(r"(?:on\s+)?(?:the\s+)?\d{1,2}", s))
+    if (m and any(v in raw for v in ("the ",))) or (
+        m and re.fullmatch(r"(?:on\s+)?(?:the\s+)?\d{1,2}", s)
     ):
         n = int(m.group(1))
         if 1 <= n <= 31:

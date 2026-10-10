@@ -33,10 +33,11 @@ def test_session_variables_match_case():
 
 def test_identity_flow():
     b, c = session()
-    assert vi(b, c, "date_of_birth", "14 March 1988")["ok"] is False  # unreadable, not counted
+    assert vi(b, c, "date_of_birth", "the fourteenth")["ok"] is False  # unreadable, not counted
     r = vi(b, c, "date_of_birth", "1988-14-03")
     assert r["ok"] is False  # not a calendar date either
-    r = vi(b, c, "date_of_birth", "1988-03-14")
+    # The real mock reads a spoken date too (bank_parity, 10 Oct).
+    r = vi(b, c, "date_of_birth", "14 March 1988")
     assert r["verified"] and not r["all_verified"] and r["wrong_answers_left"] == 3
     r = vi(b, c, "phone_last4", "4471")
     assert r["all_verified"]

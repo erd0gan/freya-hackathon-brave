@@ -50,6 +50,23 @@ def http(url: str, body: dict[str, Any] | None = None) -> tuple[int, dict[str, A
             return e.code, {"raw": raw[:200].decode(errors="replace")}
 
 
+def _num(x: Any) -> Any:
+    return float(x) if isinstance(x, (int, float)) else x
+
+
+def _same_keys(real: Any, local: Any) -> Any:
+    """The real ledger rows carry extra ids (promise_id, type) and integer amounts; compare
+    only the fields the local ledger (and score.py) has."""
+    if not (isinstance(real, list) and isinstance(local, list)) or len(real) != len(local):
+        return real
+    out = []
+    for r, lo in zip(real, local, strict=True):
+        if not (isinstance(r, dict) and isinstance(lo, dict)):
+            return real
+        out.append({k: _num(r.get(k)) if isinstance(lo.get(k), float) else r.get(k) for k in lo})
+    return out
+
+
 def probes(case: dict[str, Any]) -> list[tuple[str, dict[str, Any]]]:
     """Identity edge cases first: they do not change what the golden sequence needs."""
     ident = case["identity"]
@@ -106,7 +123,9 @@ def main() -> int:
         ll = bank.ledger(lc)
         rscore, lscore = score_ledger(case, rl), score_ledger(case, ll)
         for k in ("outcome", "reason", "promises", "notes", "callbacks", "transfers"):
-            if json.dumps(rl.get(k), sort_keys=True) != json.dumps(ll.get(k), sort_keys=True):
+            if json.dumps(_same_keys(rl.get(k), ll.get(k)), sort_keys=True) != json.dumps(
+                ll.get(k), sort_keys=True
+            ):
                 diffs += 1
                 print(f"{case['id']} ledger.{k}\n   real  {rl.get(k)}\n   local {ll.get(k)}")
         print(f"{case['id']}: real score {rscore['pass']} local score {lscore['pass']}")

@@ -15,6 +15,49 @@
 #   notes: true when products without a promise get add_note (Brief B)
 #   lines: exact sentences (today_question, recorded, paid, sympathy, ...)
 #   multi_today_question
+#   policy knobs (POLICY_KEYS below): counts and choices a brief states. The builder must set
+#   every one of them from the spec; POLICY_DEFAULTS only keeps a hand-run engine working and
+#   `missing_policy` lets the builder refuse a config that would fall back to them.
+
+# Brief A/B values. Never relied on by a generated workflow (see missing_policy).
+POLICY_DEFAULTS = {
+    # A42: ask once whether you can help, transfer on the second request. 1 = transfer at once.
+    "human_requests_to_transfer": 2,
+    # A45: close after the customer says twice that they do not want to talk.
+    "stop_requests_to_close": 2,
+    # A37: create_promise calls per product before giving up (first try + one retry).
+    "promise_attempts": 2,
+    # A37/B11 after the last failed call: "continue" (mark failed, close/note service_error)
+    # or "transfer" (transfer to queue `record_failure_queue`).
+    "record_failure": "continue",
+    "record_failure_queue": "support",
+    # A32: "offer_support" (offer a transfer; yes -> transfer, no -> hardship),
+    # "transfer" (transfer at once) or "close" (no persuasion, close as hardship).
+    "hardship": "offer_support",
+    "hardship_queue": "support",
+    # B closing: no promise recorded -> reason of the "first_product" (get_account order)
+    # whose status is not paid, or the first status of `reason_priority` that any product has.
+    "no_promise_reason": "first_product",
+    "reason_priority": ["dispute", "hardship", "service_error", "refused"],
+    # B10: add_note calls on a transferred call.
+    "notes_on_transfer": False,
+    # A21: times to ask for the exact day after a vague period, before proposing the deadline.
+    "vague_date_asks": 1,
+    # A26/A27: times the floor is offered after "too much" or an amount below the floor.
+    "floor_offers": 1,
+}
+POLICY_KEYS = sorted(POLICY_DEFAULTS)
+
+
+def _pol(neg, key):
+    val = neg.get(key)
+    return POLICY_DEFAULTS[key] if val is None else val
+
+
+def missing_policy(neg):
+    """Policy keys the config leaves to the defaults."""
+    return [k for k in POLICY_KEYS if neg.get(k) is None]
+
 
 SEMANTIC_KINDS = [
     "yes",
@@ -74,8 +117,8 @@ def new_state(pf, neg, now):
                 "attempts": att,
                 "used": 0,
                 "too_much": False,
-                "floor_offered": False,
-                "vague_asked": False,
+                "floor_offered": 0,
+                "vague_asked": 0,
                 "status": "open",
                 "amount": None,
                 "date": None,
@@ -87,7 +130,7 @@ def new_state(pf, neg, now):
         "phase": "ask_today",
         "i": 0,
         "p": ps,
-        "human_asked": False,
+        "human_asked": 0,
         "stop": 0,
         "transfer": "",
         "action": "say",
@@ -196,9 +239,9 @@ def _apply_offer(st, k, amount, date_iso, date_kind, neg, cal, now, cfg, all_pro
     if amount > p["full"] + 0.005:
         amount = p["full"]
     if amount < p["floor"] - 0.005 and len(targets) == 1:
-        if p["floor_offered"]:
+        if p["floor_offered"] >= _pol(neg, "floor_offers"):
             return _flat_refusal(st, k, neg, cal)
-        p["floor_offered"] = True
+        p["floor_offered"] += 1
         d = date_iso or (p["offer"] or {}).get("date") or cal.get("today_iso")
         p["offer"] = {"amount": p["floor"], "date": d, "kind": "floor"}
         return (
@@ -212,10 +255,10 @@ def _apply_offer(st, k, amount, date_iso, date_kind, neg, cal, now, cfg, all_pro
         )
     if not date_iso:
         if date_kind == "vague":
-            if not p["vague_asked"]:
-                p["vague_asked"] = True
+            if p["vague_asked"] < _pol(neg, "vague_date_asks"):
+                p["vague_asked"] += 1
                 p["pending_amount"] = amount
-                return "Ask once for the exact day on which they will pay."
+                return "Ask for the exact day on which they will pay."
             p["offer"] = {"amount": amount, "date": p["deadline"], "kind": "deadline"}
             return (
                 "Propose "
@@ -333,11 +376,6 @@ def _finish(st, neg):
     st["action"] = "finish"
     oc = neg.get("outcomes") or {}
     rs = neg.get("reasons") or {}
-    if st["transfer"]:
-        st["final_outcome"] = oc.get("transferred", "transferred")
-        st["final_reason"] = (neg.get("transfer_reasons") or {}).get(st["transfer"], st["transfer"])
-        st["notes"] = []
-        return
     sem = {
         "refused": "refused",
         "open": "refused",
@@ -349,21 +387,28 @@ def _finish(st, neg):
     notes = []
     for q in st["p"]:
         if q["status"] != "recorded":
-            notes.append(
-                [q["id"], rs.get(sem.get(q["status"], "refused"), sem.get(q["status"], "refused"))]
-            )
+            s = sem.get(q["status"], "refused")
+            notes.append([q["id"], rs.get(s, s)])
     st["notes"] = notes if neg.get("notes") else []
+    if st["transfer"]:
+        st["final_outcome"] = oc.get("transferred", "transferred")
+        st["final_reason"] = (neg.get("transfer_reasons") or {}).get(st["transfer"], st["transfer"])
+        if not _pol(neg, "notes_on_transfer"):
+            st["notes"] = []
+        return
     if any(q["status"] == "recorded" for q in st["p"]):
         st["final_outcome"] = oc.get("promise", "promise")
         st["final_reason"] = ""
         return
-    first = next((q for q in st["p"] if q["status"] != "paid"), None)
-    if first is None:
+    left = [sem.get(q["status"], "refused") for q in st["p"] if q["status"] != "paid"]
+    if not left:
         st["final_outcome"] = oc.get("paid", "paid")
         st["final_reason"] = ""
         return
     st["final_outcome"] = oc.get("no_promise", "no_promise")
-    s = sem.get(first["status"], "refused")
+    s = left[0]
+    if _pol(neg, "no_promise_reason") == "priority":
+        s = next((x for x in _pol(neg, "reason_priority") if x in left), left[0])
     st["final_reason"] = rs.get(s, s)
 
 
@@ -381,6 +426,13 @@ def _transfer(st, what, neg):
     st["action"] = "transfer"
 
 
+def _close_hardship(st, neg):
+    for q in st["p"]:
+        if q["status"] in ("open", "agreed"):
+            q["status"] = "hardship"
+    _finish(st, neg)
+
+
 def step(st, r, neg, cal, now, cfg):
     """r: {kind, amount, date, date_kind, all, product}. Mutates and returns st."""
     st["action"] = "say"
@@ -394,28 +446,30 @@ def step(st, r, neg, cal, now, cfg):
         _transfer(st, "restructuring", neg)
         return st
     if kind == "human":
-        if not st["human_asked"]:
-            st["human_asked"] = True
+        st["human_asked"] += 1
+        if st["human_asked"] < _pol(neg, "human_requests_to_transfer"):
             st["say"] = "Ask once whether you can help them yourself first. Then: " + st["last_ask"]
             return st
         _transfer(st, "human", neg)
         return st
     if phase == "hardship_offer":
         if kind == "yes":
-            _transfer(st, "support", neg)
+            _transfer(st, _pol(neg, "hardship_queue"), neg)
             return st
         if kind != "offer":
-            for q in st["p"]:
-                if q["status"] in ("open", "agreed"):
-                    q["status"] = "hardship"
-            say = _advance(st, neg, cal)
-            if say is None:
-                _finish(st, neg)
-                return st
-            st["say"] = say
+            _close_hardship(st, neg)
             return st
         phase = "offer"
     elif kind == "hardship":
+        mode = _pol(neg, "hardship")
+        if mode == "transfer":
+            st["final_lines"].append(_line(neg, "sympathy"))
+            _transfer(st, _pol(neg, "hardship_queue"), neg)
+            return st
+        if mode == "close":
+            st["final_lines"].append(_line(neg, "sympathy"))
+            _close_hardship(st, neg)
+            return st
         st["phase"] = "hardship_offer"
         st["say"] = (
             "Say one short sentence of sympathy. Make no payment request. Offer once to "
@@ -424,7 +478,7 @@ def step(st, r, neg, cal, now, cfg):
         return st
     if kind == "stop":
         st["stop"] += 1
-        if st["stop"] >= 2:
+        if st["stop"] >= _pol(neg, "stop_requests_to_close"):
             for q in st["p"]:
                 if q["status"] in ("open", "agreed"):
                     q["status"] = "refused"
@@ -558,8 +612,8 @@ def step(st, r, neg, cal, now, cfg):
     elif kind == "too_much":
         if not p["too_much"]:
             p["too_much"] = True
-        if not p["floor_offered"] and p["floor"] < p["full"] - 0.005:
-            p["floor_offered"] = True
+        if p["floor_offered"] < _pol(neg, "floor_offers") and p["floor"] < p["full"] - 0.005:
+            p["floor_offered"] += 1
             d = (p.get("offer") or {}).get("date") or cal.get("today_iso")
             p["offer"] = {"amount": p["floor"], "date": d, "kind": "floor"}
             say = (
@@ -598,19 +652,24 @@ def _set_rec(st):
 
 
 def record_result(st, ok, neg, cal):
-    """After one create_promise call. Retries once, then marks the product failed."""
+    """After one create_promise call. Retries up to `promise_attempts` calls in total, then
+    marks the product failed (and transfers when `record_failure` says so)."""
     j = st["rec"][0]
     q = st["p"][j]
     if ok:
         q["status"] = "recorded"
         st["rec"].pop(0)
         st["rec_try"] = 0
-    elif st["rec_try"] == 0:
-        st["rec_try"] = 1
     else:
-        q["status"] = "failed"
-        st["rec"].pop(0)
-        st["rec_try"] = 0
+        st["rec_try"] += 1
+        if st["rec_try"] >= int(_pol(neg, "promise_attempts")):
+            q["status"] = "failed"
+            st["rec"].pop(0)
+            st["rec_try"] = 0
+            if _pol(neg, "record_failure") == "transfer":
+                st["rec"] = []
+                _transfer(st, _pol(neg, "record_failure_queue"), neg)
+                return st
     if st["rec"]:
         st["action"] = "record"
         _set_rec(st)

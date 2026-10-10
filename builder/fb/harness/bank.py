@@ -29,12 +29,34 @@ NOT_VERIFIED = "identity not verified"
 MAX_WRONG = 3
 
 
+_MONTHS = {
+    m: i + 1
+    for i, m in enumerate(
+        ["jan", "feb", "mar", "apr", "may", "jun", "jul", "aug", "sep", "oct", "nov", "dec"]
+    )
+}
+
+
 def _date(s: Any) -> datetime.date | None:
-    m = re.fullmatch(r"\s*(\d{4})-(\d{2})-(\d{2})\s*", str(s or ""))
-    if not m:
-        return None
+    """ISO dates, and (like the real mock, see bank_parity) "14 March 1988" / "March 14, 1988"."""
+    t = str(s or "").strip()
+    m = re.fullmatch(r"(\d{4})-(\d{2})-(\d{2})", t)
+    if m:
+        y, mo, d = int(m.group(1)), int(m.group(2)), int(m.group(3))
+    else:
+        m1 = re.fullmatch(r"(\d{1,2})\s+([A-Za-z]+)\.?,?\s+(\d{4})", t)
+        m2 = re.fullmatch(r"([A-Za-z]+)\.?\s+(\d{1,2}),?\s+(\d{4})", t)
+        if m1:
+            d, name, y = int(m1.group(1)), m1.group(2), int(m1.group(3))
+        elif m2:
+            name, d, y = m2.group(1), int(m2.group(2)), int(m2.group(3))
+        else:
+            return None
+        mo = _MONTHS.get(name[:3].lower())
+        if mo is None:
+            return None
     try:
-        return datetime.date(int(m.group(1)), int(m.group(2)), int(m.group(3)))
+        return datetime.date(y, mo, d)
     except ValueError:
         return None
 
@@ -121,7 +143,7 @@ class Bank:
             status, out = 409, {"ok": False, "error": "call already closed"}
         elif s.fault_hits.get(tool, 0) < s.faults.get(tool, 0):
             s.fault_hits[tool] = s.fault_hits.get(tool, 0) + 1
-            status, out = 500, {"ok": False, "error": "service unavailable"}
+            status, out = 500, {"ok": False, "error": "service unavailable, nothing was recorded"}
         else:
             status, out = handler(s, body)
         s.ledger["calls"].append(
@@ -149,6 +171,8 @@ class Bank:
             if d is None:
                 return 200, {"ok": False, "error": "answer is not a date (YYYY-MM-DD)"}
             t = _date(truth)
+            if d == t and f in s.verified:  # the real mock omits all_verified here
+                return 200, {**base, "verified": True, "wrong_answers_left": MAX_WRONG - s.wrong}
             if d == t:
                 s.verified.add(f)
             elif (
@@ -161,7 +185,6 @@ class Bank:
                     "verified": False,
                     "hint": "day_month_swapped",
                     "wrong_answers_left": MAX_WRONG - s.wrong,
-                    "all_verified": s.all_verified,
                 }
             else:
                 s.wrong += 1

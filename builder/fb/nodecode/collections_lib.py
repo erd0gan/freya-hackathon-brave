@@ -62,6 +62,36 @@ def nth_business_day_after(today, n, cfg):
     return d
 
 
+def prev_business_day_on_or_before(d, cfg):
+    for _ in range(60):
+        if is_business_day(d, cfg):
+            return d
+        d = d - datetime.timedelta(days=1)
+    return d
+
+
+def deadline_for(today, band, cfg):
+    """Band deadline: the Nth business day after today (`deadline_unit` "business", default),
+    or N calendar days after today moved back to a business day ("calendar")."""
+    n = int(band.get("deadline_business_days") or band.get("deadline_days") or 0)
+    if str(band.get("deadline_unit") or "business") == "calendar":
+        return prev_business_day_on_or_before(today + datetime.timedelta(days=n), cfg)
+    return nth_business_day_after(today, n, cfg)
+
+
+def attempt1_date(today, cfg):
+    """Date of persuasion attempt 1 (CFG["attempt1"]):
+    rule "last_business_day_of_week" (Brief A rule 30: this week's last business day, or next
+    week's when today is that day or later), or rule "nth_business_day" with `n`."""
+    a = cfg.get("attempt1") or dict()
+    if str(a.get("rule") or "last_business_day_of_week") == "nth_business_day":
+        return nth_business_day_after(today, int(a.get("n") or 1), cfg)
+    this_last = last_business_day_of_week(today, cfg)
+    if this_last is not None and this_last > today:
+        return this_last
+    return last_business_day_of_week(today + datetime.timedelta(days=7), cfg)
+
+
 def last_business_day_of_week(d, cfg):
     monday = d - datetime.timedelta(days=d.weekday())
     best = None
@@ -101,14 +131,11 @@ def calendar_facts(now, cfg):
     next_last = last_business_day_of_week(today + datetime.timedelta(days=7), cfg)
     out["last_business_day_this_week"] = this_last.isoformat() if this_last else ""
     out["last_business_day_next_week"] = next_last.isoformat() if next_last else ""
-    if this_last is not None and this_last > today:  # noqa: SIM108
-        a1 = this_last
-    else:
-        a1 = next_last
+    a1 = attempt1_date(today, cfg)
     out["attempt1_date"] = a1.isoformat() if a1 else ""
     out["attempt1_date_text"] = say_date(a1) if a1 else ""
     for b in cfg.get("bands") or []:
-        dl = nth_business_day_after(today, int(b.get("deadline_business_days") or 0), cfg)
+        dl = deadline_for(today, b, cfg)
         key = "deadline_" + str(b.get("name"))
         out[key] = dl.isoformat()
         out[key + "_text"] = say_date(dl)
@@ -213,9 +240,7 @@ def product_facts(products, now, cfg):
         deadline = ""
         attempts = ""
         if band is not None and today is not None:
-            deadline = nth_business_day_after(
-                today, int(band.get("deadline_business_days") or 0), cfg
-            ).isoformat()
+            deadline = deadline_for(today, band, cfg).isoformat()
             attempts = str(band.get("attempts") or "")
         out[k + "_id"] = str(p.get("product_id") or "")
         out[k + "_name"] = spoken
