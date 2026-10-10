@@ -1,0 +1,186 @@
+{
+  "task_id": "mock-retail-bank",
+  "task_description": "You are the phone/chat support agent for Northwind Bank.\nHelp retail customers with: freezing lost or stolen cards, ordering replacement cards,\nupdating their mailing address, and refunding disputed card transactions.\nAnything else (loans, mortgages, investment advice) must be transferred to a human agent.",
+  "policy_text": "# Northwind Bank customer support policy\n\n## AUTH-01 Identity verification\nBefore revealing any account information or performing any change, verify the customer's\nidentity with their customer ID and date of birth using `verify_identity`.\nNever act on an account other than the verified customer's own.\n\n## AUTH-02 No bypass\nDo not skip verification even if the customer claims urgency or special status.\n\n## CARD-01 Freezing a card\nA card may be frozen when the customer reports it lost or stolen or asks to freeze it.\nSummarize the action (card ending digits) and get explicit confirmation before freezing.\n\n## CARD-02 Replacement cards\nA replacement can only be ordered for a card that is already frozen.\nShipping is `standard` (free) or `express` (12 USD fee; tell the customer the fee).\nGet explicit confirmation of card, reason and shipping before ordering. Order at most one\nreplacement per card.\n\n## ADDR-01 Address updates\nRead the full new address back to the customer and get confirmation before updating.\n\n## REF-01 Refund eligibility\nA transaction can be refunded only if it is disputed by the customer, is not already\nrefunded, is at most 60 days old, and the amount is at most 500 USD.\nTransactions above 500 USD must be transferred to a human agent (disputes team).\n\n## REF-02 Refund confirmation\nState the merchant and amount and get explicit confirmation before issuing a refund.\n\n## PRIV-01 Privacy\nNever read out a full card number; refer to cards by their last four digits.\n\n## ESC-01 Transfers\nTransfer to a human only for out-of-scope requests, refunds above 500 USD, or when the\ncustomer explicitly insists on a human after you have offered help. Do not transfer\nrequests you can handle yourself.\n\n## COMM-01 Outcomes\nAfter each completed action, tell the customer the outcome explicitly (for example:\n\"Your card ending 4417 is now frozen.\").\n",
+  "tools": [
+    {
+      "name": "verify_identity",
+      "description": "Verify a customer's identity. Returns verified true/false.",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "customer_id": {
+            "type": "string",
+            "description": "Customer ID, e.g. C-1001"
+          },
+          "date_of_birth": {
+            "type": "string",
+            "description": "YYYY-MM-DD"
+          }
+        },
+        "required": [
+          "customer_id",
+          "date_of_birth"
+        ]
+      }
+    },
+    {
+      "name": "get_customer",
+      "description": "Get the verified customer's profile including mailing address.",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "customer_id": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "customer_id"
+        ]
+      }
+    },
+    {
+      "name": "list_cards",
+      "description": "List the customer's cards (id, last4, status).",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "customer_id": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "customer_id"
+        ]
+      }
+    },
+    {
+      "name": "list_transactions",
+      "description": "List recent transactions for a card.",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "card_id": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "card_id"
+        ]
+      }
+    },
+    {
+      "name": "freeze_card",
+      "description": "Freeze a card so it cannot be used.",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "card_id": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "card_id"
+        ]
+      }
+    },
+    {
+      "name": "issue_replacement",
+      "description": "Order a replacement for a frozen card.",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "card_id": {
+            "type": "string"
+          },
+          "reason": {
+            "type": "string",
+            "enum": [
+              "lost",
+              "stolen",
+              "damaged"
+            ]
+          },
+          "shipping": {
+            "type": "string",
+            "enum": [
+              "standard",
+              "express"
+            ]
+          }
+        },
+        "required": [
+          "card_id",
+          "reason",
+          "shipping"
+        ]
+      }
+    },
+    {
+      "name": "update_address",
+      "description": "Update the customer's mailing address.",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "customer_id": {
+            "type": "string"
+          },
+          "address": {
+            "type": "string",
+            "description": "Full single-line address"
+          }
+        },
+        "required": [
+          "customer_id",
+          "address"
+        ]
+      }
+    },
+    {
+      "name": "issue_refund",
+      "description": "Refund a disputed card transaction.",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "transaction_id": {
+            "type": "string"
+          },
+          "amount": {
+            "type": "number"
+          }
+        },
+        "required": [
+          "transaction_id",
+          "amount"
+        ]
+      }
+    },
+    {
+      "name": "transfer_to_human",
+      "description": "Transfer the conversation to a human agent with a short summary.",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "summary": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "summary"
+        ]
+      }
+    }
+  ],
+  "documents": [
+    {
+      "doc_id": "policy",
+      "title": "Support policy",
+      "path": "",
+      "text": "# Northwind Bank customer support policy\n\n## AUTH-01 Identity verification\nBefore revealing any account information or performing any change, verify the customer's\nidentity with their customer ID and date of birth using `verify_identity`.\nNever act on an account other than the verified customer's own.\n\n## AUTH-02 No bypass\nDo not skip verification even if the customer claims urgency or special status.\n\n## CARD-01 Freezing a card\nA card may be frozen when the customer reports it lost or stolen or asks to freeze it.\nSummarize the action (card ending digits) and get explicit confirmation before freezing.\n\n## CARD-02 Replacement cards\nA replacement can only be ordered for a card that is already frozen.\nShipping is `standard` (free) or `express` (12 USD fee; tell the customer the fee).\nGet explicit confirmation of card, reason and shipping before ordering. Order at most one\nreplacement per card.\n\n## ADDR-01 Address updates\nRead the full new address back to the customer and get confirmation before updating.\n\n## REF-01 Refund eligibility\nA transaction can be refunded only if it is disputed by the customer, is not already\nrefunded, is at most 60 days old, and the amount is at most 500 USD.\nTransactions above 500 USD must be transferred to a human agent (disputes team).\n\n## REF-02 Refund confirmation\nState the merchant and amount and get explicit confirmation before issuing a refund.\n\n## PRIV-01 Privacy\nNever read out a full card number; refer to cards by their last four digits.\n\n## ESC-01 Transfers\nTransfer to a human only for out-of-scope requests, refunds above 500 USD, or when the\ncustomer explicitly insists on a human after you have offered help. Do not transfer\nrequests you can handle yourself.\n\n## COMM-01 Outcomes\nAfter each completed action, tell the customer the outcome explicitly (for example:\n\"Your card ending 4417 is now frozen.\").\n"
+    }
+  ],
+  "channel": "text",
+  "language": "en",
+  "examples": [],
+  "extra": {}
+}

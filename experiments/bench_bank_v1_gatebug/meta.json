@@ -1,0 +1,7 @@
+{
+  "simulation_cost_usd": 0.86,
+  "generation_log": [
+    "rejected mock-retail-bank-user_correction-005: policy oracle rejected: The expected outcome does not require the agent to offer standard (free) or express shipping (with its $12 fee) before ordering the replacement, as CARD-02b requires. Naming standard shipping and its no-fee outcome does not ensure that required offer and fee disclosure occurred.",
+    "rejected mock-retail-bank-tool_failure-006: policy oracle rejected: The expected outcome says the replacement attempt returns a 503 error but also requires telling the customer the replacement was ordered. The reference trajectory contains only one issue_replacement call and no successful retry, so that success claim is unsupported. It also omits list_transactions, the tool needed to check whether T-2 was already refunded before reporting that status."
+  ]
+}

@@ -1,0 +1,204 @@
+# Freya Documentation
+
+## Docs
+
+- [Introduction to Freya](https://docs.freyavoice.ai/index.md): Welcome to Freya - Build AI-powered voice agents and workflows for phone calls
+- [Creating a Workspace](https://docs.freyavoice.ai/getting-started/creating-workspace.md): Learn how to create your first workspace in Freya
+- [Configuring Your Workspace](https://docs.freyavoice.ai/getting-started/configuring-workspace.md): Learn how to configure workspace settings, team members, and preferences
+- [Creating Your First Agent](https://docs.freyavoice.ai/getting-started/creating-agent.md): Learn how to create and configure an AI voice agent in Freya
+- [Creating Your First Workflow](https://docs.freyavoice.ai/getting-started/creating-workflow.md): Learn how to create and configure workflows in Freya
+- [Iterate Your Agents](https://docs.freyavoice.ai/getting-started/iterating-agents.md): Learn how to use AI Studio to improve your agent prompts and performance
+- [Import a Phone Number](https://docs.freyavoice.ai/getting-started/import-phone-number.md): Learn how to import phone numbers from Twilio and other providers into Freya
+- [Connect a Phone Number](https://docs.freyavoice.ai/getting-started/connect-phone-number.md): Learn how to connect phone numbers to agents or workflows in Freya
+- [Start Receiving Inbound Calls](https://docs.freyavoice.ai/getting-started/receiving-inbound-calls.md): Learn how to test and start receiving inbound calls with your configured phone number
+- [Start Initiating Outbound Calls](https://docs.freyavoice.ai/getting-started/initiating-outbound-calls.md): Learn how to start making outbound calls and running campaigns in Freya
+- [Learning Freyavoice AI](https://docs.freyavoice.ai/guides/learning-freyavoice-ai/overview.md): A guided path through the platform — from core concepts to architecture to production best practices
+- [Core Concepts](https://docs.freyavoice.ai/guides/learning-freyavoice-ai/core-concepts.md): Understanding the fundamental building blocks of Freyavoice AI
+- [Architecture](https://docs.freyavoice.ai/guides/learning-freyavoice-ai/architecture.md): Understanding Freyavoice AI's system architecture and how components work together
+- [Best Practices](https://docs.freyavoice.ai/guides/learning-freyavoice-ai/best-practices.md): Proven patterns and strategies for building effective voice AI solutions with Freyavoice AI
+- [Workspaces](https://docs.freyavoice.ai/guides/fundamentals/workspaces.md): Understanding workspaces and how to effectively organize your Freyavoice AI resources
+- [Agents](https://docs.freyavoice.ai/guides/fundamentals/agents.md): Comprehensive guide to creating, configuring, and optimizing AI agents in Freyavoice AI
+- [Workflows](https://docs.freyavoice.ai/guides/fundamentals/workflows.md): Building complex call routing and processing logic with visual workflows
+- [Phone Numbers](https://docs.freyavoice.ai/guides/fundamentals/phone-numbers.md): Connect phone numbers to your agents for inbound and outbound calls — with SIP configuration, agent assignment, and regional endpoints
+- [Integrations](https://docs.freyavoice.ai/guides/fundamentals/integrations.md): Connecting Freyavoice AI with external systems, APIs, and services
+- [Knowledgebase](https://docs.freyavoice.ai/guides/features/knowledgebase.md): Give your AI agents access to your company's knowledge — documents, websites, and custom answers — for accurate, grounded responses
+- [Analytics](https://docs.freyavoice.ai/guides/features/analytics.md): Track call performance, visualize trends, and build custom dashboards with structured data widgets
+- [Campaigns](https://docs.freyavoice.ai/guides/features/campaigns.md): Launch outbound calling campaigns to reach customers at scale — with scheduling, retries, and real-time progress tracking
+- [Telephony Overview](https://docs.freyavoice.ai/guides/telephony/overview.md): Understanding telephony systems, call handling, and voice infrastructure in Freyavoice AI
+- [Inbound Calls](https://docs.freyavoice.ai/guides/telephony/inbound-calls.md): Handling, optimizing, and managing inbound call processing in Freyavoice AI
+- [Outbound Calls](https://docs.freyavoice.ai/guides/telephony/outbound-calls.md): Initiating, managing, and optimizing outbound calling operations
+- [Call Routing](https://docs.freyavoice.ai/guides/telephony/call-routing.md): Configuring and optimizing call routing for various scenarios and use cases
+- [Voice Configuration](https://docs.freyavoice.ai/guides/telephony/voice-configuration.md): Configuring voice settings for optimal audio quality and user experience
+- [Embed SDK](https://docs.freyavoice.ai/guides/embed/overview.md): Add a Freya voice or chat agent to any web page — full control over your UI, powered by WebRTC under the hood
+- [Client Reference](https://docs.freyavoice.ai/guides/embed/reference.md): Complete reference for FreyaClient methods, properties, and events
+- [Authentication](https://docs.freyavoice.ai/api-reference/authentication.md): Get your API key to start using the Freya APIs
+- [Introduction](https://docs.freyavoice.ai/api-reference/introduction.md): Freyavoice v2 Call API overview
+- [List campaigns](https://docs.freyavoice.ai/api-reference/campaigns/list-campaigns.md): Returns campaigns for a workspace with filters, sorting, pagination, and export support.
+- [Create campaign](https://docs.freyavoice.ai/api-reference/campaigns/create-campaign.md): Creates an outbound voice campaign and schedules calls to the provided customers.
+- [Bulk delete campaigns](https://docs.freyavoice.ai/api-reference/campaigns/bulk-delete-campaigns.md): Deletes multiple campaigns by their IDs.
+- [Get campaign](https://docs.freyavoice.ai/api-reference/campaigns/get-campaign.md): Returns campaign configuration, customers, events, and call IDs.
+- [Delete campaign](https://docs.freyavoice.ai/api-reference/campaigns/delete-campaign.md): Deletes a campaign and all associated data.
+- [Update campaign](https://docs.freyavoice.ai/api-reference/campaigns/update-campaign.md): Updates editable fields (currently the name) of a campaign.
+- [List campaign customers](https://docs.freyavoice.ai/api-reference/campaigns/list-campaign-customers.md): Returns customers for a campaign with retry status, property keys, pagination, and exports.
+- [Call outcome webhook](https://docs.freyavoice.ai/api-reference/webhooks/call-outcome-webhook.md): Sent to the campaign's webhookUrl when a call completes or fails.
+- [End of call report webhook](https://docs.freyavoice.ai/api-reference/webhooks/end-of-call-report-webhook.md): Sent when a call completes with detailed information about the call.
+- [List calls](https://docs.freyavoice.ai/api-reference/calls/list-calls.md): Returns calls for a workspace with filters, sorting, pagination, and export support.
+- [Initiate call](https://docs.freyavoice.ai/api-reference/calls/initiate-call.md): Initiates an outbound call. Requires phoneNumber, callerNumber, and workspaceId. Add campaignId to trigger the campaign call flow. Routes via Asterisk ARI or FreeSWITCH ESL based on phone number trunk config.
+- [Bulk delete calls](https://docs.freyavoice.ai/api-reference/calls/bulk-delete-calls.md): Deletes multiple calls by their IDs.
+- [Bulk update calls](https://docs.freyavoice.ai/api-reference/calls/bulk-update-calls.md): Updates multiple calls. Currently supports archiving/unarchiving calls.
+- [Get call details](https://docs.freyavoice.ai/api-reference/calls/get-call-details.md): Returns detailed call information including transcript, messages, tags, and feedbacks.
+- [Raw ZIP export](https://docs.freyavoice.ai/api-reference/calls/raw-zip-export.md): Lossless dump of calls + related sub-tables + recordings + debug blobs + upstream FK targets (agents/workflows/versions) for round-trip with the import endpoint. Returns a ZIP containing calls.json, agents.json, workflows.json, versions.json, recordings/<callId>[_user|_assistant].{mp3,wav}, and trac…
+- [Import calls from a raw ZIP export](https://docs.freyavoice.ai/api-reference/calls/import-calls-from-a-raw-zip-export.md): Accepts a multipart/form-data upload of a ZIP archive produced by /call/export-raw. Phase A inserts bundled workflows/agents/versions (ON CONFLICT DO NOTHING, flagged is_imported) so imported calls preserve their call → agent → workflow → version FK chain inside the target workspace. Phase B creates…
+- [Register an inbound web call](https://docs.freyavoice.ai/api-reference/calls/register-an-inbound-web-call.md): Registers an inbound web (LiveKit) call session for the authenticated workspace. The workspace is resolved from the bearer token — it is not accepted from the request body.
+- [Add call tag](https://docs.freyavoice.ai/api-reference/call-tags/add-call-tag.md): Adds a tag to a call.
+- [Remove call tag](https://docs.freyavoice.ai/api-reference/call-tags/remove-call-tag.md): Removes a tag from a call.
+- [Update call tag](https://docs.freyavoice.ai/api-reference/call-tags/update-call-tag.md): Updates an existing tag or adds a new one. Can also delete a tag if delete=true.
+- [Download call recording](https://docs.freyavoice.ai/api-reference/call-recordings/download-call-recording.md): Returns the MP3 audio recording for a call.
+- [List agents](https://docs.freyavoice.ai/api-reference/agents/list-agents.md): Returns agents for a workspace with pagination.
+- [Create agent](https://docs.freyavoice.ai/api-reference/agents/create-agent.md): Creates a new AI agent with the specified configuration.
+- [Delete agent](https://docs.freyavoice.ai/api-reference/agents/delete-agent.md): Deletes an agent and all associated versions.
+- [Get default agent config](https://docs.freyavoice.ai/api-reference/agents/get-default-agent-config.md): Returns the platform default agent configuration (with language localization applied) used by the editor's reset-to-default controls.
+- [Get agent](https://docs.freyavoice.ai/api-reference/agents/get-agent.md): Returns detailed agent information including configuration.
+- [Update agent](https://docs.freyavoice.ai/api-reference/agents/update-agent.md): Updates an existing agent's name, configuration, or files.
+- [List workflows](https://docs.freyavoice.ai/api-reference/workflows/list-workflows.md): Returns workflows for a workspace with pagination.
+- [Get workflow](https://docs.freyavoice.ai/api-reference/workflows/get-workflow.md): Returns detailed workflow information including nodes and canvas state.
+- [List workflow templates](https://docs.freyavoice.ai/api-reference/workflows/list-workflow-templates.md): Returns available workflow templates for a workspace.
+- [List feedbacks](https://docs.freyavoice.ai/api-reference/feedbacks/list-feedbacks.md): Returns feedbacks for a workspace with filters, sorting, pagination, and histogram data.
+- [Create feedback](https://docs.freyavoice.ai/api-reference/feedbacks/create-feedback.md): Creates a new feedback. Can be linked to a call or agent, or standalone.
+- [Bulk delete feedbacks](https://docs.freyavoice.ai/api-reference/feedbacks/bulk-delete-feedbacks.md): Deletes multiple feedbacks by their IDs.
+- [Update feedback](https://docs.freyavoice.ai/api-reference/feedbacks/update-feedback.md): Updates a feedback's status, assignment, resolution, or content.
+- [Open feedbacks for an agent](https://docs.freyavoice.ai/api-reference/feedbacks/open-feedbacks-for-an-agent.md): Unresolved feedbacks (call-linked + standalone) for an agent, used by the #N issue-linking control.
+- [Get feedback statuses](https://docs.freyavoice.ai/api-reference/feedback-status-config/get-feedback-statuses.md): Returns all unique feedback statuses used in the workspace.
+- [List feedback assignees](https://docs.freyavoice.ai/api-reference/feedback-assignees/list-feedback-assignees.md): Returns all assignees for a feedback.
+- [Replace feedback assignees](https://docs.freyavoice.ai/api-reference/feedback-assignees/replace-feedback-assignees.md): Replaces all assignees for a feedback.
+- [Add feedback assignee](https://docs.freyavoice.ai/api-reference/feedback-assignees/add-feedback-assignee.md): Adds an assignee to a feedback.
+- [Remove feedback assignee](https://docs.freyavoice.ai/api-reference/feedback-assignees/remove-feedback-assignee.md): Removes an assignee from a feedback.
+- [List feedback comments](https://docs.freyavoice.ai/api-reference/feedback-comments/list-feedback-comments.md): Returns all comments for a feedback.
+- [Add feedback comment](https://docs.freyavoice.ai/api-reference/feedback-comments/add-feedback-comment.md): Adds a comment to a feedback.
+- [Delete feedback comment](https://docs.freyavoice.ai/api-reference/feedback-comments/delete-feedback-comment.md): Deletes a comment from a feedback.
+- [Update feedback comment](https://docs.freyavoice.ai/api-reference/feedback-comments/update-feedback-comment.md): Updates a comment's content.
+- [List feedback references](https://docs.freyavoice.ai/api-reference/feedback-references/list-feedback-references.md): Returns the entities (personas, simulations, calls, versions, solutions) a feedback references.
+- [Add feedback reference](https://docs.freyavoice.ai/api-reference/feedback-references/add-feedback-reference.md): Links a feedback to an entity in the same workspace. Returns the full list.
+- [Remove feedback reference](https://docs.freyavoice.ai/api-reference/feedback-references/remove-feedback-reference.md): Removes a reference from a feedback. Returns the full list.
+- [List branches](https://docs.freyavoice.ai/api-reference/branches/list-branches.md): Lists an entity's branches (proposed changes). A branch is a side-line of versions.
+- [Create branch](https://docs.freyavoice.ai/api-reference/branches/create-branch.md): Forks the edited config off a base mainline version into a new branch's first commit.
+- [Get branch](https://docs.freyavoice.ai/api-reference/branches/get-branch.md): The merge view: commits, net change, closed issues, and a dry-run conflict preview.
+- [Commit to branch](https://docs.freyavoice.ai/api-reference/branches/commit-to-branch.md): Stacks a new full-snapshot commit on the branch head (a branch save).
+- [Merge branch](https://docs.freyavoice.ai/api-reference/branches/merge-branch.md): 3-way merges the branch onto mainline, minting a mainline draft (Apply) or publishing it (Apply & Publish). Returns 409 with per-path conflicts when mainline drifted.
+- [Discard branch](https://docs.freyavoice.ai/api-reference/branches/discard-branch.md): Marks an open branch as discarded.
+- [Branch activity](https://docs.freyavoice.ai/api-reference/branches/branch-activity.md): The side sheet's tabs: the branch's commits, simulations, and unit-test runs.
+- [List API keys](https://docs.freyavoice.ai/api-reference/api-keys/list-api-keys.md): Returns all API keys for a workspace.
+- [Update API keys](https://docs.freyavoice.ai/api-reference/api-keys/update-api-keys.md): Updates one or more API keys (name, active status, rate limits). Expiry is set at creation and is immutable — an `expiresAt` field in the payload is ignored.
+- [Create API key](https://docs.freyavoice.ai/api-reference/api-keys/create-api-key.md): Creates a new API key. The key value is only returned in this response. Every key expires: `expiresAt` defaults to 90 days from now and may be at most 365 days out. It cannot be changed after creation.
+- [Delete API keys](https://docs.freyavoice.ai/api-reference/api-keys/delete-api-keys.md): Deletes one or more API keys.
+- [Check API key](https://docs.freyavoice.ai/api-reference/api-keys/check-api-key.md): Verifies the caller's API key is valid and returns key metadata. Only API key authentication is accepted.
+- [Get analytics](https://docs.freyavoice.ai/api-reference/analytics/get-analytics.md): Returns call analytics for a workspace including summary statistics, time series data, ended reasons, top locations, sentiment distribution, and more.
+- [Get credits analytics](https://docs.freyavoice.ai/api-reference/analytics/get-credits-analytics.md): Returns credit usage analytics for a workspace including daily breakdown and totals.
+- [Get structured data analytics](https://docs.freyavoice.ai/api-reference/analytics/get-structured-data-analytics.md): Returns analytics for structured data fields including time series, summaries, distributions, and value counts.
+- [List widgets](https://docs.freyavoice.ai/api-reference/analytics/list-widgets.md): Returns all analytics widgets for a workspace.
+- [Batch update widget positions](https://docs.freyavoice.ai/api-reference/analytics/batch-update-widget-positions.md): Updates the positions (rowIndex, sortOrder) of multiple widgets at once.
+- [Create widget](https://docs.freyavoice.ai/api-reference/analytics/create-widget.md): Creates a new analytics widget for a workspace.
+- [Get widget](https://docs.freyavoice.ai/api-reference/analytics/get-widget.md): Returns a single analytics widget by ID.
+- [Update widget](https://docs.freyavoice.ai/api-reference/analytics/update-widget.md): Updates an existing analytics widget.
+- [Delete widget](https://docs.freyavoice.ai/api-reference/analytics/delete-widget.md): Deletes an analytics widget.
+- [List phone numbers](https://docs.freyavoice.ai/api-reference/phone-numbers/list-phone-numbers.md): Returns phone numbers for a workspace with pagination, filtering, and optional counts by column.
+- [Update phone numbers](https://docs.freyavoice.ai/api-reference/phone-numbers/update-phone-numbers.md): Updates one or more phone numbers. Returns updated records and any validation errors.
+- [Create phone number](https://docs.freyavoice.ai/api-reference/phone-numbers/create-phone-number.md): Registers a new phone number with optional agent configuration for inbound and outbound calls.
+- [Delete phone numbers](https://docs.freyavoice.ai/api-reference/phone-numbers/delete-phone-numbers.md): Deletes one or more phone numbers by ID.
+- [List phone book contacts](https://docs.freyavoice.ai/api-reference/phone-aliases/list-phone-book-contacts.md): Returns the workspace's phone book contacts (each with its phone numbers) with pagination and search over names and numbers.
+- [Update phone book contact](https://docs.freyavoice.ai/api-reference/phone-aliases/update-phone-book-contact.md): Updates a single contact by ID: renames it and replaces its full set of phone numbers.
+- [Create phone book contact](https://docs.freyavoice.ai/api-reference/phone-aliases/create-phone-book-contact.md): Creates a new contact with one or more phone numbers in the workspace.
+- [Delete phone book contacts](https://docs.freyavoice.ai/api-reference/phone-aliases/delete-phone-book-contacts.md): Deletes one or more contacts by ID; each contact's phone numbers are removed with it.
+- [List do-not-call numbers](https://docs.freyavoice.ai/api-reference/suppression-list/list-do-not-call-numbers.md): Returns the workspace's do-not-call (DNC) suppression list with pagination and search over numbers and reasons. Numbers on this list are blocked from outbound dialing.
+- [Update a do-not-call number](https://docs.freyavoice.ai/api-reference/suppression-list/update-a-do-not-call-number.md): Updates a single suppression entry by ID: its number and/or reason.
+- [Add do-not-call numbers](https://docs.freyavoice.ai/api-reference/suppression-list/add-do-not-call-numbers.md): Adds one or more numbers to the workspace's do-not-call list. Numbers already on the list are skipped (reported in `skipped`).
+- [Remove do-not-call numbers](https://docs.freyavoice.ai/api-reference/suppression-list/remove-do-not-call-numbers.md): Removes one or more numbers from the do-not-call list by ID.
+- [List workspaces](https://docs.freyavoice.ai/api-reference/workspaces/list-workspaces.md): Returns all workspaces the authenticated user has access to, including settings and members.
+- [Update workspace](https://docs.freyavoice.ai/api-reference/workspaces/update-workspace.md): Updates workspace name, logo, settings, or integration configuration.
+- [Create workspace](https://docs.freyavoice.ai/api-reference/workspaces/create-workspace.md): Creates a new workspace with the authenticated user as owner.
+- [Delete workspace](https://docs.freyavoice.ai/api-reference/workspaces/delete-workspace.md): Permanently deletes a workspace and all associated data. Only the workspace owner can delete.
+- [List members](https://docs.freyavoice.ai/api-reference/workspace-members/list-members.md): Returns all members of the specified workspace with their roles.
+- [Remove member](https://docs.freyavoice.ai/api-reference/workspace-members/remove-member.md): Removes a member from the workspace. Admins can remove other members; members can remove themselves.
+- [Update member](https://docs.freyavoice.ai/api-reference/workspace-members/update-member.md): Updates the authenticated user's display name in the workspace.
+- [Change member role](https://docs.freyavoice.ai/api-reference/workspace-members/change-member-role.md): Assigns a workspace role to an existing member. The actor must hold the members:role-change permission and the target role must be assignable by their own role (you can't promote a member into a role that exceeds yours). System role assignment is allowed; system roles themselves are immutable. Effec…
+- [List invitations](https://docs.freyavoice.ai/api-reference/workspace-invitations/list-invitations.md): Returns all pending invitations for the workspace.
+- [Invite member](https://docs.freyavoice.ai/api-reference/workspace-invitations/invite-member.md): Sends an email invitation to join the workspace. The invitee can accept within 7 days.
+- [Revoke invitation](https://docs.freyavoice.ai/api-reference/workspace-invitations/revoke-invitation.md): Revokes a pending workspace invitation.
+- [Get audit logs](https://docs.freyavoice.ai/api-reference/workspace-logs/get-audit-logs.md): Returns audit log entries for workspace events (login, API key changes, member changes, exports, etc.).
+- [Get credits](https://docs.freyavoice.ai/api-reference/workspace-credits/get-credits.md): Returns the current credit balance for the workspace.
+- [Request export](https://docs.freyavoice.ai/api-reference/export/request-export.md): Requests a data export from one of the supported endpoints. The export can be delivered as a direct download URL or sent via email.
+- [List integrations](https://docs.freyavoice.ai/api-reference/integrations/list-integrations.md): Returns available integrations with optional connection status for the workspace.
+- [Remove integration](https://docs.freyavoice.ai/api-reference/integrations/remove-integration.md): Disconnects an integration from the workspace. This removes the connection but does not affect data that was synced.
+- [Get review](https://docs.freyavoice.ai/api-reference/reviews/get-review.md): Returns the review for a specific call, or null if no review exists.
+- [Upsert review](https://docs.freyavoice.ai/api-reference/reviews/upsert-review.md): Creates or updates a review for a call.
+- [List assignees](https://docs.freyavoice.ai/api-reference/review-assignees/list-assignees.md): Returns all users assigned to a review.
+- [Replace assignees](https://docs.freyavoice.ai/api-reference/review-assignees/replace-assignees.md): Replaces all assignees with the provided list. Pass an empty array to remove all assignees.
+- [Add assignee](https://docs.freyavoice.ai/api-reference/review-assignees/add-assignee.md): Adds a user as an assignee to the review.
+- [Remove assignee](https://docs.freyavoice.ai/api-reference/review-assignees/remove-assignee.md): Removes a user from the review's assignees.
+- [Create transcription](https://docs.freyavoice.ai/api-reference/audio/create-transcription.md): Transcribes an uploaded audio file using Freya's transcription models. (Closed Beta)
+- [Create speech](https://docs.freyavoice.ai/api-reference/audio/create-speech.md): Generates speech audio from text using Freya's speech model. (Closed Beta)
+- [List personas](https://docs.freyavoice.ai/api-reference/personas/list-personas.md): Returns personas for a workspace.
+- [Create persona](https://docs.freyavoice.ai/api-reference/personas/create-persona.md): Creates a new persona for simulation testing.
+- [Generate persona preview](https://docs.freyavoice.ai/api-reference/personas/generate-persona-preview.md): Generates AI-powered persona previews based on a prompt.
+- [Get persona](https://docs.freyavoice.ai/api-reference/personas/get-persona.md): Returns detailed persona information.
+- [Update persona](https://docs.freyavoice.ai/api-reference/personas/update-persona.md): Updates an existing persona.
+- [Delete persona](https://docs.freyavoice.ai/api-reference/personas/delete-persona.md): Deletes a persona.
+- [List simulation tags](https://docs.freyavoice.ai/api-reference/simulations/list-simulation-tags.md): Returns the distinct tags across all simulations in the workspace.
+- [List simulations](https://docs.freyavoice.ai/api-reference/simulations/list-simulations.md): Returns simulations for a workspace.
+- [Create simulation](https://docs.freyavoice.ai/api-reference/simulations/create-simulation.md): Creates a new simulation for agent testing.
+- [Get simulation](https://docs.freyavoice.ai/api-reference/simulations/get-simulation.md): Returns detailed simulation information including personas and assertions.
+- [Update simulation](https://docs.freyavoice.ai/api-reference/simulations/update-simulation.md): Updates an existing simulation.
+- [Delete simulation](https://docs.freyavoice.ai/api-reference/simulations/delete-simulation.md): Deletes a simulation and all associated data.
+- [List simulation checks for a version](https://docs.freyavoice.ai/api-reference/simulations/list-simulation-checks-for-a-version.md): Returns the simulations that ran against a single agent/workflow version as check rows (latest iteration per simulation, bucketed as passed/failed/running), newest first.
+- [List simulation persona runs for a version](https://docs.freyavoice.ai/api-reference/simulations/list-simulation-persona-runs-for-a-version.md): Returns the personas that ran against a single agent/workflow version as check rows (one per persona on each simulation's latest iteration, bucketed as passed/failed/running), newest first.
+- [Rerun simulation](https://docs.freyavoice.ai/api-reference/simulations/rerun-simulation.md): Triggers a new run of the simulation, creating a new iteration.
+- [List iterations](https://docs.freyavoice.ai/api-reference/simulation-iterations/list-iterations.md): Returns iteration history for a simulation.
+- [List unit-test version runs](https://docs.freyavoice.ai/api-reference/unit-tests/list-unit-test-version-runs.md): Returns one summary per entity version that has at least one non-stale run, with run-level outcome counts folded in a single GROUP BY (no per-test fan-out), ordered newest-activity-first and paged. Backs the runs-oriented list. Requires agents:read or workflows:read.
+- [Unit tests overview](https://docs.freyavoice.ai/api-reference/unit-tests/unit-tests-overview.md): Returns every non-archived unit test in the workspace grouped by entity, with each test's latest run aggregated against its entity's mainline head version. Requires agents:read or workflows:read.
+- [List unit tests](https://docs.freyavoice.ai/api-reference/unit-tests/list-unit-tests.md): Returns the unit tests for an agent or workflow, plus the latest run per (test, version) pair.
+- [Create unit test](https://docs.freyavoice.ai/api-reference/unit-tests/create-unit-test.md): Creates a new unit test against an agent or workflow snapshot.
+- [Get unit test](https://docs.freyavoice.ai/api-reference/unit-tests/get-unit-test.md): Returns a single unit test by ID.
+- [Archive unit test](https://docs.freyavoice.ai/api-reference/unit-tests/archive-unit-test.md): Soft-deletes a unit test by setting is_archived = true; historical runs stay queryable.
+- [Update unit test](https://docs.freyavoice.ai/api-reference/unit-tests/update-unit-test.md): Updates a unit test's name, expectation, input snapshot, ordinal, or archived flag.
+- [Run all unit tests](https://docs.freyavoice.ai/api-reference/unit-tests/run-all-unit-tests.md): Enqueues a run for every active unit test on an agent or workflow, deduping against pending jobs.
+- [Get unit-test run](https://docs.freyavoice.ai/api-reference/unit-tests/get-unit-test-run.md): Returns a single unit-test run, including its verdict and metrics.
+- [List unit-test runs](https://docs.freyavoice.ai/api-reference/unit-tests/list-unit-test-runs.md): Returns the non-stale runs for a unit test on a specific entity version (the run drill-down list). Requires agents:read or workflows:read.
+- [Get TTS abbreviations](https://docs.freyavoice.ai/api-reference/custom/get-tts-abbreviations.md): Returns the current TTS abbreviations list (`textSubstitutions`) for an agent or workflow. Identify the target by either `id` (UUID, preferred) or `name`. The resolver checks agents first, then workflows. If `name` matches multiple rows in either table, or matches both an agent and a workflow, the r…
+- [Replace TTS abbreviations](https://docs.freyavoice.ai/api-reference/custom/replace-tts-abbreviations.md): Replaces the TTS abbreviations list (`textSubstitutions`) on an agent or on a workflow's embedded agent config. Behaves like a UI save: persists to the JSONB config and creates a new version for audit and rollback.
+- [Send a chat message](https://docs.freyavoice.ai/api-reference/chat/send-a-chat-message.md): Drives a Freya agent or workflow turn-by-turn over text. Omit `callId` and provide `agentId` or `workflowId` to start a new call; the response returns a `callId` to pass on subsequent turns. Branch by passing `fromMessageId` pointing at an earlier assistant turn.
+- [Fork a chat call at an anchor](https://docs.freyavoice.ai/api-reference/chat/fork-a-chat-call-at-an-anchor.md): Creates a brand-new chat call that copies the parent call's messages up to and including `fromMessageId` and retargets a different `versionId`, `agentId`, or `workflowId`. The forked call is dormant until the caller drives it via POST /chat/message. Cross-entity forks are allowed; the inherited work…
+- [Close a chat call](https://docs.freyavoice.ai/api-reference/chat/close-a-chat-call.md): Closes a chat call. Tells pipecat to fire the end-of-call lifecycle (webhook + post-conversation analysis + end-of-call tools) — analysis runs async on pipecat; the webhook arrives at the dashboard shortly after with summary, sentiment, themes, problems, and assertions. Idempotent: a second call on…
+- [List insights](https://docs.freyavoice.ai/api-reference/insights/list-insights.md): Returns all structured data field definitions for a workspace.
+- [Create insight](https://docs.freyavoice.ai/api-reference/insights/create-insight.md): Creates a new structured data field definition.
+- [Get insight](https://docs.freyavoice.ai/api-reference/insights/get-insight.md): Returns a structured data field definition with assigned agents.
+- [Update insight](https://docs.freyavoice.ai/api-reference/insights/update-insight.md): Updates a structured data field definition. Type is immutable after creation.
+- [Delete insight](https://docs.freyavoice.ai/api-reference/insights/delete-insight.md): Deletes a structured data field definition and all associated values.
+- [List agent insights](https://docs.freyavoice.ai/api-reference/agent-insights/list-agent-insights.md): Returns the structured data field IDs assigned to an agent.
+- [Update agent insights](https://docs.freyavoice.ai/api-reference/agent-insights/update-agent-insights.md): Replaces the set of structured data fields assigned to an agent.
+- [List versions](https://docs.freyavoice.ai/api-reference/versions/list-versions.md): Returns version history for an entity (agent or workflow) with pagination.
+- [Create version](https://docs.freyavoice.ai/api-reference/versions/create-version.md): Creates a new version of an entity with the provided configuration snapshot. For entities with a live working copy (agent, workflow) the snapshot is validated against that entity's config schema and applied to the working copy, so an invalid snapshot is rejected with 422.
+- [Get version](https://docs.freyavoice.ai/api-reference/versions/get-version.md): Returns a specific version including full config snapshot.
+- [Update version](https://docs.freyavoice.ai/api-reference/versions/update-version.md): Updates version metadata.
+- [Get version graph](https://docs.freyavoice.ai/api-reference/versions/get-version-graph.md): Returns every commit (mainline + all branch commits) and every branch for an entity in one payload, for the full commit-graph history view.
+- [Permission catalog](https://docs.freyavoice.ai/api-reference/permissions/permission-catalog.md): Returns the full permission catalog (used by the role-picker UI and the API-key permission-picker UI). Auth-only — any logged-in user can read.
+- [List workspace roles](https://docs.freyavoice.ai/api-reference/workspace-roles/list-workspace-roles.md): Returns every role for the workspace — three system roles (Owner / Admin / Member) plus any custom roles.
+- [Create workspace role](https://docs.freyavoice.ai/api-reference/workspace-roles/create-workspace-role.md): Creates a new custom role. The actor can only grant permissions they themselves hold; `workspace:delete` cannot be assigned to a custom role.
+- [Delete workspace role](https://docs.freyavoice.ai/api-reference/workspace-roles/delete-workspace-role.md): Deletes a custom role. System roles, the workspace's default role, and roles with assigned members all reject with 409.
+- [Update workspace role](https://docs.freyavoice.ai/api-reference/workspace-roles/update-workspace-role.md): Updates a custom role. System roles (Owner / Admin / Member) reject this with 409. Permission changes (additions or removals) take effect immediately, on each affected member's next request.
+- [Introduction](https://docs.freyavoice.ai/model-api-reference/introduction.md): Freya Model APIs for Speech-to-Text and Text-to-Speech
+- [Speech-to-Text](https://docs.freyavoice.ai/api-reference/stt.md): Transcribe audio files or stream real-time audio to text using Freya ASR
+- [Text-to-Speech](https://docs.freyavoice.ai/api-reference/tts.md): Convert text into natural-sounding speech using Freya TTS
+- [Speech-to-Text](https://docs.freyavoice.ai/model-api-reference/speech-to-text.md): Transcribe an audio file to text. Accepts multipart form upload with the audio file and optional parameters. Compatible with the OpenAI audio transcription API.
+- [Text-to-Speech](https://docs.freyavoice.ai/model-api-reference/text-to-speech.md): Converts text into natural-sounding speech using Freya's TTS model. Returns a binary audio file. Supports the following emotion tags: [pause], [eee], [throat clearing], [mm-hmm], [laughter], [deep breath], [hmm], [cough], [breath]
+
+## OpenAPI Specs
+
+- [openapi](https://docs.freyavoice.ai/api-reference/openapi.json)
+- [model-apis-openapi](https://docs.freyavoice.ai/api-reference/model-apis-openapi.json)
+
+## Optional
+
+- [Dashboard](https://app.freyavoice.ai)
+
+
+This documentation is built and hosted on [Mintlify](https://mintlify.com), a developer documentation platform.

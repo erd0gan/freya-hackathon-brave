@@ -1,0 +1,96 @@
+{
+  "FRESH (primary)": {
+    "B0": {
+      "candidate_id": "B0",
+      "mean": 0.2,
+      "std_err": 0.09176629354822471,
+      "clustered_std_err": 0.11055415967851334,
+      "lower_bound": 0.07882004566602577,
+      "pass_hat_k": {
+        "1": 0.2,
+        "2": 0.1
+      },
+      "false_compliance_rate": 0.6,
+      "false_refusal_rate": 0.1,
+      "n_scenarios": 10,
+      "n_runs": 20
+    },
+    "A": {
+      "candidate_id": "A",
+      "mean": 0.35,
+      "std_err": 0.10942433098048311,
+      "clustered_std_err": 0.15,
+      "lower_bound": 0.16638464596880392,
+      "pass_hat_k": {
+        "1": 0.35,
+        "2": 0.3
+      },
+      "false_compliance_rate": 0.1,
+      "false_refusal_rate": 0.25,
+      "n_scenarios": 10,
+      "n_runs": 20
+    },
+    "C3": {
+      "candidate_id": "C3",
+      "mean": 0.2,
+      "std_err": 0.09176629354822471,
+      "clustered_std_err": 0.11055415967851334,
+      "lower_bound": 0.07882004566602577,
+      "pass_hat_k": {
+        "1": 0.2,
+        "2": 0.1
+      },
+      "false_compliance_rate": 0.2,
+      "false_refusal_rate": 0.3,
+      "n_scenarios": 10,
+      "n_runs": 20
+    }
+  },
+  "FROZEN val+holdout (C selected here)": {
+    "B0": {
+      "candidate_id": "B0",
+      "mean": 0.3888888888888889,
+      "std_err": 0.11823563735376173,
+      "clustered_std_err": 0.1388888888888889,
+      "lower_bound": 0.18511608663501633,
+      "pass_hat_k": {
+        "1": 0.3888888888888889,
+        "2": 0.2222222222222222
+      },
+      "false_compliance_rate": 0.3888888888888889,
+      "false_refusal_rate": 0.0,
+      "n_scenarios": 9,
+      "n_runs": 18
+    },
+    "A": {
+      "candidate_id": "A",
+      "mean": 0.3888888888888889,
+      "std_err": 0.11823563735376173,
+      "clustered_std_err": 0.1111111111111111,
+      "lower_bound": 0.18511608663501633,
+      "pass_hat_k": {
+        "1": 0.3888888888888889,
+        "2": 0.1111111111111111
+      },
+      "false_compliance_rate": 0.16666666666666666,
+      "false_refusal_rate": 0.16666666666666666,
+      "n_scenarios": 9,
+      "n_runs": 18
+    },
+    "C3": {
+      "candidate_id": "C3",
+      "mean": 0.5,
+      "std_err": 0.12126781251816648,
+      "clustered_std_err": 0.14433756729740643,
+      "lower_bound": 0.2619220040464192,
+      "pass_hat_k": {
+        "1": 0.5,
+        "2": 0.3333333333333333
+      },
+      "false_compliance_rate": 0.1111111111111111,
+      "false_refusal_rate": 0.16666666666666666,
+      "n_scenarios": 9,
+      "n_runs": 18
+    }
+  }
+}

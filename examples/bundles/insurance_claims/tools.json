@@ -1,0 +1,18 @@
+[
+  {"name": "verify_policyholder", "description": "Verify a caller by policy number and postcode.",
+   "parameters": {"type": "object", "properties": {"policy_number": {"type": "string"}, "postcode": {"type": "string"}}, "required": ["policy_number", "postcode"]}},
+  {"name": "get_policy", "description": "Get policy status, period and coverages.",
+   "parameters": {"type": "object", "properties": {"policy_number": {"type": "string"}}, "required": ["policy_number"]}},
+  {"name": "open_claim", "description": "Open a first notice of loss claim.",
+   "parameters": {"type": "object", "properties": {"policy_number": {"type": "string"}, "incident_date": {"type": "string", "description": "YYYY-MM-DD"}, "location": {"type": "string"}, "description": {"type": "string"}, "injuries": {"type": "boolean"}}, "required": ["policy_number", "incident_date", "location", "description", "injuries"]}},
+  {"name": "get_claim_status", "description": "Get the status of a claim.",
+   "parameters": {"type": "object", "properties": {"claim_id": {"type": "string"}}, "required": ["claim_id"]}},
+  {"name": "list_inspection_slots", "description": "List available inspection slots for a claim.",
+   "parameters": {"type": "object", "properties": {"claim_id": {"type": "string"}}, "required": ["claim_id"]}},
+  {"name": "book_inspection", "description": "Book an inspection slot for a claim.",
+   "parameters": {"type": "object", "properties": {"claim_id": {"type": "string"}, "slot_id": {"type": "string"}}, "required": ["claim_id", "slot_id"]}},
+  {"name": "arrange_rental", "description": "Arrange a rental car under the claim.",
+   "parameters": {"type": "object", "properties": {"claim_id": {"type": "string"}, "start_date": {"type": "string"}}, "required": ["claim_id", "start_date"]}},
+  {"name": "transfer_to_adjuster", "description": "Transfer the call to a human adjuster.",
+   "parameters": {"type": "object", "properties": {"reason": {"type": "string"}}, "required": ["reason"]}}
+]
