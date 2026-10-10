@@ -12,3 +12,4 @@ env.sh
 .personas.json
 kit/results/
 kit/traces/
+runs/

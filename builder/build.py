@@ -112,12 +112,31 @@ def smoke(trace: Trace, wf_id: str, names: dict) -> None:
         trace.test(f"chat smoke FAILED: {str(e)[:300]}")
 
 
+def keep_previous_run(slot: str) -> None:
+    """A new run of the same brief must not overwrite the trace, spec and export of an earlier
+    run that may be the one submitted: move them to runs/<slot>/<time of that run>/."""
+    files = [
+        ROOT / "traces" / f"{slot}.log",
+        ROOT / "submission" / f"{slot}.spec.json",
+        ROOT / "submission" / f"{slot}.workflow.json",
+    ]
+    old = [f for f in files if f.exists()]
+    if not old:
+        return
+    stamp = time.strftime("%Y%m%dT%H%M%SZ", time.gmtime(old[0].stat().st_mtime))
+    dest = ROOT / "runs" / slot / stamp
+    dest.mkdir(parents=True, exist_ok=True)
+    for f in old:
+        f.replace(dest / f.name)
+
+
 def main(argv: list[str]) -> int:
     if len(argv) != 3:
         print(__doc__, file=sys.stderr)
         return 2
     brief_path, api_path = Path(argv[1]), Path(argv[2])
     slot = brief_path.stem
+    keep_previous_run(slot)
     trace = Trace(ROOT / "traces" / f"{slot}.log")
     # Every step shares one clock; the last EXPORT_RESERVE_S stay for save and export.
     deadline = time.monotonic() + BUDGET_S - EXPORT_RESERVE_S
