@@ -208,7 +208,11 @@ def _lit(x: Any) -> str:
     return repr(x)
 
 
-def identity_hooks(spec: dict[str, Any]) -> tuple[str, str]:
+def identity_hooks(
+    spec: dict[str, Any], f_field: str = "field", f_answer: str = "answer"
+) -> tuple[str, str]:
+    """verify_identity hooks. `f_field` / `f_answer`: the tool's names for the question
+    discriminator and the answer (bound from the spec; hidden tool APIs can rename them)."""
     ident = spec.get("identity") or {}
     qs = ident.get("questions") or []
     kinds = {x["field"]: x.get("kind", "text") for x in qs}
@@ -226,18 +230,28 @@ def identity_hooks(spec: dict[str, Any]) -> tuple[str, str]:
         + "\n"
         + "    _b = config.get('body')\n"
         + "    if isinstance(_b, dict):\n"
-        + "        _f = str(_b.get('field') or '')\n"
+        + "        _f = str(_b.get("
+        + repr(f_field)
+        + ") or '')\n"
         + "        _k = _kinds.get(_f, 'text')\n"
-        + "        _a = _b.get('answer')\n"
+        + "        _a = _b.get("
+        + repr(f_answer)
+        + ")\n"
         + "        if _k == 'date':\n"
-        + "            _b['answer'] = normalize_dob(_a, "
+        + "            _b["
+        + repr(f_answer)
+        + "] = normalize_dob(_a, "
         + repr(order_dm)
         + ")\n"
         + "        elif _k in ('digits', 'year'):\n"
         + "            _d = digits_from_speech(_a)\n"
-        + "            _b['answer'] = _d or str(_a or '').strip()\n"
+        + "            _b["
+        + repr(f_answer)
+        + "] = _d or str(_a or '').strip()\n"
         + "        else:\n"
-        + "            _b['answer'] = str(_a or '').strip()\n"
+        + "            _b["
+        + repr(f_answer)
+        + "] = str(_a or '').strip()\n"
         + "        vars['id_last_field'] = _f\n"
         + "except Exception:\n"
         + "    pass\n"
@@ -352,7 +366,9 @@ def build(spec: dict[str, Any], tools: dict[str, ToolDef]) -> tuple[dict[str, An
 
     # ---- tools
     t_ver = tools["verify_identity"]
-    pre_id, post_id = identity_hooks(spec)
+    pre_id, post_id = identity_hooks(
+        spec, role_field(t_ver, "field", "question"), role_field(t_ver, "answer", "value")
+    )
     field_desc = "Which question this answer is for. " + " ".join(
         f"'{x['field']}' for: {x.get('ask', '')}" for x in questions
     )
@@ -465,7 +481,8 @@ def build(spec: dict[str, Any], tools: dict[str, ToolDef]) -> tuple[dict[str, An
     id_desc = (
         "declines: the customer refuses to answer a security question, says they do not want "
         "to talk, or asks what the call is about instead of answering. answers: gives an "
-        "answer. question: asks something else. unclear: anything else."
+        "answer. wants_human: asks to speak to a person or a human agent. question: asks "
+        "something else. unclear: anything else."
     )
     reply_desc = (
         "What the customer's LAST message means. yes: agrees to what was just proposed, or "
@@ -544,7 +561,10 @@ def build(spec: dict[str, Any], tools: dict[str, ToolDef]) -> tuple[dict[str, An
 
     nodes: dict[str, Any] = {}
     # ---- opening: who is on the line (the initial node must not be a code node: G0)
+    opening_line = ((L.get("opening") or "") + " " + who_q).strip()
     opening_task = (
+        # The chat route can skip the entry line; then this sentence still opens the call.
+        f'If you have not spoken yet in this call, say exactly: "{q(opening_line)}" '
         "Find out whether you are speaking with " + who_name + ". Do not call any tool. "
         f"Never say why you are calling and never say {forbidden}. If asked whether you are "
         f'a robot or an AI, say: "{ai}"'
@@ -567,7 +587,7 @@ def build(spec: dict[str, Any], tools: dict[str, ToolDef]) -> tuple[dict[str, An
         "opening",
         opening_task,
         who_routes("who1", "opening2"),
-        on_enter={"type": "tts", "text": (L.get("opening") or "") + " " + who_q},
+        on_enter={"type": "tts", "text": opening_line},
         extraction=[enum_var("who1", who_values, who_desc)],
         max_turns=3,
         cap_to="opening2",
@@ -589,7 +609,9 @@ def build(spec: dict[str, Any], tools: dict[str, ToolDef]) -> tuple[dict[str, An
 
     # ---- identity
     nodes["setup_id"] = code_node(
-        "setup_id", snippet(now_alias + bodies.SETUP, cfg, LIB_CALENDAR), [tr("identity", "always")]
+        "setup_id",
+        snippet(now_alias + "vars['pre_human_count'] = '0'\n" + bodies.SETUP, cfg, LIB_CALENDAR),
+        [tr("identity", "always")],
     )
     q_list = " ".join(f"{i + 1}. {x.get('ask', '')}" for i, x in enumerate(questions))
     id_task = (
@@ -603,17 +625,39 @@ def build(spec: dict[str, Any], tools: dict[str, ToolDef]) -> tuple[dict[str, An
         f'and ask the question again. If asked whether you are a robot or an AI: "{ai}"'
         + (f' If asked whether this is a scam: "{scam}"' if scam else "")
     )
-    id_vals = ["answers", "declines", "question", "unclear"]
+    id_vals = ["answers", "declines", "wants_human", "question", "unclear"]
     verified = eq("verify_identity_response.data." + resp("verify_identity", "all_verified"), *TRUE)
     locked = eq(
         "verify_identity_response.data." + resp("verify_identity", "wrong_answers_left"), "0"
     )
+    # A request for a person applies before verification too (Brief A rules 42, 45): ask once
+    # whether you can help (the spec's count), then transfer. Nothing about the account is said.
+    human_limit = int(neg.get("human_requests_to_transfer") or 1)
+
+    def human_routes(var: str) -> list[dict[str, Any]]:
+        return [
+            tr(
+                "pre_transfer",
+                "the customer insists on a person",
+                all_of(
+                    {"variable": var, "operator": "equals", "operand": "wants_human"},
+                    {
+                        "variable": "pre_human_count",
+                        "operator": "greater_than",
+                        "operand": human_limit - 2,
+                    },
+                ),
+            ),
+            tr("pre_human", "the customer asks for a person", eq(var, "wants_human")),
+        ]
+
     nodes["identity"] = conv(
         "identity",
         id_task,
         [
             tr("account", "both answers verified", verified),
             tr("fin_failed", "no wrong answers left", locked),
+            *human_routes("id1"),
             tr("identity2", "the customer declines", eq("id1", "declines")),
         ],
         on_enter={
@@ -634,6 +678,7 @@ def build(spec: dict[str, Any], tools: dict[str, ToolDef]) -> tuple[dict[str, An
         [
             tr("account", "both answers verified", verified),
             tr("fin_failed", "no wrong answers left", locked),
+            *human_routes("id2"),
             tr("fin_declined", "the customer declines again", eq("id2", "declines")),
         ],
         on_enter={
@@ -646,6 +691,54 @@ def build(spec: dict[str, Any], tools: dict[str, ToolDef]) -> tuple[dict[str, An
         max_turns=14,
         cap_to="fin_declined",
         first_entry_only=True,
+    )
+
+    help_first = (
+        (neg.get("lines") or {}).get("help_first")
+        or L.get("help_first")
+        or ("Before I transfer you, can I help you with this myself?")
+    )
+    nodes["pre_human"] = conv(
+        "pre_human",
+        "The customer asked for a person. Do not call any tool. Never say why you are calling "
+        f"and never say {forbidden}, an amount or a product.",
+        [
+            tr("pre_transfer", "the customer insists", eq("hum1", "insists")),
+            tr("pre_human_back", "the customer goes on"),
+        ],
+        on_enter={"type": "tts", "text": help_first},
+        extraction=[
+            enum_var(
+                "hum1",
+                ["insists", "continues"],
+                "insists: still wants a person. continues: agrees to go on, or anything else.",
+            )
+        ],
+        max_turns=2,
+        cap_to="pre_human_back",
+    )
+    nodes["pre_human_back"] = code_node(
+        "pre_human_back",
+        "c = vars.get('pre_human_count') or '0'\n"
+        "vars['pre_human_count'] = str(int(c) + 1) if str(c).isdigit() else '1'\n"
+        "vars['id1'] = ''\nvars['id2'] = ''\nvars['hum1'] = ''\n",
+        [tr("identity", "always")],
+    )
+    n_oc = neg.get("outcomes") or {}
+    nodes["pre_transfer"] = code_node(
+        "pre_transfer",
+        f"vars['transfer_queue'] = {str((neg.get('queues') or {}).get('human') or 'human')!r}\n"
+        + bodies.finish_pre(
+            str(n_oc.get("transferred") or "transferred"),
+            str((neg.get("transfer_reasons") or {}).get("human") or "human"),
+            (
+                (neg.get("lines") or {}).get("transfer_human")
+                or "I am connecting you with a colleague now."
+            )
+            + " "
+            + goodbye,
+        ),
+        [tr("transfer_pre", "always")],
     )
 
     # ---- account and negotiation
@@ -703,6 +796,8 @@ def build(spec: dict[str, Any], tools: dict[str, ToolDef]) -> tuple[dict[str, An
     )
     nodes["after_record"] = code_node("after_record", snippet(bodies.AFTER_RECORD, cfg), after())
     nodes["transfer"] = api_node("transfer", transfer_fn, [tr("wrap", "always")])
+    # before verification: no notes are possible, straight to the goodbye
+    nodes["transfer_pre"] = api_node("transfer_pre", transfer_fn, [tr("goodbye", "always")])
     notes_on = bool(neg.get("notes")) and note_fn is not None
     wrap_routes = [tr("goodbye", "always")]
     if notes_on:

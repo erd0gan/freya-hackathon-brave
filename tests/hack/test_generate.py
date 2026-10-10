@@ -1,0 +1,98 @@
+"""The generated workflow: identity field binding (F08), a person asked for before verification
+(F09), the opening fallback (F02), renamed call variables."""
+
+import copy
+import json
+
+from fb.generate import build
+from fb.openapi_tools import parse_openapi
+from fb.validate import validate
+from spec_fixtures import SPEC_A
+
+from conftest import KIT
+
+OPENAPI = json.loads((KIT / "tools" / "openapi.json").read_text())
+
+
+def tools_with_identity_renamed():
+    o = copy.deepcopy(OPENAPI)
+    b = o["paths"]["/verify_identity"]["post"]["requestBody"]["content"]["application/json"]
+    props = b["schema"]["properties"]
+    props["question_code"] = props.pop("field")
+    props["response"] = props.pop("answer")
+    b["schema"]["required"] = ["customer_id", "question_code", "response"]
+    return parse_openapi(o)
+
+
+def run_hook(src, body):
+    cfg = {"body": body}
+    exec(compile(src, "hook", "exec"), {"vars": {}, "config": cfg})
+    return cfg["body"]
+
+
+def identity_tool(wf):
+    return next(
+        t for t in wf["nodes"]["identity"]["tools"] if t["function"]["name"] == "verify_identity"
+    )
+
+
+def test_identity_hook_uses_bound_field_names():
+    spec = copy.deepcopy(SPEC_A)
+    spec["tool_fields"] = {"verify_identity": {"field": "question_code", "answer": "response"}}
+    wf, _ = build(spec, tools_with_identity_renamed())
+    t = identity_tool(wf)
+    body = run_hook(
+        t["pre_process_code"],
+        {"customer_id": "c1", "question_code": "date_of_birth", "response": "14 March 1988"},
+    )
+    assert body == {"customer_id": "c1", "question_code": "date_of_birth", "response": "1988-03-14"}
+    leaf = t["function"]["parameters"]["properties"]["body"]["properties"]
+    assert set(leaf) == {"customer_id", "question_code", "response"}
+
+
+def test_identity_hook_default_names():
+    wf, _ = build(SPEC_A, parse_openapi(OPENAPI))
+    body = run_hook(
+        identity_tool(wf)["pre_process_code"],
+        {"customer_id": "c1", "field": "phone_last4", "answer": "four four seven one"},
+    )
+    assert body["answer"] == "4471"
+
+
+def test_person_before_verification_has_its_own_path():
+    wf, policy = build(SPEC_A, parse_openapi(OPENAPI))
+    assert validate(wf, parse_openapi(OPENAPI), policy).ok
+    nodes = wf["nodes"]
+    targets = [t["target_node"] for t in nodes["identity"]["transitions"]]
+    assert targets.index("pre_transfer") < targets.index("pre_human") < targets.index("identity2")
+    assert nodes["pre_human"]["on_enter"]["text"].startswith("Before I transfer you")
+    assert nodes["transfer_pre"]["transitions"][-1]["target_node"] == "goodbye"
+    code = nodes["pre_transfer"]["pre_actions"][0]["function"]["parameters"]["properties"]
+    src = code["code"]["default"]
+    assert "'general'" in src and "'transferred'" in src and "'human'" in src
+
+
+def test_person_transfer_at_once_when_the_brief_says_so():
+    spec = copy.deepcopy(SPEC_A)
+    spec["cfg"] = {**spec["cfg"], "neg": {**spec["cfg"]["neg"], "human_requests_to_transfer": 1}}
+    wf, _ = build(spec, parse_openapi(OPENAPI))
+    first = wf["nodes"]["identity"]["transitions"][2]
+    assert first["target_node"] == "pre_transfer"
+    assert first["condition"]["conditions"][0]["conditions"][1]["operand"] == -1
+
+
+def test_opening_line_is_also_in_the_task():
+    wf, _ = build(SPEC_A, parse_openapi(OPENAPI))
+    line = wf["nodes"]["opening"]["on_enter"]["text"]
+    assert line in wf["nodes"]["opening"]["task_message"].replace("'", "'")
+    assert "recording this call" in line
+
+
+def test_full_name_call_variable():
+    spec = copy.deepcopy(SPEC_A)
+    spec["call_variables"] = {"customer_id": "customer_id", "full_name": "full_name", "now": "now"}
+    spec["lines"] = {**spec["lines"], "who_question": "Is this {{full_name}}?"}
+    wf, _ = build(spec, parse_openapi(OPENAPI))
+    text = json.dumps(wf)
+    assert "{{title}}" not in text and "{{last_name}}" not in text
+    assert "{{full_name}}" in wf["nodes"]["third_party"]["task_message"]

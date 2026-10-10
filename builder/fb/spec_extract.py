@@ -22,9 +22,10 @@ POLICY_DEFAULTS: dict[str, Any] = namespace()["POLICY_DEFAULTS"]
 
 LINE_KEYS = {
     "opening": "First sentence of the call, exactly what the brief requires (who is calling, "
-    "for example that the call is recorded). It must not mention the reason for the call. Never "
-    "use the word 'recorded' in it (say for example 'we are recording this call'): that word is "
-    "reserved for a recorded promise.",
+    "for example that the call is recorded). It must not mention the reason for the call. If "
+    "the brief gives the exact words, use them exactly. Otherwise avoid the word 'recorded' "
+    "(say for example 'we are recording this call'): a transcript judge can read it as a "
+    "claim that a promise was recorded.",
     "who_question": "The question that checks who is on the line, with call variables written "
     "as {{variable_name}}, for example 'Am I speaking with {{title}} {{last_name}}?'",
     "ai_answer": "What to say when asked whether this is a robot or an AI.",
@@ -51,6 +52,9 @@ LINE_KEYS = {
     "callback_booked": "Short sentence after a callback is booked.",
     "goodbye": "Thank you and goodbye.",
     "no_info": "What to say to a question the agent cannot answer.",
+    "cannot_change": "What to say when the customer wants to change a promise that is already "
+    "recorded ('' if the brief is silent).",
+    "transfer_human": "Short sentence when handing the call to a person.",
     "rest_overdue": "The note said with any amount below the full past-due amount (for example "
     "'The rest stays overdue.'), '' if the brief has none.",
 }
@@ -254,6 +258,15 @@ def _enum(tools: dict[str, ToolDef], tool: str, *fields: str) -> list[str]:
     return []
 
 
+def warnings(spec: dict[str, Any], brief: str) -> list[str]:
+    """Soft findings for the trace; they never stop the build."""
+    out = []
+    opening = str((spec.get("lines") or {}).get("opening") or "")
+    if "recorded" in opening.lower() and opening not in brief:
+        out.append("lines.opening says 'recorded' without the brief requiring those words")
+    return out
+
+
 def check(spec: dict[str, Any], tools: dict[str, ToolDef], brief: str) -> list[str]:
     """Deterministic checks against the tool API. Returns problems as sentences."""
     bad: list[str] = []
@@ -318,8 +331,6 @@ def check(spec: dict[str, Any], tools: dict[str, ToolDef], brief: str) -> list[s
     for k in ("opening", "who_question", "today_question", "confirm_question", "goodbye"):
         if not str(lines.get(k) or "").strip():
             bad.append(f"lines.{k} is empty")
-    if "recorded" in str(lines.get("opening") or "").lower():
-        bad.append("lines.opening must not contain the word 'recorded'")
     for k, v in lines.items():
         if k != "who_question" and ("{{" in str(v) or "}}" in str(v)):
             bad.append(f"lines.{k} must not contain a placeholder")
@@ -389,6 +400,8 @@ def to_generator(spec: dict[str, Any]) -> dict[str, Any]:
             "help_first",
             "goodbye",
             "rest_overdue",
+            "cannot_change",
+            "transfer_human",
         )
         if lines.get(k)
     }
