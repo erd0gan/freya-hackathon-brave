@@ -15,3 +15,16 @@ Kept so later changes can be compared with it and, if needed, rolled back.
   call-variable names). Regenerating today gives a slightly different workflow; the exports are the reference.
 - Not measured here: a workflow built by `builder/build.py` from the model-extracted spec, the conversation
   styles of `run_cases.py --style`, other call dates.
+
+## Builder run with the model-extracted spec (10 Oct 2026, ~17:45 UTC)
+
+`python3 builder/build.py <brief> kit/tools/openapi.json` at commit `be73311` (clean tree): Brief A alone,
+and Brief A + B concatenated into one file (as a hidden brief arrives: one Markdown file). Each build:
+one model call (`anthropic/claude-opus-5.5`), about 50 s, about $0.15.
+
+| Slot | Input | Workflow id | Agent id | Version | Result file | Result |
+|---|---|---|---|---|---|---|
+| brief-a | `kit/briefs/brief-a.md` | `ac6bd729-f4c2-4e48-9dbc-dde4c717680d` | `20616ec5-e539-477a-a57b-6221b526d7ae` | 1 | `llm-a-1.json` | Brief A 10/10, each 3/3 |
+| brief-ab | brief-a.md + brief-b.md | `e560ef12-f542-4e26-99ce-31be4775f29b` | `cb238dde-3a26-4d9c-be5f-82459dc99e14` | 1 | `llm-b-1.json` | Brief B 3/3, each 3/3 |
+
+The A spec has `notes: false` (no add_note tool in the workflow); the A+B spec has `notes: true`.
