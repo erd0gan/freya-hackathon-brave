@@ -9,6 +9,7 @@ from __future__ import annotations
 
 import copy
 import datetime
+import itertools
 import json
 import re
 from typing import Any
@@ -379,7 +380,7 @@ def structure(spec: dict[str, Any]) -> list[str]:
         if b.get("deadline_unit", "business") not in ("business", "calendar"):
             bad.append(f"band {name!r}: deadline_unit must be business or calendar")
     spans.sort()
-    for (_, hi1, n1), (lo2, _, n2) in zip(spans, spans[1:], strict=False):
+    for (_, hi1, n1), (lo2, _, n2) in itertools.pairwise(spans):
         if lo2 <= hi1:
             bad.append(f"bands {n1!r} and {n2!r} overlap")
     for k in ("notes", "notes_on_transfer"):
