@@ -58,4 +58,11 @@ files = ["src/builder/schema", "src/builder/optimize", "src/builder/llm"]
 
 [tool.ruff.lint.per-file-ignores]
 # Node-code libraries are concatenated into one snippet; names cross files.
-"builder/fb/nodecode/negotiation_lib.py" = ["F821"]
+"builder/fb/nodecode/negotiation_lib.py" = ["F821", "RUF005"]
+# Sandbox code: plain constructs the code_exec runtime surely supports.
+"builder/fb/nodecode/*.py" = ["SIM102", "UP031"]
+# Dev tools print long diagnostic lines.
+"builder/tools/*.py" = ["E501", "SIM105", "RUF005"]
+"builder/build.py" = ["SIM105"]
+"builder/fb/generate.py" = ["E501"]
+"tests/hack/spec_fixtures.py" = ["E501"]

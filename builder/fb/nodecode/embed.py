@@ -7,7 +7,10 @@ from pathlib import Path
 from typing import Any
 
 LIB_FILES = ("collections_lib.py", "speech_lib.py", "negotiation_lib.py")
-LIB = "\n\n".join((Path(__file__).parent / f).read_text() for f in LIB_FILES)
+_SRC = {f: (Path(__file__).parent / f).read_text(encoding="utf-8") for f in LIB_FILES}
+LIB = "\n\n".join(_SRC[f] for f in LIB_FILES)
+# Smaller embeds for code that needs no negotiation engine (dates, speech, callbacks).
+LIB_CALENDAR = "\n\n".join(_SRC[f] for f in LIB_FILES[:2])
 
 
 def namespace() -> dict[str, Any]:
@@ -23,11 +26,11 @@ def config_literal(cfg: dict[str, Any]) -> str:
     return repr(json.dumps(cfg, indent=1, ensure_ascii=False))
 
 
-def snippet(body: str, cfg: dict[str, Any]) -> str:
+def snippet(body: str, cfg: dict[str, Any], lib: str = LIB) -> str:
     """`body` runs inside try/except with `CFG`, the lib and `vars` in scope."""
     inner = "\n".join("    " + line for line in body.strip().splitlines())
     src = (
-        LIB
+        lib
         + "\n\nCFG = json.loads("
         + config_literal(cfg)
         + ")\ntry:\n"

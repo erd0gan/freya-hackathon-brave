@@ -83,6 +83,7 @@ CFG = {
         "vague_date_asks": 1,
         "floor_offers": 1,
         "lines": {
+            "present_intro": "I am calling from the collections team about a late payment.",
             "today_question": "Can you make this payment today?",
             "confirm_question": "Do you confirm?",
             "recorded": "You will receive a text message confirming this promise.",
@@ -158,7 +159,7 @@ def test_attempt_counts_pub12():
 
 def test_pub13_readback_names_both_dates():
     r = simulate(CASES["PUB-13"], SCENARIOS["PUB-13"], CFG)
-    rb = next(s for s in r.says if "Read back" in s)
+    rb = next(s for s in r.says if s.startswith("To confirm"))
     assert "30 October" in rb and "23 October" in rb
 
 
@@ -169,5 +170,5 @@ def test_paid_line_reaches_final_say():
 
 def test_floor_offered_once_with_rest_overdue():
     r = simulate(CASES["PUB-06"], SCENARIOS["PUB-06"], CFG_A)
-    offers = [s for s in r.says if not s.startswith("Repeat")]
+    offers = [s for s in r.says if not s.startswith("Sorry")]
     assert sum("637.50" in s and "rest stays overdue" in s for s in offers) == 1

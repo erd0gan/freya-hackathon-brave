@@ -98,6 +98,9 @@ class Policy:
     promise_tool: str = "create_promise"
     promise_nodes: set[str] = field(default_factory=set)
     require_turn_caps: bool = True
+    # Passthrough nodes of a retry loop whose exit is decided by code with a counter
+    # (create_promise retry, one add_note per product). Not reported as passthrough cycles.
+    bounded_loops: set[str] = field(default_factory=set)
     # A platform export carries agent_config and nulls on optional node fields; accept those.
     exported: bool = False
 
@@ -549,7 +552,7 @@ class _V:
             self.err("no_path_to_end", f"nodes.{k}", "no path to an end of call")
         # a cycle of passthrough nodes spins without user input
         pt = {k for k, n in self.nodes.items() if n.get("passthrough")}
-        for k in pt:
+        for k in sorted(pt - self.p.bounded_loops):
             seen: set[str] = set()
             stack = [t for t, _ in adj[k] if t in pt]
             while stack:

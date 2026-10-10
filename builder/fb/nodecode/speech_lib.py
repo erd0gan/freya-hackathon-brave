@@ -334,3 +334,82 @@ def parse_amount(text):
         return whole
     except Exception:
         return None
+
+
+def parse_spoken_time(text, day_start=10, day_end=19):
+    """'around eleven', '11am', 'half past two', '14:30', 'two thirty in the afternoon' ->
+    'HH:MM', or ''. A bare hour that cannot be a working hour as said (1 to 7) is read as
+    afternoon; 'morning' / 'afternoon' / 'evening' / am / pm decide when given."""
+    raw = str(text or "").lower().replace(".", " ").replace("-", " ")
+    if not raw.strip():
+        return ""
+    s = re.sub(r"(\d)([a-z])", r"\1 \2", _last_segment(raw))
+    if "noon" in s and "after" not in s:
+        return "12:00"
+    pm = bool(re.search(r"\b(pm|p m|afternoon|evening|tonight)\b", s))
+    am = bool(re.search(r"\b(am|a m|morning)\b", s))
+    s = re.sub(r"\b(o'?clock|oclock|ish|around|about|at|by|maybe)\b", " ", s)
+    t = _words_to_number_tokens(s)
+    hour, minute = None, 0
+    m = re.search(r"\b(\d{1,2})[:h ](\d{2})\b", t)
+    if m and int(m.group(2)) < 60:
+        hour, minute = int(m.group(1)), int(m.group(2))
+    else:
+        m = re.search(r"\bhalf past (\d{1,2})\b", t)
+        q = re.search(r"\bquarter past (\d{1,2})\b", t)
+        q2 = re.search(r"\bquarter to (\d{1,2})\b", t)
+        if m:
+            hour, minute = int(m.group(1)), 30
+        elif q:
+            hour, minute = int(q.group(1)), 15
+        elif q2:
+            hour, minute = int(q2.group(1)) - 1, 45
+        else:
+            m = re.search(r"\b(\d{1,2}) (\d{2})\b", t)
+            if m and int(m.group(2)) < 60 and int(m.group(1)) <= 23:
+                hour, minute = int(m.group(1)), int(m.group(2))
+            else:
+                m = re.search(r"\b(\d{1,2})\b", t)
+                if m:
+                    hour = int(m.group(1))
+    if hour is None or hour > 23:
+        return ""
+    if (pm and hour < 12) or (not am and 1 <= hour <= 7):
+        hour += 12
+    elif am and hour == 12:
+        hour = 0
+    return "%02d:%02d" % (hour, minute)
+
+
+def digits_from_speech(text):
+    """'four four seven one', '44 71', 'forty-four seventy-one' -> '4471'."""
+    raw = str(text or "").lower().replace("-", " ")
+    s = _last_segment(raw)
+    out = []
+    for w in re.findall(r"[a-z]+|\d+", s):
+        if w.isdigit():
+            out.append(w)
+        elif w in ("oh", "o", "zero"):
+            out.append("0")
+        elif w in _UNITS:
+            out.append(str(_UNITS[w]))
+        elif w in _TENS:
+            out.append(str(_TENS[w]))
+        elif w in ("double", "triple"):
+            out.append(w)
+    # 'double four' -> '44'; 'forty four' -> '44' (a tens word followed by a unit)
+    res = []
+    i = 0
+    while i < len(out):
+        x = out[i]
+        if x in ("double", "triple") and i + 1 < len(out):
+            res.append(out[i + 1] * (2 if x == "double" else 3))
+            i += 2
+            continue
+        if len(x) == 2 and x.endswith("0") and i + 1 < len(out) and len(out[i + 1]) == 1:
+            res.append(x[0] + out[i + 1])
+            i += 2
+            continue
+        res.append(x)
+        i += 1
+    return "".join(r for r in res if r.isdigit())

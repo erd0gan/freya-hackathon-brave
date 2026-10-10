@@ -147,10 +147,17 @@ def new_state(pf, neg, now):
 
 
 def present_text(st, neg):
+    """The exact words that state every late product and ask the first question."""
     lines = []
     for p in st["p"]:
         lines.append(
-            p["name"] + ": " + _m(p["full"]) + " past due, " + str(_days(p)) + " days late."
+            "Your "
+            + p["name"]
+            + " has "
+            + _m(p["full"])
+            + " past due and is "
+            + str(_days(p))
+            + " days late."
         )
     multi = len(st["p"]) > 1
     q = (
@@ -158,14 +165,15 @@ def present_text(st, neg):
         if multi
         else _line(neg, "today_question", "Can you make this payment today?")
     )
-    return (
-        "Say that you are calling from the collections team about a late payment. "
-        + ("State every late product, one sentence each: " if multi else "State: ")
-        + " ".join(lines)
-        + ' Then ask exactly: "'
-        + q
-        + '"'
+    return " ".join(
+        x
+        for x in [_line(neg, "present_intro", "I am calling about a late payment.")] + lines + [q]
+        if x
     )
+
+
+def _rest(neg):
+    return _line(neg, "rest_overdue", "The rest stays overdue.")
 
 
 def _days(p):
@@ -194,17 +202,16 @@ def _attempt_offer(st, k, neg, cal):
     p["offer"] = {"amount": amount, "date": date, "kind": "attempt"}
     floor_note = ""
     if amount < p["full"] - 0.005:
-        floor_note = " Say that the rest stays overdue."
+        floor_note = " " + _rest(neg)
     return (
-        "Propose that the customer pays "
+        "Could you pay "
         + _m(amount)
         + " for the "
         + p["name"]
         + " on "
         + _d(date)
-        + "."
+        + "?"
         + floor_note
-        + " Ask if they can do that."
     )
 
 
@@ -245,33 +252,36 @@ def _apply_offer(st, k, amount, date_iso, date_kind, neg, cal, now, cfg, all_pro
         d = date_iso or (p["offer"] or {}).get("date") or cal.get("today_iso")
         p["offer"] = {"amount": p["floor"], "date": d, "kind": "floor"}
         return (
-            "Say that "
+            "I cannot record "
             + _m(amount)
-            + " cannot be recorded. Offer the minimum of "
+            + ". The minimum is "
+            + _m(p["floor"])
+            + ". Could you pay "
             + _m(p["floor"])
             + " on "
             + _d(d)
-            + ". Say that the rest stays overdue. Ask if they can do that."
+            + "? "
+            + _rest(neg)
         )
     if not date_iso:
         if date_kind == "vague":
             if p["vague_asked"] < _pol(neg, "vague_date_asks"):
                 p["vague_asked"] += 1
                 p["pending_amount"] = amount
-                return "Ask for the exact day on which they will pay."
+                return _line(neg, "vague_ask", "On which exact day will you pay?")
             p["offer"] = {"amount": amount, "date": p["deadline"], "kind": "deadline"}
             return (
-                "Propose "
-                + _m(amount)
-                + " on "
+                "The latest date I can record is "
                 + _d(p["deadline"])
-                + ", the latest date that can be recorded. Ask if they can do that."
+                + ". Could you pay "
+                + _m(amount)
+                + " on that day?"
             )
         if p.get("offer") and p["offer"].get("date"):
             date_iso = p["offer"]["date"]
         else:
             p["pending_amount"] = amount
-            return "Ask on which exact day they can pay " + _m(amount) + "."
+            return "On which day can you pay " + _m(amount) + "?"
     said = []
     for j in targets:
         q = st["p"][j]
@@ -284,28 +294,29 @@ def _apply_offer(st, k, amount, date_iso, date_kind, neg, cal, now, cfg, all_pro
         elif res.startswith("after_deadline"):
             q["offer"] = {"amount": amt, "date": q["deadline"], "kind": "deadline"}
             said.append(
-                "Say that the latest date you can record is "
+                "The latest date I can record for the "
+                + q["name"]
+                + " is "
                 + _d(q["deadline"])
-                + " and offer "
+                + ". Could you pay "
                 + _m(amt)
-                + " on that day. Ask if they can do that."
+                + " on that day?"
             )
         elif res.startswith("not_business_day"):
             nb = res.split(":", 1)[1]
             q["offer"] = {"amount": amt, "date": nb, "kind": "next_business_day"}
             said.append(
-                "Say that "
-                + _d(date_iso)
-                + " is not a business day and offer the next business day, "
-                + _d(nb)
-                + ", for "
+                _d(date_iso)
+                + " is not a business day. Could you pay "
                 + _m(amt)
-                + ". Ask if they can do that."
+                + " on the next business day, "
+                + _d(nb)
+                + "?"
             )
         elif res == "past":
-            said.append("Say the date must be today or later and ask for another day.")
+            said.append("The date has to be today or later. On which day can you pay?")
         else:
-            said.append("Ask for the exact day again.")
+            said.append("On which exact day can you pay?")
         if said:
             st["i"] = j
             return said[0]
@@ -324,23 +335,20 @@ def _readback(st, neg):
     for q in st["p"]:
         if q["status"] == "agreed":
             parts.append(
-                q["name"]
-                + ": "
+                "the "
+                + q["name"]
+                + ", "
                 + _m(q["amount"])
                 + " on "
                 + _d(q["date"])
                 + (
-                    " (its latest possible date, so it cannot be later)"
+                    ", which is the latest date I can record for it"
                     if q.get("own_deadline")
                     else ""
                 )
             )
     return (
-        "Read back every promise: "
-        + "; ".join(parts)
-        + '. Then ask exactly: "'
-        + _line(neg, "confirm_question", "Do you confirm?")
-        + '"'
+        "To confirm: " + "; ".join(parts) + ". " + _line(neg, "confirm_question", "Do you confirm?")
     )
 
 
@@ -352,11 +360,12 @@ def _advance(st, neg, cal):
         just = [q for q in st["p"] if q["status"] == "agreed" and not q.get("acked")]
         if just:
             ack = (
-                "Say briefly that you have noted "
+                "I have noted "
                 + ", ".join(
-                    q["name"] + " for " + _m(q["amount"]) + " on " + _d(q["date"]) for q in just
+                    "the " + q["name"] + " for " + _m(q["amount"]) + " on " + _d(q["date"])
+                    for q in just
                 )
-                + ". Then: "
+                + ". "
             )
             for q in just:
                 q["acked"] = True
@@ -436,9 +445,15 @@ def _close_hardship(st, neg):
 def step(st, r, neg, cal, now, cfg):
     """r: {kind, amount, date, date_kind, all, product}. Mutates and returns st."""
     st["action"] = "say"
+    st["mode"] = "speak"
     kind = r.get("kind") or "unclear"
     k = st["i"]
-    if r.get("product") is not None and 0 <= r["product"] < len(st["p"]):
+    # A product the customer names counts only while it is still open (extraction is noisy).
+    if (
+        r.get("product") is not None
+        and 0 <= r["product"] < len(st["p"])
+        and st["p"][r["product"]]["status"] in ("open", "agreed")
+    ):
         k = r["product"]
     say = None
     phase = st["phase"]
@@ -448,7 +463,9 @@ def step(st, r, neg, cal, now, cfg):
     if kind == "human":
         st["human_asked"] += 1
         if st["human_asked"] < _pol(neg, "human_requests_to_transfer"):
-            st["say"] = "Ask once whether you can help them yourself first. Then: " + st["last_ask"]
+            st["say"] = _line(
+                neg, "help_first", "Before I transfer you, can I help you with this myself?"
+            )
             return st
         _transfer(st, "human", neg)
         return st
@@ -472,8 +489,13 @@ def step(st, r, neg, cal, now, cfg):
             return st
         st["phase"] = "hardship_offer"
         st["say"] = (
-            "Say one short sentence of sympathy. Make no payment request. Offer once to "
-            "connect them with the customer support team and ask if they want that."
+            _line(neg, "sympathy", "I am sorry to hear that.")
+            + " "
+            + _line(
+                neg,
+                "support_offer",
+                "Would you like me to connect you with our customer support team?",
+            )
         )
         return st
     if kind == "stop":
@@ -484,7 +506,7 @@ def step(st, r, neg, cal, now, cfg):
                     q["status"] = "refused"
             _finish(st, neg)
             return st
-        st["say"] = "Acknowledge briefly. Then: " + st["last_ask"]
+        st["say"] = "I understand. " + st["last_ask"]
         return st
     if kind in ("paid", "dispute"):
         p = st["p"][k]
@@ -499,17 +521,19 @@ def step(st, r, neg, cal, now, cfg):
             _finish(st, neg)
             return st
         pre = (
-            "Say that payments can take one business day to appear. "
+            _line(neg, "paid", "Payments can take one business day to appear.")
             if kind == "paid"
-            else "Do not argue; say you have noted it. "
+            else _line(neg, "dispute_noted", "I have noted that.")
         )
-        st["say"] = pre + "Then continue: " + say
+        st["say"] = pre + " " + say
         st["last_ask"] = say
         return st
     if kind == "question":
+        st["mode"] = "llm"
         st["say"] = (
-            "Answer the customer's question briefly with what you know from this call; "
-            "if you do not have the information, say so. Then repeat: " + st["last_ask"]
+            "Answer the customer's last question in one short sentence, only with what you "
+            "know from this call; if you do not have the information, say so. Then say "
+            'exactly: "' + st["last_ask"] + '"'
         )
         return st
     if phase == "closing":
@@ -558,9 +582,9 @@ def step(st, r, neg, cal, now, cfg):
                 st["say"] = say
                 st["last_ask"] = say
                 return st
-            st["say"] = "Ask which promise they want to change."
+            st["say"] = "Which promise would you like to change?"
             return st
-        st["say"] = "Repeat: " + _readback(st, neg)
+        st["say"] = _readback(st, neg)
         return st
     # ask_today or offer
     p = st["p"][k]
@@ -580,7 +604,7 @@ def step(st, r, neg, cal, now, cfg):
             o = p["offer"]
             _agree(p, o["amount"], o["date"])
         else:
-            st["say"] = "Repeat: " + st["last_ask"]
+            st["say"] = st["last_ask"]
             return st
         say = _advance(st, neg, cal)
     elif kind == "no":
@@ -617,13 +641,16 @@ def step(st, r, neg, cal, now, cfg):
             d = (p.get("offer") or {}).get("date") or cal.get("today_iso")
             p["offer"] = {"amount": p["floor"], "date": d, "kind": "floor"}
             say = (
-                "Offer the minimum of "
-                + _m(p["floor"])
-                + " for the "
+                "The minimum for the "
                 + p["name"]
+                + " is "
+                + _m(p["floor"])
+                + ". Could you pay "
+                + _m(p["floor"])
                 + " on "
                 + _d(d)
-                + ". Say that the rest stays overdue. Ask if they can do that."
+                + "? "
+                + _rest(neg)
             )
             st["phase"] = "offer"
         else:
@@ -633,7 +660,7 @@ def step(st, r, neg, cal, now, cfg):
             else:
                 st["phase"] = "offer"
     else:
-        st["say"] = "Repeat: " + st["last_ask"]
+        st["say"] = "Sorry, I did not get that. " + st["last_ask"]
         return st
     if say is None:
         _finish(st, neg)
@@ -679,25 +706,24 @@ def record_result(st, ok, neg, cal):
     parts = []
     if rec:
         parts.append(
-            "Say that the promise is recorded for "
-            + ", ".join(
-                q["name"] + " (" + _m(q["amount"]) + " on " + _d(q["date"]) + ")" for q in rec
+            "Your promise is recorded: "
+            + "; ".join(
+                "the " + q["name"] + ", " + _m(q["amount"]) + " on " + _d(q["date"]) for q in rec
             )
-            + '. Then say exactly: "'
+            + ". "
             + _line(neg, "recorded", "You will receive a text message confirming this promise.")
-            + '"'
         )
     if bad:
         parts.append(
-            "Say that you could not record the promise for "
-            + ", ".join(q["name"] for q in bad)
-            + "."
+            "I could not record the promise for the " + ", the ".join(q["name"] for q in bad) + "."
         )
-    parts.append("Ask if there is anything else.")
+    anything = _line(neg, "anything_else", "Is there anything else I can help you with?")
+    parts.append(anything)
     st["action"] = "say"
+    st["mode"] = "speak"
     st["phase"] = "closing"
     st["say"] = " ".join(parts)
-    st["last_ask"] = "Ask if there is anything else."
+    st["last_ask"] = anything
     return st
 
 
@@ -715,7 +741,27 @@ REPLY_VARS = (
     "said_amount",
     "all_products",
     "about_product",
+    "has_question",
 )
+
+
+def answer_first(st, r):
+    """The customer also asked something (a robot, a discount, ...): the model answers it in
+    one sentence, then says the engine's exact sentence."""
+    if (
+        r.get("question")
+        and r.get("kind") != "question"
+        and st.get("action") == "say"
+        and st.get("mode", "speak") == "speak"
+        and st.get("say")
+    ):
+        st["mode"] = "llm"
+        st["say"] = (
+            "First answer the customer's question in one short sentence, only with what you "
+            "know from this call (never offer a discount, a waiver or a plan; if you do not "
+            'have the information, say so). Then say exactly: "' + st["say"] + '"'
+        )
+    return st
 
 
 def read_reply(v, today):
@@ -745,6 +791,7 @@ def read_reply(v, today):
         "date_kind": dk,
         "all": allp,
         "product": pi,
+        "question": str(v.get("has_question") or "").strip().lower() in ("yes", "true"),
     }
 
 
@@ -757,6 +804,8 @@ def publish(v, st, neg):
     v["neg_state"] = json.dumps(st)
     v["neg_action"] = st.get("action") or "say"
     v["neg_say"] = st.get("say") or ""
+    # speak: neg_say is the exact sentence (spoken as is); llm: an instruction for the model
+    v["neg_mode"] = st.get("mode") or "speak"
     v["neg_phase"] = st.get("phase") or ""
     if st.get("rec"):
         v["rec_product_id"] = str(st.get("rec_product_id") or "")

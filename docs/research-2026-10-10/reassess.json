@@ -1,0 +1,123 @@
+{
+  "checked_at": "2026-10-10T17:19:31.100490+00:00",
+  "public_repetitions": [
+    {
+      "file": "kit/results/gen-a-3.json",
+      "passed": 10,
+      "total": 10,
+      "runs": 3,
+      "seconds": 387,
+      "all_cases_three_of_three": true,
+      "batch_sizes": [
+        10,
+        10,
+        10
+      ],
+      "all_trials_pass": true,
+      "spec_origin": "handwritten; as reported by user"
+    },
+    {
+      "file": "kit/results/gen-b-3.json",
+      "passed": 3,
+      "total": 3,
+      "runs": 3,
+      "seconds": 357,
+      "all_cases_three_of_three": true,
+      "batch_sizes": [
+        3,
+        3,
+        3
+      ],
+      "all_trials_pass": true,
+      "spec_origin": "handwritten; as reported by user"
+    }
+  ],
+  "northwind": {
+    "stage_2_attempts": 2,
+    "memo_holiday_present": true,
+    "callback_end": "17:00",
+    "identity_fields": [
+      "postcode",
+      "birth_year"
+    ],
+    "call_variables": {
+      "customer_id": "customer_id",
+      "title": "",
+      "first_name": "",
+      "last_name": "",
+      "full_name": "full_name",
+      "now": "now"
+    },
+    "request_bindings": {
+      "_": "the request field name of each role, per tool, exactly as in the tool API",
+      "verify_identity": {
+        "customer_id": "customer_id",
+        "field": "field",
+        "answer": "answer",
+        "response": {
+          "verified": "verified",
+          "all_verified": "all_verified",
+          "wrong_answers_left": "wrong_answers_left",
+          "hint": "hint"
+        }
+      },
+      "get_account": {
+        "customer_id": "customer_id"
+      },
+      "create_promise": {
+        "customer_id": "customer_id",
+        "product_id": "account_ref",
+        "amount": "amount",
+        "date": "pay_date"
+      },
+      "add_note": {
+        "customer_id": "customer_id",
+        "product_id": "account_ref",
+        "reason": "code"
+      },
+      "schedule_callback": {
+        "customer_id": "customer_id",
+        "date": "date",
+        "time": "time"
+      },
+      "transfer_to_agent": {
+        "customer_id": "customer_id",
+        "queue": "team"
+      },
+      "close_call": {
+        "customer_id": "customer_id",
+        "outcome": "result",
+        "reason": "reason"
+      }
+    },
+    "validator_errors": [],
+    "export_nodes": 28,
+    "agent_model": "experimental-5",
+    "behavior_simulated": false
+  },
+  "explicit_identity_rename": {
+    "request_body_fields": [
+      "customer_id",
+      "question_code",
+      "response"
+    ],
+    "body_after_hook": {
+      "customer_id": "synthetic",
+      "question_code": "date_of_birth",
+      "response": "14 March 1988",
+      "answer": ""
+    },
+    "expected_response": "1988-03-14",
+    "normalized_correctly": false
+  },
+  "sha256": {
+    "builder/build.py": "1bc4e316778345802c33bad4b652c4c931cb8f6e55f2354f9f5be8c7fce4fb54",
+    "builder/fb/generate.py": "1fe801a38ad3b58181e08e18fe290fab06e0886752cbbc99ad3c1282df341a86",
+    "builder/fb/spec_extract.py": "614b4c2e467a42b25e200dd2d88b22705ca4afef2d2326adeb832a6a31803b45",
+    "submission/northwind.spec.json": "89ca3895c16d2da173ced504ee633fd2453637d241cf574fe98f4c10e5510be5",
+    "submission/northwind.workflow.json": "c393273f7f4c0749d91be31a1e80bd3f1de0ab59ed785b6823edd926fb9fd81c",
+    "traces/northwind.log": "537be95b43ab91362ac623c75c94a602cbae4d2fa2dd9d9cffb2d3578b0f1add",
+    "kit/results/gen-a-3.json": "36f6acd1348d391b630d5cd71744d33320ecf523bc8894c6ae7219e91506bd89",
+    "kit/results/gen-b-3.json": "691446fdba5af7f531a46280fe2f1c3dff991b602882f6f6dd68be00cd460c38"
+  }
+}

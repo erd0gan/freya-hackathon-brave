@@ -143,11 +143,18 @@ def calendar_facts(now, cfg):
     cb = cfg.get("callback") or {}
     start = str(cb.get("start") or "10:00")
     end = str(cb.get("end") or "19:00")
+    # CFG["callback"]: include_today (default true), business_days_ahead (default 1),
+    # business_days_only (default true: a callback day must be a business day).
     days = []
-    if is_business_day(today, cfg) and out["now_time"] < end:
-        days.append(("today", today, max(start, out["now_time"])))
-    nb = nth_business_day_after(today, 1, cfg)
-    days.append(("next business day", nb, start))
+    bd_only = cb.get("business_days_only", True) is not False
+    if cb.get("include_today", True) is not False and out["now_time"] < end:
+        if is_business_day(today, cfg) or not bd_only:
+            days.append(("today", today, max(start, out["now_time"])))
+    for n in range(1, int(cb.get("business_days_ahead") or 1) + 1):
+        nb = (
+            nth_business_day_after(today, n, cfg) if bd_only else today + datetime.timedelta(days=n)
+        )
+        days.append(("next business day" if n == 1 else say_date(nb), nb, start))
     out["callback_window_text"] = " or ".join(
         name + " (" + say_date(d) + ", " + d.isoformat() + ") from " + s + " to " + end
         for name, d, s in days
@@ -213,7 +220,7 @@ def load_products(raw):
 
 def money(x):
     try:
-        return "%.2f" % float(x)  # noqa: UP031
+        return "%.2f" % float(x)
     except Exception:
         return str(x)
 
@@ -226,9 +233,16 @@ def product_facts(products, now, cfg):
         "products_state": "known" if products else "unknown",
     }
     lines = []
+    # CFG["product_fields"]: the names the tool API uses for these roles (hidden briefs can
+    # rename them).
+    fmap = cfg.get("product_fields") or dict()
+
+    def pf(p, role):
+        return p.get(fmap.get(role) or role)
+
     for i, p in enumerate(products):
         k = "p" + str(i + 1)
-        ptype = str(p.get("type") or "")
+        ptype = str(pf(p, "type") or "")
         floor_field = (cfg.get("floor_field") or {}).get(ptype, "")
         floor = p.get(floor_field) if floor_field else None
         name_tpl = (cfg.get("product_names") or {}).get(ptype) or ptype.replace("_", " ")
@@ -236,16 +250,21 @@ def product_facts(products, now, cfg):
             spoken = name_tpl.format(**{kk: str(vv) for kk, vv in p.items()})
         except Exception:
             spoken = ptype.replace("_", " ")
-        band = band_for(p.get("days_late"), cfg)
+        band = band_for(pf(p, "days_late"), cfg)
         deadline = ""
         attempts = ""
         if band is not None and today is not None:
             deadline = deadline_for(today, band, cfg).isoformat()
             attempts = str(band.get("attempts") or "")
-        out[k + "_id"] = str(p.get("product_id") or "")
+        out[k + "_id"] = str(pf(p, "product_id") or "")
         out[k + "_name"] = spoken
-        out[k + "_past_due"] = money(p.get("past_due"))
-        out[k + "_days_late"] = str(p.get("days_late") or "")
+        out[k + "_past_due"] = money(pf(p, "past_due"))
+        dl = pf(p, "days_late")
+        try:
+            dl = str(int(float(dl))) if float(dl) == int(float(dl)) else str(dl)
+        except Exception:
+            dl = str(dl or "")
+        out[k + "_days_late"] = dl
         out[k + "_floor"] = money(floor) if floor is not None else ""
         out[k + "_band"] = str(band.get("name")) if band else ""
         out[k + "_deadline"] = deadline
@@ -275,6 +294,17 @@ def product_facts(products, now, cfg):
             + (", persuasion attempts " + attempts if attempts else "")
         )
     out["product_facts"] = "\n".join(lines)
+    # What the model may say about the products: no floor, deadline or attempt count, so it
+    # cannot make an offer of its own.
+    out["product_brief"] = "\n".join(
+        out["p" + str(i + 1) + "_name"]
+        + ": "
+        + out["p" + str(i + 1) + "_past_due"]
+        + " past due, "
+        + out["p" + str(i + 1) + "_days_late"]
+        + " days late"
+        for i in range(len(products))
+    )
     return out
 
 
@@ -305,8 +335,9 @@ _WORD_MONTHS = dict((m.lower(), i + 1) for i, m in enumerate(MONTHS))
 _WORD_MONTHS.update(dict((m[:3].lower(), i + 1) for i, m in enumerate(MONTHS)))
 
 
-def normalize_dob(text):
-    """'14 March 1988', 'March 14th, 1988', '14/03/1988' (day first), '1988-03-14' -> ISO."""
+def normalize_dob(text, order="DMY"):
+    """'14 March 1988', 'March 14th, 1988', '14/03/1988' (day first; order "MDY" reads month
+    first), '1988-03-14' -> ISO."""
     s = str(text or "").strip().lower().replace(",", " ")
     m = re.match(r"^(\d{4})-(\d{1,2})-(\d{1,2})$", s)
     if m:
@@ -319,6 +350,8 @@ def normalize_dob(text):
                 mon = _WORD_MONTHS[w]
         if mon and len(nums) >= 2:
             d, y, mo = int(nums[0]), int(nums[-1]), mon
+        elif len(nums) == 3 and str(order).upper().startswith("M"):
+            mo, d, y = int(nums[0]), int(nums[1]), int(nums[2])
         elif len(nums) == 3:
             d, mo, y = int(nums[0]), int(nums[1]), int(nums[2])
         else:

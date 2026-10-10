@@ -60,6 +60,25 @@ lifecycle close_call: outcome={{final_outcome}}, reason={{final_reason}}
 - birebir cümleler (açılış, kayıt cümlesi, taziye, scam cevabı)
 - çok ürün kuralları (B): sıra, not kuralı, kapanış önceliği
 
+## Platform kapıları: sonuçlar (10 Ekim 2026, 16:30 UTC, `builder/tools/gate_probe.py`)
+
+Test: küçük bir probe workflow, PUB-10 practice müşterisi (ilk `create_promise` 500 döner), `/chat/message` ile 5 tur. Kanıt: call event'leri (`node_enter`, `route_evaluated`, `function_call_start`) ve bankanın ledger'ı.
+
+| # | Soru | Sonuç |
+|---|---|---|
+| G6 | Tam node-code kütüphanesini (52.780 karakter) taşıyan code node kabul ediliyor ve çalışıyor mu? | **Evet.** Dry-run geçti, kod platformda kesilmeden saklandı, `code_error` yok, takvim değerleri doğru (`attempt1_date = 2026-10-16`). Workflow JSON'u 64,5 KB. |
+| G0 | Chat route, `initial_node` olan passthrough code node'u çalıştırıyor mu? | **Hayır.** Code node baştayken hiçbir değişkeni yazılmadı: `create_promise` gövdesi boş gitti, `close_call`'ı model doldurdu (`outcome: "success"` → bank `unknown outcome`). Aynı code node ilk konuşma node'undan sonra konunca çalıştı. **Karar:** initial node her zaman açılış konuşma node'u (tts); setup code node ondan sonra. Simülasyonda nasıl davrandığına bakmaya gerek kalmıyor. |
+| G2 | Bir sonraki turda değer çıkmazsa extraction değişkeni eski değerini koruyor mu? | **Evet.** `color = red`, şemasında `color` da olan sonraki node'da iki tur boyunca korundu. |
+| G1 | `max_node_turns = N` iken N. turda eşleşen transition mı, cap mi kazanıyor? | **Transition.** `max_node_turns: 2` olan node'da 2. turda `animal == cat` transition'ı çalıştı, `max_turn_transition` çalışmadı. |
+| G4 | Code değişkeni `api_request` gövdesine bake ediliyor mu? Sayı tipi? | **Evet, düz `{{rec_amount}}` ile.** Gövde: `{"amount": 365.0, "date": "2026-10-16", "product_id": "p1", ...}`. `amount` JSON number olarak gitti; `:json` gerekmedi. |
+| G5 | 500 cevabında `<node>_failure_count` artıyor mu? Node'a yeniden girince `pre_actions` tekrar çalışıyor mu? | **İkisi de evet.** `record_failure_count = 1`, transition aynı turda çalıştı; code node üzerinden `record`'a dönünce çağrı tekrarlandı. 500'den sonra `record_status_code` güvenilir değil (sonraki başarılı çağrı 200 yazar); sayaca bakılmalı. |
+| G3 | Code'un yazdığı `final_outcome`, lifecycle `close_call`'a bake ediliyor mu? | **Evet.** `close_call` gövdesi `{"outcome": "promise", "customer_id": ...}`; boş `reason` pre-hook ile düştü. `end_call` → `call_ended` → `close_call` sırası doğrulandı. |
+
+Ek gözlemler:
+- Chat'te ilk kullanıcı mesajı, açılış satırından önce gelir (`route ... Suppressed: Missing prior assistant message`). Bu tur `max_node_turns`'e sayılabilir; açılış node'unun cap'i buna göre seçilmeli.
+- `end_call` node'una giden turda `/chat/message` 504 döndü (13 sn): çağrı sonu + lifecycle tool aynı istekte çalışıyor. Çağrı yine de kapandı ve `close_call` gitti.
+- Konuşma turları 1,4–2,9 sn sürdü (küçük prompt'larla).
+
 ## Platform varsayımları: Freya'da doğrulanacak (gate 4 ve sonrası)
 
 1. `max_node_turns` = N iken N. kullanıcı turunda transition'lar cap'ten önce mi çalışıyor?

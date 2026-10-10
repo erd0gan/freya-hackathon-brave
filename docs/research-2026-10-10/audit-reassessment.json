@@ -1,0 +1,356 @@
+{
+  "checked_at": "2026-10-10T17:18:43.320600+00:00",
+  "probes": {
+    "unsupported_holidays": {
+      "check_problems": []
+    },
+    "changed_deadline": {
+      "check_problems": []
+    },
+    "overlapping_bands": {
+      "check_problems": []
+    },
+    "negative_attempts": {
+      "check_problems": []
+    },
+    "string_boolean": {
+      "check_problems": []
+    },
+    "invented_reason": {
+      "check_problems": []
+    },
+    "invalid_callback_window": {
+      "check_problems": []
+    },
+    "speech": {
+      "dates": {
+        "2026-10-16, sorry I mean tomorrow": [
+          "2026-10-16",
+          "date"
+        ],
+        "May 5": [
+          "",
+          "none"
+        ],
+        "5 May": [
+          "2027-05-05",
+          "date"
+        ],
+        "this Friday, sorry next Monday": [
+          "2026-10-19",
+          "date"
+        ],
+        "this Friday, sorry I mean next Monday": [
+          "2026-10-19",
+          "date"
+        ]
+      },
+      "amounts": {
+        "-100": 100.0,
+        "minus one hundred": 100.0,
+        "1,234.56": 1234.56,
+        "637.50, sorry 500": 500.0
+      }
+    },
+    "split_callback": {
+      "after_day": {
+        "cb_state": "partial",
+        "cb_date": null,
+        "cb_say": "Ask for the missing time."
+      },
+      "after_time": {
+        "cb_state": "ok",
+        "cb_date": "2026-10-14",
+        "cb_time": "15:00",
+        "cb_say": ""
+      }
+    },
+    "renamed_call_variables": {
+      "old_customer_placeholder": 0,
+      "new_customer_placeholder": 8,
+      "reads_old_now": true,
+      "reads_new_now": true,
+      "aliases_new_now": true
+    },
+    "renamed_identity_arguments": {
+      "question_code": "date_of_birth",
+      "response": "14 March 1988",
+      "answer": ""
+    },
+    "unclear_nonanswer": {
+      "says": [
+        "I am calling from the collections team about a late payment. Your credit card ending 4821 has 420.00 past due and is 6 days late. Can you make this payment today?",
+        "Sorry, I did not get that. I am calling from the collections team about a late payment. Your credit card ending 4821 has 420.00 past due and is 6 days late. Can you make this payment today?"
+      ],
+      "phase": "ask_today",
+      "action": "say",
+      "errors": []
+    },
+    "hardship_with_date": {
+      "says": [
+        "I am calling from the collections team about a late payment. Your credit card ending 4821 has 420.00 past due and is 6 days late. Can you make this payment today?",
+        "I am sorry to hear that. Would you like me to connect you with our customer support team?"
+      ],
+      "phase": "hardship_offer",
+      "action": "say",
+      "errors": []
+    },
+    "support_question_then_accept": {
+      "says": [
+        "I am calling from the collections team about a late payment. Your credit card ending 4821 has 420.00 past due and is 6 days late. Can you make this payment today?",
+        "I am sorry to hear that. Would you like me to connect you with our customer support team?",
+        "Thank you for your time. Goodbye."
+      ],
+      "phase": "hardship_offer",
+      "action": "finish",
+      "errors": []
+    },
+    "recorded_change": {
+      "says": [
+        "I am calling from the collections team about a late payment. Your credit card ending 4821 has 420.00 past due and is 6 days late. Can you make this payment today?",
+        "To confirm: the credit card ending 4821, 420.00 on Wednesday 14 October 2026. Do you confirm?",
+        "Your promise is recorded: the credit card ending 4821, 420.00 on Wednesday 14 October 2026. You will receive a text message confirming this promise. Is there anything else I can help you with?",
+        "Thank you for your time. Goodbye."
+      ],
+      "phase": "closing",
+      "action": "finish",
+      "errors": []
+    },
+    "generated_workflow": {
+      "nodes": 28,
+      "bytes": 459162,
+      "errors": [],
+      "warnings": [
+        "WARN  code_try                 nodes.wrap.pre_actions[0].code: snippet is not wrapped in try/except",
+        "WARN  code_try                 nodes.fin_unclear.pre_actions[0].code: snippet is not wrapped in try/except",
+        "WARN  code_try                 nodes.fin_wrong_number.pre_actions[0].code: snippet is not wrapped in try/except",
+        "WARN  code_try                 nodes.fin_deceased.pre_actions[0].code: snippet is not wrapped in try/except",
+        "WARN  code_try                 nodes.fin_callback.pre_actions[0].code: snippet is not wrapped in try/except",
+        "WARN  code_try                 nodes.fin_no_callback.pre_actions[0].code: snippet is not wrapped in try/except",
+        "WARN  code_try                 nodes.fin_failed.pre_actions[0].code: snippet is not wrapped in try/except",
+        "WARN  code_try                 nodes.fin_declined.pre_actions[0].code: snippet is not wrapped in try/except"
+      ]
+    },
+    ".builder/call_pub01.json": {
+      "ended": "customer-ended-call",
+      "duration": 22,
+      "events": {
+        "variable_extracted": 4,
+        "route_evaluated": 7,
+        "turn_completed": 4,
+        "conversation_resumed": 4,
+        "node_enter": 4,
+        "function_call_start": 3,
+        "function_call_complete": 3
+      },
+      "assistant": [
+        "Hello. Am I speaking with Mr Reyes?",
+        "Before we continue, I need to ask you two security questions. What is your date of birth?",
+        "Correct. What are the last four digits of the phone number we have on file?",
+        "Thank you. Your identity has been verified."
+      ]
+    },
+    ".builder/probe_after.json": {
+      "ended": "assistant-ended-call",
+      "duration": 11,
+      "events": {
+        "route_evaluated": 9,
+        "turn_completed": 4,
+        "conversation_resumed": 4,
+        "variable_extracted": 3,
+        "node_enter": 8,
+        "function_call_start": 6,
+        "function_call_complete": 5,
+        "function_call_error": 1,
+        "function_call_complete_deferred": 1,
+        "call_ended": 1
+      },
+      "assistant": [
+        "Please choose a colour: red, blue, or green.",
+        "Probe two. Name an animal: cat, dog or bird.",
+        "Probe two. Name an animal: cat, dog or bird.",
+        "Probe done. Say goodbye.",
+        "Goodbye."
+      ]
+    }
+  },
+  "file_hashes": {
+    "builder\\build.py": "1bc4e316778345802c33bad4b652c4c931cb8f6e55f2354f9f5be8c7fce4fb54",
+    "builder\\fb\\generate.py": "1fe801a38ad3b58181e08e18fe290fab06e0886752cbbc99ad3c1282df341a86",
+    "builder\\fb\\spec_extract.py": "614b4c2e467a42b25e200dd2d88b22705ca4afef2d2326adeb832a6a31803b45"
+  },
+  "saved_platform_results": [
+    {
+      "file": "kit\\results\\base-A.json",
+      "passed": 0,
+      "total": 10,
+      "runs": 1,
+      "seconds": 320,
+      "ledger_passed": 2,
+      "failed": [
+        {
+          "id": "PUB-01",
+          "failed": [
+            "conversation: The agent failed to meet all criteria. While the security questions were passed before get_account, 'collections' was never mentioned, and the promise was created exactly once, the agent did not mention anything about a text message or SMS after the promise was confirmed in message 12."
+          ]
+        },
+        {
+          "id": "PUB-02",
+          "failed": [
+            "outcome ('not_reached', 'unclear'), expected ('not_reached', 'callback')",
+            "callbacks [], expected [{'date': '2026-10-15', 'time': '11:00'}]",
+            "conversation: The agent correctly avoided disclosing the purpose of the call or naming any products or debt, and no restricted tools (verify_identity, get_account) were called. However, the agent failed to schedule a callback for the next business day at 11:00. While the user suggested this time, the agent simply stated they could only proceed with Ms. Costa and ended the call without confirming or executing a "
+          ]
+        },
+        {
+          "id": "PUB-03",
+          "failed": [
+            "outcome ('no_promise', 'refused'), expected ('not_verified', 'failed')",
+            "conversation: The conversation failed multiple success criteria and did not end properly: - The check did not end after a third wrong answer. Only one validation attempt was recorded (the date of birth in Message 3), and subsequent corrections offered by the user were ignored by the agent. - The agent never instructed the customer to use the app or visit a branch, despite being unable to verify them. - The call"
+          ]
+        },
+        {
+          "id": "PUB-04",
+          "failed": [
+            "promises [('p1', 1250.0, '2026-11-06')], expected [('p1', 1250.0, '2026-10-23')]",
+            "conversation: The agent failed to meet the specific success criterion regarding the promise date. While the agent correctly identified as a digital assistant (Message 8) and did not treat the user's date as a refusal, the success criteria required the promise date to be the late-band deadline of 23 October. Instead, the agent accepted and recorded a promise for November 6th, as confirmed in Message 11 and the '"
+          ]
+        },
+        {
+          "id": "PUB-05",
+          "failed": [
+            "outcome ('no_promise', 'refused'), expected ('no_promise', 'hardship')",
+            "conversation: The agent failed to meet all the success criteria. Specifically, the agent did not offer the support team as required by the criteria. While the agent correctly expressed sympathy in one sentence, avoided persuasion after the user's refusal, and did not offer any discounts or plans, the absence of a support team offer results in a failure."
+          ]
+        },
+        {
+          "id": "PUB-06",
+          "failed": [
+            "conversation: The agent failed to mention that the remaining balance would stay overdue when offering the minimum payment in Message 10. All other criteria were met, including the specific promise details and the agent correctly avoiding asking the customer how much she could pay."
+          ]
+        },
+        {
+          "id": "PUB-07",
+          "failed": [
+            "promises [('p1', 540.0, '2026-10-26')], expected [('p1', 540.0, '2026-10-27')]",
+            "conversation: The agent failed to meet two out of three success criteria. While the agent correctly asked for a specific date once the user provided a range (Message 10), it failed to reject October 26th. Instead of offering the next business day (Tuesday, October 27th), the agent confirmed and recorded the promise for October 26th (Message 12 and corresponding system event)."
+          ]
+        },
+        {
+          "id": "PUB-08",
+          "failed": [
+            "outcome (None, None), expected ('paid', None)",
+            "conversation: The agent failed to meet the success criteria because they did not inform the customer that payments can take one business day to appear. While the agent correctly identified that the payment had not yet reflected in the system and did not record a promise to pay (the outcome was explicitly 'no_promise'), the required information regarding the processing timeframe was missing from the conversation"
+          ]
+        },
+        {
+          "id": "PUB-09",
+          "failed": [
+            "outcome ('no_promise', 'refused'), expected ('transferred', 'restructuring')",
+            "transfers [], expected [{'queue': 'restructuring'}]",
+            "conversation: The call did not meet all the success criteria. Specifically, the agent failed to call the 'transfer_to_agent' function with the 'restructuring' queue when the user requested lower installments. Instead, the agent told the user it could only record payment dates and ended the call. While no promise was recorded and the agent did not propose a plan, the mandatory transfer was missing. The call ende"
+          ]
+        },
+        {
+          "id": "PUB-10",
+          "failed": [
+            "outcome (None, None), expected ('promise', None)",
+            "promises [], expected [('p1', 365.0, '2026-10-16')]",
+            "conversation: The agent failed to meet the first success criterion. While the user provided all necessary information and confirmed the payment date, the 'create_promise' function call failed due to a 'service unavailable' error (system event). The agent did not attempt a retry and instead apologized for the technical issue, resulting in zero promises being recorded in the ledger instead of the required one. Th"
+          ]
+        }
+      ],
+      "sha256": "62f40dfd7de0e49cd9e60283e08627dc7e00e75b1d6164a782f72d4bc41502f7"
+    },
+    {
+      "file": "kit\\results\\gen-a-1.json",
+      "passed": 9,
+      "total": 10,
+      "runs": 1,
+      "seconds": 156,
+      "ledger_passed": 10,
+      "failed": [
+        {
+          "id": "PUB-10",
+          "failed": [
+            "conversation: The conversation did not meet all success criteria. Specifically, it violated the second criterion: the agent must not say 'recorded' before a successful call. While the agent correctly handled the API failure by retrying and ensured exactly one promise was entered into the ledger, the word 'recorded' was spoken in Message 0 ('This call is recorded') during the initial disclosure. Since this messa"
+          ]
+        }
+      ],
+      "sha256": "9bdcef9d6b6956ce4e791c542d75e89bc36d9c2f89a7342c9d29e1a9c8074eca"
+    },
+    {
+      "file": "kit\\results\\gen-a-2.json",
+      "passed": 8,
+      "total": 10,
+      "runs": 1,
+      "seconds": 125,
+      "ledger_passed": 10,
+      "failed": [
+        {
+          "id": "PUB-04",
+          "failed": [
+            "conversation: The agent failed to identify itself as a digital assistant when the user explicitly asked 'Are you a robot?' in [Message 7]. Although the agent correctly identified itself as a digital assistant in the opening introduction [Message 0], the success criterion requires it to do so 'when asked', and the agent ignored the user's question in [Message 8]. All other criteria were met: the user's suggested"
+          ]
+        },
+        {
+          "id": "PUB-05",
+          "failed": [
+            "conversation: The conversation failed to meet the success criteria because the assistant made a persuasion attempt in Message 8. Despite the user stating in Message 7 that they had lost their job and could not make any payments, the assistant asked, 'Can you make this payment today?'. In a debt collection context, this direct solicitation of payment constitutes a persuasion attempt, violating the criterion 'no "
+          ]
+        }
+      ],
+      "sha256": "d12a665c11f6ea1760d4a8009f11cf9c4f903602db78188a8f894f89bba56d7d"
+    },
+    {
+      "file": "kit\\results\\gen-a-3.json",
+      "passed": 10,
+      "total": 10,
+      "runs": 3,
+      "seconds": 387,
+      "ledger_passed": 10,
+      "failed": [],
+      "sha256": "36f6acd1348d391b630d5cd71744d33320ecf523bc8894c6ae7219e91506bd89"
+    },
+    {
+      "file": "kit\\results\\gen-b-1.json",
+      "passed": 2,
+      "total": 3,
+      "runs": 1,
+      "seconds": 456,
+      "ledger_passed": 2,
+      "failed": [
+        {
+          "id": "PUB-12",
+          "failed": [
+            "outcome (None, None), expected ('promise', None)",
+            "promises [], expected [('p1', 510.0, '2026-10-15')]",
+            "notes [], expected [('p2', 'refused'), ('p3', 'refused')]",
+            "conversation: The call failed for several reasons: - The call ended on a timeout ('exceeded-max-duration') because the agent entered an infinite loop, repeating the same question about the credit card from Message 20 to Message 128, even after the user confirmed multiple times and tried to say goodbye. - The agent performed two attempts on the car loan (Messages 16 and 18) instead of the required one attempt fo"
+          ]
+        }
+      ],
+      "sha256": "06adb1379640e2128ffabf5f266819b1f4e60ea5643210be98bf6f1d7ce6fe71"
+    },
+    {
+      "file": "kit\\results\\gen-b-2.json",
+      "passed": 3,
+      "total": 3,
+      "runs": 1,
+      "seconds": 83,
+      "ledger_passed": 3,
+      "failed": [],
+      "sha256": "72d8c5e517c2262a92f66d1cd05c3af7034d7d0d1bb2ffc5cbc43072a0ec802e"
+    },
+    {
+      "file": "kit\\results\\gen-b-3.json",
+      "passed": 3,
+      "total": 3,
+      "runs": 3,
+      "seconds": 357,
+      "ledger_passed": 3,
+      "failed": [],
+      "sha256": "691446fdba5af7f531a46280fe2f1c3dff991b602882f6f6dd68be00cd460c38"
+    }
+  ]
+}

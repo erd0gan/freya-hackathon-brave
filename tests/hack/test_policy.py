@@ -27,7 +27,7 @@ def test_public_config_sets_every_knob():
 def test_human_transfer_needs_two_requests_by_default():
     r = simulate(CASES["PUB-01"], [{"kind": "human"}], CFG_A)
     assert r.ledger["transfers"] == []
-    assert "help them yourself" in r.says[-1]
+    assert "help you with this myself" in r.says[-1]
     r = simulate(CASES["PUB-01"], [{"kind": "human"}, {"kind": "human"}], CFG_A)
     assert r.ledger["transfers"] == [{"queue": "general"}]
     assert (r.ledger["outcome"], r.ledger["reason"]) == ("transferred", "human")
@@ -121,7 +121,7 @@ def test_vague_date_asks():
     r = simulate(CASES["PUB-07"], first, CFG_A)
     assert "exact day" in r.says[-1]
     r = simulate(CASES["PUB-07"], first, neg(CFG_A, vague_date_asks=0))
-    assert "latest date that can be recorded" in r.says[-1]
+    assert "latest date I can record" in r.says[-1]
 
 
 def test_floor_offers():
