@@ -237,12 +237,21 @@ def identity_hooks(
         + "        _a = _b.get("
         + repr(f_answer)
         + ")\n"
+        + "        vars['id_incomplete'] = ''\n"
         + "        if _k == 'date':\n"
         + "            _b["
         + repr(f_answer)
         + "] = normalize_dob(_a, "
         + repr(order_dm)
         + ")\n"
+        # pieces: a year said in two parts ('19' ... '75'); a lone century is not an answer
+        # yet. Sent unreadable on purpose: the bank does not count that as a wrong answer.
+        + "            _ld = digits_from_speech(vars.get('id_last'))\n"
+        + "            if _ld in ('19', '20') or (len(_ld) == 3 and _ld[:2] in ('19', '20')):\n"
+        + "                _b["
+        + repr(f_answer)
+        + "] = 'incomplete'\n"
+        + "                vars['id_incomplete'] = 'yes'\n"
         + "        elif _k in ('digits', 'year'):\n"
         + "            _d = digits_from_speech(_a)\n"
         # pieces: the model can join the parts in the wrong order ('ninety-nine' then
@@ -283,7 +292,15 @@ def identity_hooks(
         + "            _left = str(_d.get("
         + repr(resp("verify_identity", "wrong_answers_left"))
         + "))\n"
-        + "            if _d.get("
+        + "            _inc = ''\n"
+        + "            try:\n"
+        + "                _inc = str(vars.get('id_incomplete') or '')\n"
+        + "            except Exception:\n"
+        + "                _inc = ''\n"
+        + "            if _inc == 'yes':\n"
+        + "                _m = 'The year is not complete yet. Do not repeat the question: ask only "
+        + "for the rest of the year.'\n"
+        + "            elif _d.get("
         + repr(resp("verify_identity", "hint"))
         + ") == "
         + repr(swap_hint)

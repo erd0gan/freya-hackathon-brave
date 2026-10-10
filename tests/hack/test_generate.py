@@ -119,3 +119,23 @@ def test_a_new_full_answer_is_not_reordered():
     body = {"customer_id": "c1", "field": "phone_last4", "answer": "4410"}
     heard = {"id_heard": "four four zero one", "id_last": "four four one zero"}
     assert run_hook(src, dict(body), heard)["answer"] == "4410"
+
+
+def test_lone_century_is_not_sent_as_a_year():
+    src = identity_tool(build(SPEC_A, parse_openapi(OPENAPI))[0])["pre_process_code"]
+    body = {"customer_id": "c1", "field": "date_of_birth", "answer": "2019-12-05"}
+    v = {"id_heard": "5 December 19", "id_last": "19"}
+    assert run_hook(src, dict(body), v)["answer"] == "incomplete"
+    assert v["id_incomplete"] == "yes"
+    v = {"id_heard": "5 December 19 75", "id_last": "75"}
+    body["answer"] = "1975-12-05"
+    assert run_hook(src, dict(body), v)["answer"] == "1975-12-05"
+    v = {"id_last": "nineteen seventy-five"}
+    assert run_hook(src, dict(body), v)["answer"] == "1975-12-05"
+
+
+def test_post_hook_asks_for_the_rest_of_the_year():
+    post = identity_tool(build(SPEC_A, parse_openapi(OPENAPI))[0])["post_process_code"]
+    result = {"data": {"ok": False, "error": "answer is not a date"}}
+    exec(compile(post, "hook", "exec"), {"vars": {"id_incomplete": "yes"}, "result": result})
+    assert "rest of the year" in result["data"]["what_to_do_next"]
