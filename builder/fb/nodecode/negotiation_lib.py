@@ -173,6 +173,15 @@ def present_text(st, neg):
     )
 
 
+def _the(name):
+    """'the personal loan', but 'your overdraft' stays as it is."""
+    n = str(name or "")
+    low = n.lower()
+    if low.startswith(("the ", "your ", "my ", "a ", "an ")):
+        return n
+    return "the " + n
+
+
 def _rest(neg):
     return _line(neg, "rest_overdue", "The rest stays overdue.")
 
@@ -207,8 +216,8 @@ def _attempt_offer(st, k, neg, cal):
     return (
         "Could you pay "
         + _m(amount)
-        + " for the "
-        + p["name"]
+        + " for "
+        + _the(p["name"])
         + " on "
         + _d(date)
         + "?"
@@ -300,8 +309,8 @@ def _apply_offer(st, k, amount, date_iso, date_kind, neg, cal, now, cfg, all_pro
         elif res.startswith("after_deadline"):
             q["offer"] = {"amount": amt, "date": q["deadline"], "kind": "deadline"}
             said.append(
-                "The latest date I can record for the "
-                + q["name"]
+                "The latest date I can record for "
+                + _the(q["name"])
                 + " is "
                 + _d(q["deadline"])
                 + ". Could you pay "
@@ -341,8 +350,7 @@ def _readback(st, neg):
     for q in st["p"]:
         if q["status"] == "agreed":
             parts.append(
-                "the "
-                + q["name"]
+                _the(q["name"])
                 + ", "
                 + _m(q["amount"])
                 + " on "
@@ -368,7 +376,7 @@ def _advance(st, neg, cal):
             ack = (
                 "I have noted "
                 + ", ".join(
-                    "the " + q["name"] + " for " + _m(q["amount"]) + " on " + _d(q["date"])
+                    _the(q["name"]) + " for " + _m(q["amount"]) + " on " + _d(q["date"])
                     for q in just
                 )
                 + ". "
@@ -691,8 +699,8 @@ def step(st, r, neg, cal, now, cfg):
             d = (p.get("offer") or {}).get("date") or cal.get("today_iso")
             p["offer"] = {"amount": p["floor"], "date": d, "kind": "floor"}
             say = (
-                "The minimum for the "
-                + p["name"]
+                "The minimum for "
+                + _the(p["name"])
                 + " is "
                 + _m(p["floor"])
                 + ". Could you pay "
@@ -760,14 +768,14 @@ def record_result(st, ok, neg, cal):
         parts.append(
             "Your promise is recorded: "
             + "; ".join(
-                "the " + q["name"] + ", " + _m(q["amount"]) + " on " + _d(q["date"]) for q in rec
+                _the(q["name"]) + ", " + _m(q["amount"]) + " on " + _d(q["date"]) for q in rec
             )
             + ". "
             + _line(neg, "recorded", "You will receive a text message confirming this promise.")
         )
     if bad:
         parts.append(
-            "I could not record the promise for the " + ", the ".join(q["name"] for q in bad) + "."
+            "I could not record the promise for " + ", ".join(_the(q["name"]) for q in bad) + "."
         )
     anything = _line(neg, "anything_else", "Is there anything else I can help you with?")
     parts.append(anything)
