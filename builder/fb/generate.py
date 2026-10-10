@@ -32,6 +32,10 @@ from fb.openapi_tools import ToolDef, freya_tool
 from fb.validate import Policy
 
 ALWAYS = {"operator": "always"}
+# A write that answers slowly must not time out and reach the bank after close_call (seen once:
+# an add_note sent at 28 s with the default 12 s timeout landed after the call was closed). No
+# automatic retry: a late first request plus a retry would record the write twice.
+WRITE_TIMEOUT_MS = 25000
 TRUE = ("true", "True")
 
 
@@ -489,6 +493,10 @@ def build(spec: dict[str, Any], tools: dict[str, ToolDef]) -> tuple[dict[str, An
         pre_code="NO_REASON = " + _lit(no_reason) + "\n" + CLOSE_PRE,
         extra_config={"alwaysRunsAt": ["end_of_call"]},
     )
+
+    for fn in (promise_fn, note_fn, cb_fn, transfer_fn, close_fn):
+        if fn is not None:
+            fn["config"]["timeoutMs"] = WRITE_TIMEOUT_MS
 
     # ---- extraction schemas
     who_values = ["confirms", "someone_else", "wrong_number", "deceased", "question", "unclear"]

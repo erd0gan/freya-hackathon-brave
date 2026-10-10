@@ -139,3 +139,10 @@ def test_post_hook_asks_for_the_rest_of_the_year():
     result = {"data": {"ok": False, "error": "answer is not a date"}}
     exec(compile(post, "hook", "exec"), {"vars": {"id_incomplete": "yes"}, "result": result})
     assert "rest of the year" in result["data"]["what_to_do_next"]
+
+
+def test_writes_wait_longer_than_reads():
+    wf, _ = build(SPEC_A, parse_openapi(OPENAPI))
+    for node in ("record", "cb_book", "transfer", "transfer_pre"):
+        assert wf["nodes"][node]["pre_actions"][0]["config"]["timeoutMs"] == 25000
+        assert wf["nodes"][node]["pre_actions"][0]["config"]["maxRetries"] == 0
