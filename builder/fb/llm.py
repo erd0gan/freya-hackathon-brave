@@ -41,7 +41,9 @@ def chat(
     temperature: float = 0.0,
     timeout: float = 300.0,
     retries: int = 2,
+    deadline: float | None = None,
 ) -> str:
+    """`deadline`: time.monotonic() value by which the call (with its retries) must be over."""
     model = model or model_for("builder")
     key = os.environ.get("OPENROUTER_API_KEY")
     if not key:
@@ -57,6 +59,9 @@ def chat(
     ).encode()
     last = ""
     for attempt in range(retries + 1):
+        left = (deadline - time.monotonic()) if deadline is not None else timeout
+        if left < 20:
+            raise LLMError(f"no time left for the model call ({purpose}); last error: {last}")
         req = urllib.request.Request(
             base.rstrip("/") + "/chat/completions",
             data=body,
@@ -70,7 +75,7 @@ def chat(
         )
         t0 = time.time()
         try:
-            with urllib.request.urlopen(req, timeout=timeout) as r:
+            with urllib.request.urlopen(req, timeout=min(timeout, left)) as r:
                 out = json.loads(r.read())
         except (urllib.error.URLError, TimeoutError, json.JSONDecodeError) as e:
             detail = e.read().decode()[:300] if isinstance(e, urllib.error.HTTPError) else ""

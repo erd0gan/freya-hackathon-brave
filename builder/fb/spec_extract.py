@@ -337,11 +337,247 @@ def check(spec: dict[str, Any], tools: dict[str, ToolDef], brief: str) -> list[s
     for tpl in (spec.get("product_names") or {}).values():
         if "{{" in str(tpl):
             bad.append("product_names use single braces")
+    return bad + structure(spec)
+
+
+def _is_int(x: Any, lo: int | None = None) -> bool:
+    return isinstance(x, int) and not isinstance(x, bool) and (lo is None or x >= lo)
+
+
+def _hhmm(x: Any) -> bool:
+    m = re.fullmatch(r"(\d{2}):(\d{2})", str(x or ""))
+    return bool(m) and int(m.group(1)) < 24 and int(m.group(2)) < 60
+
+
+ENUMS = {
+    "hardship": ("offer_support", "transfer", "close"),
+    "record_failure": ("continue", "transfer"),
+    "no_promise_reason": ("first_product", "priority"),
+    "record_failure_queue": ("restructuring", "human", "support"),
+    "hardship_queue": ("restructuring", "human", "support"),
+}
+
+
+def structure(spec: dict[str, Any]) -> list[str]:
+    """Types, ranges and internal consistency. These say nothing about whether a value is the
+    brief's; `grounding` looks at that."""
+    bad: list[str] = []
+    neg = spec.get("neg") or {}
+    bands = spec.get("bands") or []
+    spans = []
+    for b in bands:
+        name = b.get("name")
+        lo, hi = b.get("min_days_late"), b.get("max_days_late")
+        if not (_is_int(lo, 0) and _is_int(hi, 0) and lo <= hi):
+            bad.append(f"band {name!r}: min_days_late/max_days_late must be integers, min <= max")
+        else:
+            spans.append((lo, hi, name))
+        if not _is_int(b.get("deadline_days"), 0):
+            bad.append(f"band {name!r}: deadline_days must be a whole number >= 0")
+        if not _is_int(b.get("attempts"), 1):
+            bad.append(f"band {name!r}: attempts must be a whole number >= 1")
+        if b.get("deadline_unit", "business") not in ("business", "calendar"):
+            bad.append(f"band {name!r}: deadline_unit must be business or calendar")
+    spans.sort()
+    for (_, hi1, n1), (lo2, _, n2) in zip(spans, spans[1:], strict=False):
+        if lo2 <= hi1:
+            bad.append(f"bands {n1!r} and {n2!r} overlap")
+    for k in ("notes", "notes_on_transfer"):
+        if k in neg and not isinstance(neg.get(k), bool):
+            bad.append(f"neg.{k} must be true or false")
+    for k, lo in (
+        ("human_requests_to_transfer", 1),
+        ("stop_requests_to_close", 1),
+        ("promise_attempts", 1),
+        ("vague_date_asks", 0),
+        ("floor_offers", 0),
+    ):
+        if k in neg and not _is_int(neg.get(k), lo):
+            bad.append(f"neg.{k} must be a whole number >= {lo}")
+    for k, allowed in ENUMS.items():
+        if k in neg and neg.get(k) not in allowed:
+            bad.append(f"neg.{k} must be one of {list(allowed)}")
+    for k, keys in (
+        ("outcomes", ("promise", "paid", "transferred", "no_promise")),
+        ("reasons", ("refused", "hardship", "dispute", "service_error")),
+        ("queues", ("restructuring", "human", "support")),
+        ("transfer_reasons", ("restructuring", "human", "support")),
+    ):
+        got = neg.get(k)
+        if not isinstance(got, dict) or any(not str(got.get(x) or "").strip() for x in keys):
+            bad.append(f"neg.{k} needs a value for each of {list(keys)}")
+    outcomes = spec.get("outcomes") or {}
+    for k in (
+        "unclear",
+        "callback",
+        "no_callback",
+        "wrong_number",
+        "deceased",
+        "failed",
+        "declined",
+    ):
+        v = outcomes.get(k)
+        if not (
+            isinstance(v, list) and len(v) == 2 and all(isinstance(x, str) for x in v) and v[0]
+        ):
+            bad.append(f"outcomes.{k} must be [outcome, reason]")
+    cb = spec.get("callback") or {}
+    if not (_hhmm(cb.get("start")) and _hhmm(cb.get("end")) and cb["start"] < cb["end"]):
+        bad.append("callback.start/end must be HH:MM with start before end")
+    if "business_days_ahead" in cb and not _is_int(cb.get("business_days_ahead"), 0):
+        bad.append("callback.business_days_ahead must be a whole number >= 0")
+    if "reasks" in cb and not _is_int(cb.get("reasks"), 0):
+        bad.append("callback.reasks must be a whole number >= 0")
+    a1 = spec.get("attempt1") or {}
+    if a1.get("rule") not in ("last_business_day_of_week", "nth_business_day"):
+        bad.append("attempt1.rule must be last_business_day_of_week or nth_business_day")
+    elif a1.get("rule") == "nth_business_day" and not _is_int(a1.get("n"), 1):
+        bad.append("attempt1.n must be a whole number >= 1")
+    plan = spec.get("attempt_plan") or []
+    if not plan:
+        bad.append("attempt_plan is empty")
+    for i, s in enumerate(plan):
+        if s.get("amount") not in ("current", "full", "floor") or s.get("date") not in (
+            "attempt1",
+            "deadline",
+        ):
+            bad.append(
+                f"attempt_plan[{i}] must use amount current|full|floor, date attempt1|deadline"
+            )
+    wd = (spec.get("calendar") or {}).get("workdays")
+    if wd is not None and not (
+        isinstance(wd, list) and wd and all(_is_int(x, 0) and x <= 6 for x in wd)
+    ):
+        bad.append("calendar.workdays must be a list of 0..6")
+    return bad
+
+
+_NUMWORDS = [
+    "zero",
+    "one",
+    "two",
+    "three",
+    "four",
+    "five",
+    "six",
+    "seven",
+    "eight",
+    "nine",
+    "ten",
+    "eleven",
+    "twelve",
+    "thirteen",
+    "fourteen",
+    "fifteen",
+    "sixteen",
+    "seventeen",
+    "eighteen",
+    "nineteen",
+    "twenty",
+]
+_ORDWORDS = [
+    "zeroth",
+    "first",
+    "second",
+    "third",
+    "fourth",
+    "fifth",
+    "sixth",
+    "seventh",
+    "eighth",
+    "ninth",
+    "tenth",
+    "eleventh",
+    "twelfth",
+    "thirteenth",
+    "fourteenth",
+    "fifteenth",
+    "sixteenth",
+    "seventeenth",
+    "eighteenth",
+    "nineteenth",
+    "twentieth",
+]
+_MONTHS = [
+    "january",
+    "february",
+    "march",
+    "april",
+    "may",
+    "june",
+    "july",
+    "august",
+    "september",
+    "october",
+    "november",
+    "december",
+]
+
+
+def _number_in(n: int, text: str) -> bool:
+    if re.search(r"(?<![\d.])" + str(n) + r"(?!\d)", text):
+        return True
+    return 0 <= n < len(_NUMWORDS) and bool(
+        re.search(r"\b(" + _NUMWORDS[n] + "|" + _ORDWORDS[n] + r")\b", text)
+    )
+
+
+def _date_in(iso: str, text: str) -> bool:
+    try:
+        d = datetime.date.fromisoformat(iso)
+    except ValueError:
+        return False
+    mon = _MONTHS[d.month - 1]
+    forms = [
+        iso,
+        rf"\b0?{d.day}(st|nd|rd|th)?\s+(of\s+)?{mon[:3]}",
+        rf"\b{mon[:3]}[a-z]*\.?\s+0?{d.day}(st|nd|rd|th)?\b",
+        rf"\b0?{d.day}[/.]0?{d.month}[/.]",
+        rf"\b0?{d.month}/0?{d.day}/",
+    ]
+    return any(re.search(f, text) for f in forms)
+
+
+def grounding(spec: dict[str, Any], brief: str) -> list[str]:
+    """Values that score must come from the brief: dates, day counts, limits, close codes.
+    A heuristic: a failure asks the model to look again; it does not stop the build."""
+    text = brief.lower()
+    bad: list[str] = []
+    for h in (spec.get("calendar") or {}).get("holidays") or []:
+        if not _date_in(str(h), text):
+            bad.append(f"holiday {h} is not found in the brief")
+    for b in spec.get("bands") or []:
+        for k in ("min_days_late", "max_days_late", "deadline_days", "attempts"):
+            v = b.get(k)
+            if _is_int(v) and not _number_in(v, text):
+                bad.append(f"band {b.get('name')!r} {k}={v} is not found in the brief")
+    cb = spec.get("callback") or {}
+    for k in ("start", "end"):
+        v = str(cb.get(k) or "")
+        if _hhmm(v):
+            hh, mm = int(v[:2]), v[3:]
+            h12 = hh - 12 if hh > 12 else hh
+            if not re.search(rf"\b0?({hh}|{h12})(:{mm}|\s*(am|pm|a\.m\.|p\.m\.|o'clock)|h)", text):
+                bad.append(f"callback {k} {v} is not found in the brief")
+    codes = set()
+    for v in (spec.get("outcomes") or {}).values():
+        if isinstance(v, list):
+            codes.update(x for x in v if isinstance(x, str) and x)
+    neg = spec.get("neg") or {}
+    for k in ("outcomes", "reasons", "transfer_reasons"):
+        codes.update(x for x in (neg.get(k) or {}).values() if isinstance(x, str) and x)
+    for c in sorted(codes):
+        if not re.search(r"(?<![a-z0-9_])" + re.escape(c.lower()) + r"(?![a-z0-9_])", text):
+            bad.append(f"close/note code {c!r} is not found in the brief")
     return bad
 
 
 def extract(
-    brief: str, openapi: dict[str, Any], tools: dict[str, ToolDef], trace: Trace
+    brief: str,
+    openapi: dict[str, Any],
+    tools: dict[str, ToolDef],
+    trace: Trace,
+    deadline: float | None = None,
 ) -> dict[str, Any]:
     prompt = PROMPT.format(
         policy_help=POLICY_HELP,
@@ -351,28 +587,46 @@ def extract(
         brief=brief,
     )
     msgs = [{"role": "user", "content": prompt}]
-    reply = chat(trace, "extract the spec from the brief", msgs)
-    spec = parse_json(reply)
-    problems = check(spec, tools, brief)
+    reply = chat(trace, "extract the spec from the brief", msgs, deadline=deadline)
+    spec = _parse(reply)
+    problems = check(spec, tools, brief) + grounding(spec, brief)
     if problems:
-        trace.note(f"spec check: {len(problems)} problems: " + "; ".join(problems)[:600])
+        trace.note(f"spec check: {len(problems)} problems: " + "; ".join(problems)[:800])
         msgs += [
             {"role": "assistant", "content": reply},
             {
                 "role": "user",
                 "content": "These checks failed:\n- "
                 + "\n- ".join(problems)
-                + "\nFix them using the brief and the tool API. Output the whole JSON again.",
+                + "\nFix them using the brief and the tool API. A value 'not found in the "
+                "brief' may still be right (for example said in words the check does not "
+                "know): keep it only if the brief really says it, and add a note quoting where."
+                " Output the whole JSON again.",
             },
         ]
-        reply = chat(trace, "repair the spec after failed checks", msgs)
-        spec = parse_json(reply)
-        problems = check(spec, tools, brief)
-        if problems:
-            trace.note("spec still has problems: " + "; ".join(problems)[:600])
+        reply = chat(trace, "repair the spec after failed checks", msgs, deadline=deadline)
+        spec = _parse(reply)
+        for w in grounding(spec, brief):
+            trace.note("spec warning (kept, check the brief): " + w)
+    for w in warnings(spec, brief):
+        trace.note("spec warning: " + w)
     for n in spec.get("notes") or []:
         trace.note("spec decision: " + str(n)[:300])
     return spec
+
+
+def _parse(reply: str) -> dict[str, Any]:
+    try:
+        out = parse_json(reply)
+    except (ValueError, json.JSONDecodeError) as e:
+        raise SpecError(f"the model did not return JSON: {e}") from e
+    if not isinstance(out, dict):
+        raise SpecError("the model did not return a JSON object")
+    return out
+
+
+class SpecError(RuntimeError):
+    pass
 
 
 def _var(spec: dict[str, Any], role: str) -> str:

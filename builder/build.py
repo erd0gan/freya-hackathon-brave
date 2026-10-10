@@ -23,7 +23,8 @@ ROOT = HERE.parent
 sys.path.insert(0, str(HERE))
 
 BUDGET_S = 30 * 60
-SMOKE_RESERVE_S = 4 * 60
+EXPORT_RESERVE_S = 3 * 60
+SMOKE_RESERVE_S = 60
 
 
 def load_env() -> None:
@@ -55,7 +56,14 @@ def git_commit() -> str:
         out = subprocess.run(
             ["git", "rev-parse", "--short", "HEAD"], cwd=ROOT, capture_output=True, text=True
         )
-        return out.stdout.strip() or "unknown"
+        commit = out.stdout.strip() or "unknown"
+        dirty = subprocess.run(
+            ["git", "status", "--porcelain", "--untracked-files=no"],
+            cwd=ROOT,
+            capture_output=True,
+            text=True,
+        ).stdout.strip()
+        return commit + ("-dirty" if dirty else "")
     except OSError:
         return "unknown"
 
@@ -111,20 +119,34 @@ def main(argv: list[str]) -> int:
     brief_path, api_path = Path(argv[1]), Path(argv[2])
     slot = brief_path.stem
     trace = Trace(ROOT / "traces" / f"{slot}.log")
+    # Every step shares one clock; the last EXPORT_RESERVE_S stay for save and export.
+    deadline = time.monotonic() + BUDGET_S - EXPORT_RESERVE_S
     trace.start(brief=brief_path, tool_api=api_path, commit=git_commit())
+    try:
+        return run(trace, brief_path, api_path, slot, deadline)
+    except Exception as e:  # the trace always gets its end line
+        trace.end(status=f"error: {type(e).__name__}: {str(e)[:300]}")
+        return 1
+
+
+def run(trace: Trace, brief_path: Path, api_path: Path, slot: str, deadline: float) -> int:
     brief = brief_path.read_text(encoding="utf-8")
     openapi = json.loads(api_path.read_text(encoding="utf-8"))
     tools = parse_openapi(openapi)
     trace.note(f"brief: {len(brief)} chars; tools: {', '.join(sorted(tools))}")
 
-    spec = extract(brief, openapi, tools, trace)
-    problems = check(spec, tools, brief)
-    trace.note(
-        f"spec checks: {len(problems)} open problems"
-        + (": " + "; ".join(problems)[:400] if problems else "")
-    )
+    spec = extract(brief, openapi, tools, trace, deadline=deadline)
     (ROOT / "submission").mkdir(exist_ok=True)
     (ROOT / "submission" / f"{slot}.spec.json").write_text(json.dumps(spec, indent=1))
+    problems = check(spec, tools, brief)
+    if problems:
+        # A structural error left after the repair would publish a broken agent: stop here
+        # and run the builder again (the extraction is a model call and can differ).
+        for p in problems:
+            trace.note(f"spec error: {p}")
+        trace.end(status=f"spec invalid ({len(problems)} errors), nothing published")
+        return 1
+    trace.note("spec checks: 0 errors")
 
     gen = to_generator(spec)
     wf, policy = build(gen, tools)
@@ -136,22 +158,24 @@ def main(argv: list[str]) -> int:
         f"{len(json.dumps(wf))} bytes; validator {rep.summary()}"
     )
     if not rep.ok:
-        trace.end(status="invalid workflow")
+        trace.end(status="invalid workflow, nothing published")
         return 1
     try:
         freya.validate_workflow(f"{slot} dry run", wf)
         trace.freya("dry run: ok")
     except RuntimeError as e:
         trace.freya(f"dry run FAILED: {str(e)[:500]}")
-        trace.end(status="dry run failed")
+        trace.end(status="dry run failed, nothing published")
         return 1
     saved = freya.save_workflow(slot, wf, state_file=str(ROOT / ".freya-agents.json"))
     trace.freya(
         f"save_workflow slot={slot} -> workflow_id={saved['workflow_id']} "
         f"agent_id={saved['agent_id']} version={saved.get('version', 1)} (published)"
     )
-    if trace.elapsed() < BUDGET_S - SMOKE_RESERVE_S:
+    if deadline - time.monotonic() > SMOKE_RESERVE_S:
         smoke(trace, saved["workflow_id"], gen.get("call_variables") or {})
+    else:
+        trace.test("chat smoke skipped: not enough time left")
     out = ROOT / "submission" / f"{slot}.workflow.json"
     freya.export_workflow(saved["workflow_id"], str(out))
     trace.freya(f"export_workflow -> {out.relative_to(ROOT)}")
