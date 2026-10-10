@@ -874,7 +874,31 @@ def build(spec: dict[str, Any], tools: dict[str, ToolDef]) -> tuple[dict[str, An
             tr("third_party", "keep talking"),
         ],
     )
-    nodes["cb_book"] = api_node("cb_book", cb_fn, [tr("fin_callback", "always")])
+    # F11: say "booked" only when the bank booked it; a failed booking closes without one
+    nodes["cb_book"] = api_node(
+        "cb_book",
+        cb_fn,
+        [
+            tr(
+                "fin_no_callback",
+                "the booking failed",
+                {
+                    "logic": "or",
+                    "conditions": [
+                        {
+                            "variable": "cb_book_failure_count",
+                            "operator": "greater_than",
+                            "operand": 0,
+                        },
+                        {"variable": "cb_ok", "operator": "equals", "operand": "false"},
+                        {"variable": "cb_ok", "operator": "equals", "operand": "False"},
+                    ],
+                },
+            ),
+            tr("fin_callback", "always"),
+        ],
+        [{"path": "data.ok", "variable": "cb_ok"}],
+    )
 
     # ---- endings before the negotiation
     nodes["fin_unclear"] = code_node(

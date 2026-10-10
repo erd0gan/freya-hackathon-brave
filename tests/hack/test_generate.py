@@ -96,3 +96,10 @@ def test_full_name_call_variable():
     text = json.dumps(wf)
     assert "{{title}}" not in text and "{{last_name}}" not in text
     assert "{{full_name}}" in wf["nodes"]["third_party"]["task_message"]
+
+
+def test_failed_callback_booking_is_not_reported_as_booked():
+    wf, _ = build(SPEC_A, parse_openapi(OPENAPI))
+    node = wf["nodes"]["cb_book"]
+    assert [t["target_node"] for t in node["transitions"]] == ["fin_no_callback", "fin_callback"]
+    assert node["response_mapping"] == [{"path": "data.ok", "variable": "cb_ok"}]
