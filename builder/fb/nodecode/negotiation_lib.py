@@ -182,6 +182,25 @@ def _the(name):
     return "the " + n
 
 
+def _short(st, neg):
+    """A short re-ask without amounts or dates: repeating a whole offer reads as making it a
+    second time (judge: 'minimum offered twice')."""
+    phase = st.get("phase")
+    if phase == "confirm":
+        return _line(neg, "confirm_question", "Do you confirm?")
+    if phase == "closing":
+        return _line(neg, "anything_else", "Is there anything else I can help you with?")
+    if phase == "hardship_offer":
+        return _line(
+            neg, "support_offer", "Would you like me to connect you with our customer support team?"
+        )
+    if phase == "offer":
+        return "Can you do that?"
+    if len(st.get("p") or []) > 1:
+        return _line(neg, "multi_today_question", "Can you pay all of them today?")
+    return _line(neg, "today_question", "Can you make this payment today?")
+
+
 def _rest(neg):
     return _line(neg, "rest_overdue", "The rest stays overdue.")
 
@@ -546,7 +565,7 @@ def step(st, r, neg, cal, now, cfg):
                     q["status"] = "refused"
             _finish(st, neg)
             return st
-        st["say"] = "I understand. " + st["last_ask"]
+        st["say"] = "I understand. " + _short(st, neg)
         return st
     if kind in ("paid", "dispute"):
         p = st["p"][k]
@@ -718,7 +737,7 @@ def step(st, r, neg, cal, now, cfg):
             else:
                 st["phase"] = "offer"
     else:
-        st["say"] = "Sorry, I did not get that. " + st["last_ask"]
+        st["say"] = "Sorry, I did not catch that. " + _short(st, neg)
         return st
     if say is None:
         if prefix:

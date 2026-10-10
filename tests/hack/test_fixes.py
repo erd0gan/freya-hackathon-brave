@@ -104,3 +104,10 @@ def test_change_after_recording_is_explained_not_recorded():
     r = simulate(CASES["PUB-01"], seq, CFG_A)
     assert len(r.ledger["promises"]) == 1
     assert any("mobile app" in s for s in r.says)
+
+
+# talkative: small talk after an offer must not repeat the amount (judge: "offered twice")
+def test_unclear_after_floor_offer_does_not_repeat_it():
+    r = simulate(CASES["PUB-06"], [{"kind": "too_much"}, {"kind": "unclear"}], CFG_A)
+    assert "637.50" in r.says[1]
+    assert r.says[2] == "Sorry, I did not catch that. Can you do that?"

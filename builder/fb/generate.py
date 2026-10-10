@@ -510,10 +510,12 @@ def build(spec: dict[str, Any], tools: dict[str, ToolDef]) -> tuple[dict[str, An
         "unclear: hello, go ahead, who is this, or anything else."
     )
     id_desc = (
-        "declines: the customer refuses to answer a security question, says they do not want "
-        "to talk, or asks what the call is about instead of answering. answers: gives an "
-        "answer. wants_human: asks to speak to a person or a human agent. question: asks "
-        "something else. unclear: anything else."
+        "declines: the customer clearly refuses to answer a security question ('I won't give "
+        "you that'), says they do not want to talk, or asks what the call is about instead of "
+        "answering. Small talk, an apology or a sentence that stops halfway is never declines. "
+        "answers: gives an answer. wants_human: asks to speak to a person or a human agent. "
+        "question: asks something else. unclear: anything else, including small talk and "
+        "unfinished sentences."
     )
     reply_desc = (
         "What the customer's LAST message means. yes: agrees to what was just proposed, or "
