@@ -1,5 +1,7 @@
 # Uygulama Planı — Freya "Build the Builder" Agent Builder
 
+> **10 Ekim:** Yarışmanın ana planı artık [`HACKATHON_REALIGN.md`](HACKATHON_REALIGN.md). Bu belge, genel amaçlı builder araştırmasının kaydı olarak kalıyor. Puanlanan yol workflow derleyicisi.
+
 **Kaynak:** `freya_build_the_builder_research.md` (bundan sonra "memo"; `§N` = memo bölümü)
 **Hazırlanma:** 6 Ekim 2026
 **Hedef:** 10 Ekim sabahı kurallar açıklanmadan önce çekirdeğin uçtan uca çalışması. O andan sonra sadece adapter, config ve bütçe değişecek (§44, §45).
