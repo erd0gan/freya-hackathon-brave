@@ -477,7 +477,10 @@ def build(spec: dict[str, Any], tools: dict[str, ToolDef]) -> tuple[dict[str, An
         "or paid off in the past. hardship: mentions illness, a death in the family or losing "
         "their job. restructure: asks for a new payment plan or lower instalments. human: "
         "asks for a person or a human agent. stop: says they do not want to talk. question: "
-        "asks a question. unclear: anything else."
+        "asks a question. evasive: answers the payment question but gives no yes, no clear "
+        "no, no day and no amount (for example 'I don't know', 'we will see', 'maybe "
+        "later'). unclear: anything else, such as small talk, a sentence cut off before the "
+        "answer, or a message that does not respond to the question."
     )
     neg_extract = [
         enum_var(
@@ -495,6 +498,7 @@ def build(spec: dict[str, Any], tools: dict[str, ToolDef]) -> tuple[dict[str, An
                 "human",
                 "stop",
                 "question",
+                "evasive",
                 "unclear",
             ],
             reply_desc,

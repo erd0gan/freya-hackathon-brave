@@ -72,6 +72,7 @@ SEMANTIC_KINDS = [
     "human",
     "stop",
     "question",
+    "evasive",
     "unclear",
 ]
 
@@ -217,6 +218,11 @@ def _attempt_offer(st, k, neg, cal):
 
 def _flat_refusal(st, k, neg, cal):
     p = st["p"][k]
+    if st.get("hardship"):
+        # A32: after hardship there is no persuasion attempt; the product ends as hardship
+        p["status"] = "hardship"
+        p["offer"] = None
+        return None
     if p["used"] < p["attempts"]:
         p["used"] += 1
         return _attempt_offer(st, k, neg, cal)
@@ -469,35 +475,61 @@ def step(st, r, neg, cal, now, cfg):
             return st
         _transfer(st, "human", neg)
         return st
+    named = bool(r.get("date")) or r.get("amount") is not None
+    support_offer = _line(
+        neg, "support_offer", "Would you like me to connect you with our customer support team?"
+    )
+    prefix = ""
     if phase == "hardship_offer":
         if kind == "yes":
             _transfer(st, _pol(neg, "hardship_queue"), neg)
             return st
-        if kind != "offer":
+        if kind in ("offer", "vague") or named:
+            phase = "offer"  # A32: a date or an amount the customer names is still recorded
+            kind = "offer" if named else kind
+        elif kind in ("paid", "dispute"):
+            phase = "offer"
+        elif kind in ("question", "unclear", "hardship", "evasive"):
+            # a question is not an answer to the offer: answer it and keep the offer open
+            st["hardship_repeats"] = int(st.get("hardship_repeats") or 0) + 1
+            if st["hardship_repeats"] > 2:
+                _close_hardship(st, neg)
+                return st
+            if kind == "question":
+                st["mode"] = "llm"
+                st["say"] = (
+                    "Answer the customer's last question in one short sentence, only with what "
+                    "you know from this call (never offer a discount, a waiver or a plan; if you "
+                    'do not have the information, say so). Then say exactly: "'
+                    + support_offer
+                    + '"'
+                )
+            else:
+                st["say"] = support_offer
+            return st
+        else:
             _close_hardship(st, neg)
             return st
-        phase = "offer"
     elif kind == "hardship":
         mode = _pol(neg, "hardship")
         if mode == "transfer":
             st["final_lines"].append(_line(neg, "sympathy"))
             _transfer(st, _pol(neg, "hardship_queue"), neg)
             return st
-        if mode == "close":
+        if mode == "close" and not named:
             st["final_lines"].append(_line(neg, "sympathy"))
             _close_hardship(st, neg)
             return st
-        st["phase"] = "hardship_offer"
-        st["say"] = (
-            _line(neg, "sympathy", "I am sorry to hear that.")
-            + " "
-            + _line(
-                neg,
-                "support_offer",
-                "Would you like me to connect you with our customer support team?",
-            )
-        )
-        return st
+        sympathy = _line(neg, "sympathy", "I am sorry to hear that.")
+        st["hardship"] = True  # A32: no persuasion attempt from now on
+        if named:
+            # A32: the customer names a date or an amount themselves: handle it as an offer
+            kind = "offer"
+            prefix = sympathy
+        else:
+            st["phase"] = "hardship_offer"
+            st["say"] = sympathy + " " + support_offer
+            return st
     if kind == "stop":
         st["stop"] += 1
         if st["stop"] >= _pol(neg, "stop_requests_to_close"):
@@ -537,6 +569,19 @@ def step(st, r, neg, cal, now, cfg):
         )
         return st
     if phase == "closing":
+        if kind in ("offer", "vague", "too_much"):
+            # A36: a recorded promise cannot be changed in this call
+            st["say"] = (
+                _line(
+                    neg,
+                    "cannot_change",
+                    "A recorded promise cannot be changed in this call. You can change it in "
+                    "the mobile app.",
+                )
+                + " "
+                + st["last_ask"]
+            )
+            return st
         _finish(st, neg)
         return st
     if phase == "confirm":
@@ -607,7 +652,8 @@ def step(st, r, neg, cal, now, cfg):
             st["say"] = st["last_ask"]
             return st
         say = _advance(st, neg, cal)
-    elif kind == "no":
+    elif kind in ("no", "evasive"):
+        # A30: a flat refusal or a non-answer to the payment question uses one attempt
         say = _flat_refusal(st, k, neg, cal)
         if say is None:
             say = _advance(st, neg, cal)
@@ -636,7 +682,11 @@ def step(st, r, neg, cal, now, cfg):
     elif kind == "too_much":
         if not p["too_much"]:
             p["too_much"] = True
-        if p["floor_offered"] < _pol(neg, "floor_offers") and p["floor"] < p["full"] - 0.005:
+        if (
+            not st.get("hardship")
+            and p["floor_offered"] < _pol(neg, "floor_offers")
+            and p["floor"] < p["full"] - 0.005
+        ):
             p["floor_offered"] += 1
             d = (p.get("offer") or {}).get("date") or cal.get("today_iso")
             p["offer"] = {"amount": p["floor"], "date": d, "kind": "floor"}
@@ -663,9 +713,11 @@ def step(st, r, neg, cal, now, cfg):
         st["say"] = "Sorry, I did not get that. " + st["last_ask"]
         return st
     if say is None:
+        if prefix:
+            st["final_lines"].insert(0, prefix)
         _finish(st, neg)
         return st
-    st["say"] = say
+    st["say"] = (prefix + " " + say) if prefix else say
     st["last_ask"] = say
     return st
 
@@ -777,7 +829,7 @@ def read_reply(v, today):
             )
         except Exception:
             amount = None
-    if kind in ("yes", "no", "too_much") and (iso or amount is not None):
+    if kind in ("yes", "no", "too_much", "evasive") and (iso or amount is not None):
         kind = "offer"  # a date or an amount the customer names is never a refusal
     if kind == "offer" and not iso and amount is None and dk == "vague":
         kind = "vague"

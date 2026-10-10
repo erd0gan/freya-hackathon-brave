@@ -205,7 +205,8 @@ def _safe_date(y, m, d):
 
 def parse_spoken_date(text, today):
     """-> (iso or '', 'vague' | 'date' | 'none'). `today` is a datetime.date."""
-    iso = re.findall(r"\b(\d{4})-(\d{1,2})-(\d{1,2})\b", str(text or ""))
+    # a correction ('..., sorry I mean tomorrow') wins over everything said before it
+    iso = re.findall(r"\b(\d{4})-(\d{1,2})-(\d{1,2})\b", _last_segment(str(text or "").lower()))
     if iso:
         y, mo, dd = iso[-1]
         d = _safe_date(int(y), int(mo), int(dd))
@@ -227,8 +228,13 @@ def parse_spoken_date(text, today):
     year = None
     for i, t in enumerate(toks):
         mo = _month_of(t) if re.fullmatch(r"[a-z]+", t) else None
+        # 'may' is a month only next to a day number ('5 May', 'May 5'), not in 'I may pay'
         if (mo and t not in ("may",)) or (
-            t == "may" and i > 0 and re.fullmatch(r"\d{1,2}", toks[i - 1] or "")
+            t == "may"
+            and (
+                (i > 0 and re.fullmatch(r"\d{1,2}", toks[i - 1] or ""))
+                or (i + 1 < len(toks) and re.fullmatch(r"\d{1,2}(?:st|nd|rd|th)?", toks[i + 1]))
+            )
         ):
             month = mo
             if i > 0 and re.fullmatch(r"\d{1,2}", toks[i - 1]):
