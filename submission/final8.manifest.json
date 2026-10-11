@@ -1,0 +1,58 @@
+{
+ "slot": "final8",
+ "status": "ok_smoke_failed",
+ "started_utc": "2026-10-11T19:18:51Z",
+ "duration_s": 1780.2,
+ "commit": "b8270e4",
+ "inputs": {
+  "brief": "final8",
+  "brief_sha256": "4c18be459fb7d54c40021beb805bc87208311fd8a98295aea5b37e42f17df619",
+  "tool_api": "https://freyabank-statement-mock.burak-erd0g4n.workers.dev",
+  "tool_api_sha256": "-",
+  "mock_url": "https://freyabank-statement-mock.burak-erd0g4n.workers.dev",
+  "tool_api_source": "https://freyabank-statement-mock.burak-erd0g4n.workers.dev/openapi.json",
+  "documents": {
+   "BRIEF.md": "policy",
+   "cloudflare-mock/example/example-response.json": "contract",
+   "cloudflare-mock/example/worker.js": "contract",
+   "cloudflare-mock/example/wrangler.toml": "contract",
+   "cloudflare-mock/README.md": "readme",
+   "example-scenarios.md": "other",
+   "README.md": "other",
+   "sources/documents/2025-08-14-cards-faq.md": "test_customers",
+   "sources/documents/2026-09-10-ivr-prompt-sheet.md": "test_customers",
+   "sources/documents/2026-10-01-service-contract.md": "test_customers",
+   "sources/emails/2026-09-24-kickoff-questions.txt": "test_customers",
+   "sources/emails/2026-10-09-decisions-recap.txt": "test_customers",
+   "sources/emails/attachments/2026-09-02-statement-debt-analysis.md": "test_customers",
+   "sources/emails/attachments/2026-10-08-statement-debt-analysis.md": "test_customers",
+   "sources/meetings/2026-10-07-analysis-session-transcript.txt": "test_customers",
+   "statement-debt-call-flow.pdf": "unread: ValueError: no text layer could be read (a scanned or image-only PDF, or fonts w",
+   "test-environment/test-customers.json": "test_customers",
+   "test-environment/test-customers.md": "test_customers"
+  }
+ },
+ "spec": {},
+ "observer": {},
+ "validator": {},
+ "proof_map": {},
+ "selftest": {},
+ "workflow_sha256": null,
+ "export": {
+  "mode": "platform",
+  "file": "final8.workflow.json",
+  "sha256": "cf96a4db0f88393278802437f7a37425eb19fdfa66e3e791790e347ff7cdbc2b",
+  "check": null
+ },
+ "freya": {
+  "workflow_id": "2a9f8b65-f875-485c-9128-124abc65a032",
+  "agent_id": "9f524db6-5531-4fc7-b7d9-9b43ed116c0f",
+  "version": 5
+ },
+ "smoke": "failed",
+ "model": {
+  "calls": 2,
+  "cost_usd": 7.9211,
+  "failures": 0
+ }
+}
