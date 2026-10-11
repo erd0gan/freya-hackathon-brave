@@ -84,7 +84,11 @@ def summary(tag: str, row: dict, call: dict) -> dict:
     users = [m["message"] for m in ms if m["role"] == "user"]
     agents = [m["message"] for m in ms if m["role"] == "assistant"]
     reask = sum("didn't catch" in a or "did not catch" in a for a in agents)
-    nodes = [ev(m).get("node") for m in ms if m["role"] == "system" and (ev(m) or {}).get("event") == "node_enter"]
+    nodes = [
+        ev(m).get("node")
+        for m in ms
+        if m["role"] == "system" and (ev(m) or {}).get("event") == "node_enter"
+    ]
     return {
         "tag": tag,
         "case": row.get("id"),
@@ -148,8 +152,12 @@ def main() -> int:
         its = its.get("iterations") or its.get("items") or its
         runs = freya.get_iteration(a.sim, its[0]["id"])["runs"]
         rows = [
-            {"id": (r.get("personaName") or r.get("personaId") or "?").split(" ")[0],
-             "call_id": r.get("callId"), "pass": r.get("outcome") == "pass", "failed": []}
+            {
+                "id": (r.get("personaName") or r.get("personaId") or "?").split(" ")[0],
+                "call_id": r.get("callId"),
+                "pass": r.get("outcome") == "pass",
+                "failed": [],
+            }
             for r in runs
         ]
         dump("sim-" + a.sim[:8], rows, out)

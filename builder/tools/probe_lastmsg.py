@@ -86,9 +86,32 @@ def workflow() -> dict:
             "node_type": "conversation",
             "on_enter": {
                 "type": "tts",
-                "text": "K=" + OPEN + "probe_keys" + CLOSE + " N=" + OPEN + "probe_nkeys" + CLOSE
-                + " R1=" + OPEN + "probe_raw1" + CLOSE + " L5=" + OPEN + "probe_raw5_len" + CLOSE
-                + " T1=" + PH1 + " CT=" + OPEN + "probe_ctype" + CLOSE + " TAIL=" + OPEN + "probe_ctail" + CLOSE,
+                "text": "K="
+                + OPEN
+                + "probe_keys"
+                + CLOSE
+                + " N="
+                + OPEN
+                + "probe_nkeys"
+                + CLOSE
+                + " R1="
+                + OPEN
+                + "probe_raw1"
+                + CLOSE
+                + " L5="
+                + OPEN
+                + "probe_raw5_len"
+                + CLOSE
+                + " T1="
+                + PH1
+                + " CT="
+                + OPEN
+                + "probe_ctype"
+                + CLOSE
+                + " TAIL="
+                + OPEN
+                + "probe_ctail"
+                + CLOSE,
             },
             "task_message": "Say one short sentence. Do not call any tool.",
             "transitions": [{"target_node": "show", "description": "always", "condition": ALWAYS}],
@@ -130,10 +153,15 @@ def main() -> int:
         for m in call.get("messages", []):
             if m["role"] == "system" and "code_exec" in m["message"] and "complete" in m["message"]:
                 print("  code_exec:", m["message"][:400])
-        snap = [m.get("workflowSnapshot") for m in call.get("messages", []) if m.get("workflowSnapshot")]
+        snap = [
+            m.get("workflowSnapshot") for m in call.get("messages", []) if m.get("workflowSnapshot")
+        ]
         if snap:
             vt = snap[-1].get("variableTable") or {}
-            print("  probe vars:", {k: (v or {}).get("value") for k, v in vt.items() if k.startswith("probe")})
+            print(
+                "  probe vars:",
+                {k: (v or {}).get("value") for k, v in vt.items() if k.startswith("probe")},
+            )
     return 0
 
 
