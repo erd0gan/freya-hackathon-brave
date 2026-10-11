@@ -9,6 +9,41 @@ vars['final_reason'] = ''
 vars['final_say'] = ''
 """
 
+# A write the bank already holds, read from its error text on a repeat after a lost answer ("a
+# promise is already recorded for this product", "callback already scheduled"): 'already' next
+# to a verb of holding. Not the call ("already closed") and not "date already passed".
+HELD_WORDS = (
+    "already has",
+    "already exist",
+    "already record",
+    "already schedul",
+    "already book",
+    "already transfer",
+    "already creat",
+    "already regist",
+    "already made",
+    "already been",
+    "already in place",
+    "already set",
+)
+
+
+def held_expr(var: str) -> str:
+    """Python expression: the lower-case error text in `var` says the write is already held."""
+    return f"(any(w in {var} for w in {HELD_WORDS!r}) and 'clos' not in {var})"
+
+
+# Before SETUP when the identity check starts: a request for a person made at the opening still
+# counts (A42 'ask once'); id_started tells a failed transfer before verification which ending
+# applies; id_down counts verify_identity service failures in a row.
+SETUP_ID = """
+c = str(vars.get('pre_human_count') or '0')
+vars['pre_human_count'] = c if c.isdigit() else '0'
+vars['pre_human_from'] = ''
+vars['id_started'] = 'yes'
+vars['id_down'] = '0'
+"""
+
 FACTS = """
 products = find_products(vars, CFG)
 pf = product_facts(products, vars.get('now'), CFG)
@@ -39,38 +74,67 @@ vars['neg_errors'] = '0'
 """
 
 # After an exception in DECIDE / AFTER_RECORD (wired as `on_error`). The action of the turn
-# before must not stay (neg_action=record would call create_promise again): one error gets a
-# re-ask, a second one in a row (or one right after a write) ends the call. An empty outcome is
-# filled by close_call's hook from the state; a promise the bank just confirmed is a promise.
+# before must not stay (neg_action=record would call create_promise again) and neither may the
+# reply words (said_* read again next turn): one error gets a re-ask, a second one in a row (or
+# one right after a write) ends the call. Our fault is never booked as the customer's refusal:
+# a promise the bank holds (or just confirmed) is a promise, else no_promise / service_error with
+# a sentence that says so. With notes on, every product without a promise gets its note
+# (one still being talked about: service_error), as negotiation_lib._finish would write them.
 NEG_ERROR = """
 n = str(vars.get('neg_errors') or '0')
 n = int(n) + 1 if n.isdigit() else 1
 vars['neg_errors'] = str(n)
 vars['neg_mode'] = 'speak'
 was = str(vars.get('neg_action') or '')
+clear_reply(vars)
 if n >= 2 or was == 'record':
-    vars['neg_action'] = 'finish'
+    vars['neg_action'], vars['neg_say'], vars['note_count'] = 'finish', '', '0'
     neg = CFG.get('neg') or dict()
-    ok = call_ok(vars.get('rec_ok'), CFG.get('rec_mode') or 'flag')
-    vars['final_outcome'] = (neg.get('outcomes') or dict()).get('promise', 'promise') if ok else ''
-    vars['final_reason'] = ''
-    vars['note_count'] = '0'
-    vars['final_say'] = str((neg.get('lines') or dict()).get('goodbye') or 'Goodbye.')
+    ln = neg.get('lines') or dict()
+    bye = str(ln.get('goodbye') or 'Goodbye.')
+    st = load_state(vars) or dict()
+    ps = sorted([q for q in st.get('p') or [] if isinstance(q, dict)], key=lambda q: q.get('n', 0))
+    held = set(st.get('recorded') or [])
+    held |= set(q.get('id') for q in ps if q.get('status') == 'recorded')
+    if call_ok(vars.get('rec_ok'), CFG.get('rec_mode') or 'flag'):
+        held.add(vars.get('rec_product_id') or '-')
+    k = 'promise' if held else 'no_promise'
+    vars['final_outcome'] = (neg.get('outcomes') or dict()).get(k, k)
+    vars['final_reason'] = '' if held else close_reason(neg, 'service_error')
+    vars['final_say'] = bye if held else (
+        str(ln.get('service_error') or 'I am sorry, we have a technical problem.') + ' ' + bye)
+    rs = neg.get('reasons') or dict()
+    ks = ('refused', 'hardship', 'dispute', 'paid')
+    notes = [[q.get('id'), rs.get(s, s)] for q in ps if q.get('id') not in held
+             for s in [q.get('status') if q.get('status') in ks else 'service_error']]
+    if neg.get('notes') and notes:
+        st['notes'] = notes
+        vars['neg_state'] = json.dumps(st)
+        vars['note_count'] = str(len(notes))
+        vars['note_product_id'], vars['note_reason'] = notes[0]
 else:
     vars['neg_action'] = 'say'
     vars['neg_say'] = 'Sorry, could you say that again?'
 """
 
-AFTER_RECORD = """
+AFTER_RECORD = (
+    """
 neg = CFG.get('neg') or dict()
 cal = calendar_facts(vars.get('now'), CFG)
 st = load_state(vars)
 ok = call_ok(vars.get('rec_ok'), CFG.get('rec_mode') or 'flag')
+# a retry after a lost answer: "already recorded" means the bank holds the promise
+err = str(vars.get('rec_err') or '').lower()
+vars['rec_err'] = ''
+ok = ok or """
+    + held_expr("err")
+    + """
 record_result(st, ok, neg, cal)
 if st.get('action') == 'record':
     vars['rec_ok'] = ''
 publish(vars, st, neg)
 """
+)
 
 AFTER_NOTE = """
 pop_note(vars, bool(CFG.get('note_check')))
@@ -89,8 +153,14 @@ vars['final_say'] = str((neg.get('lines') or dict()).get('goodbye') or 'Goodbye.
 
 # After transfer_to_agent: a failed transfer is not closed as `transferred`. One more try, then
 # the call closes as no_promise / service_error with a sentence that says so.
-AFTER_TRANSFER = """
+AFTER_TRANSFER = (
+    """
+err = str(vars.get('transfer_err') or '').lower()
+vars['transfer_err'] = ''
 ok = str(vars.get('transfer_ok') or '').strip().lower() == 'true'
+ok = ok or """
+    + held_expr("err")
+    + """
 tries = str(vars.get('transfer_tries') or '0')
 tries = int(tries) + 1 if tries.isdigit() else 1
 vars['transfer_tries'] = str(tries)
@@ -116,6 +186,41 @@ else:
             'I am sorry, I could not connect you.')
         + ' ' + str((neg.get('lines') or dict()).get('goodbye') or 'Goodbye.'))
 """
+)
+
+# The same after a transfer asked for before the identity check (pre_transfer): nothing about
+# the debt was said, so a failed transfer closes with the spec's ending before verification
+# (CFG['pre_close']: 'id' once the identity check started, else 'who'), not service_error.
+# Its own try counter.
+AFTER_TRANSFER_PRE = (
+    """
+err = str(vars.get('transfer_err') or '').lower()
+vars['transfer_err'] = ''
+ok = str(vars.get('transfer_ok') or '').strip().lower() == 'true'
+ok = ok or """
+    + held_expr("err")
+    + """
+tries = str(vars.get('pre_transfer_tries') or '0')
+tries = int(tries) + 1 if tries.isdigit() else 1
+vars['pre_transfer_tries'] = str(tries)
+vars['transfer_ok'] = ''
+neg = CFG.get('neg') or dict()
+if ok:
+    vars['transfer_next'] = 'done'
+elif tries < 2:
+    vars['transfer_next'] = 'retry'
+else:
+    vars['transfer_next'] = 'failed'
+    pre = CFG.get('pre_close') or dict()
+    o = pre.get('id' if vars.get('id_started') == 'yes' else 'who') or ['not_verified', 'failed']
+    vars['final_outcome'] = str(o[0])
+    vars['final_reason'] = str(o[1] if len(o) > 1 else '')
+    vars['final_say'] = (
+        str((neg.get('lines') or dict()).get('transfer_failed') or
+            'I am sorry, I could not connect you.')
+        + ' ' + str((neg.get('lines') or dict()).get('goodbye') or 'Goodbye.'))
+"""
+)
 
 
 SETUP_TP = (
