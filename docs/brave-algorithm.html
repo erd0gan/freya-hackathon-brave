@@ -1,0 +1,843 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>BRAVE: How the Algorithm Works</title>
+<style>
+  :root {
+    --bg: #2a2a2e;
+    --panel: #323237;
+    --panel-2: #3a3a40;
+    --line: #4a4a52;
+    --text: #ececef;
+    --muted: #a8a8b3;
+    --orange: #f15a2b;
+    --orange-soft: rgba(241, 90, 43, 0.14);
+    --green: #5cc98b;
+    --blue: #6aa8ff;
+    --yellow: #f2c14e;
+    --mono: ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace;
+    --sans: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  }
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--text);
+    font: 16px/1.6 var(--sans);
+  }
+  a { color: var(--orange); text-decoration: none; }
+  a:hover { text-decoration: underline; }
+  code, .mono { font-family: var(--mono); font-size: 0.88em; }
+  code { background: var(--panel-2); padding: 0.1em 0.4em; border-radius: 4px; }
+
+  /* layout */
+  .layout { display: grid; grid-template-columns: 260px 1fr; min-height: 100vh; }
+  nav.toc {
+    position: sticky; top: 0; align-self: start; height: 100vh; overflow-y: auto;
+    padding: 28px 20px; border-right: 1px solid var(--line); background: #26262a;
+  }
+  nav.toc .brand { display: flex; align-items: center; gap: 10px; margin-bottom: 22px; }
+  nav.toc .brand span { font-weight: 900; letter-spacing: 0.08em; font-size: 20px; }
+  nav.toc ol { list-style: none; margin: 0; padding: 0; counter-reset: toc; }
+  nav.toc li { counter-increment: toc; }
+  nav.toc li a {
+    display: flex; gap: 10px; padding: 6px 8px; border-radius: 6px; color: var(--muted); font-size: 14px;
+  }
+  nav.toc li a::before { content: counter(toc, decimal-leading-zero); color: var(--orange); font-family: var(--mono); font-size: 12px; padding-top: 2px; }
+  nav.toc li a:hover { background: var(--panel); color: var(--text); text-decoration: none; }
+  main { padding: 0 56px 80px; max-width: 1120px; }
+  section { padding-top: 56px; }
+  h1, h2, h3 { line-height: 1.25; }
+  h2 { font-size: 28px; margin: 0 0 6px; display: flex; align-items: baseline; gap: 12px; }
+  h2 .num { color: var(--orange); font-family: var(--mono); font-size: 16px; }
+  h3 { font-size: 19px; margin: 28px 0 8px; }
+  p.lead { color: var(--muted); margin-top: 0; font-size: 17px; }
+
+  /* hero */
+  .hero {
+    display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center;
+    min-height: 78vh; border-bottom: 1px solid var(--line); gap: 18px;
+  }
+  .hero h1 { margin: 0; font-size: 22px; font-weight: 600; color: var(--muted); letter-spacing: 0.02em; }
+  .hero h1 b { color: var(--text); }
+  .hero p { max-width: 680px; margin: 0; color: var(--muted); }
+  .stats { display: grid; grid-template-columns: repeat(4, minmax(130px, 1fr)); gap: 14px; margin-top: 18px; width: 100%; max-width: 820px; }
+  .stat { background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 14px; }
+  .stat b { display: block; font-size: 26px; color: var(--orange); }
+  .stat span { font-size: 13px; color: var(--muted); }
+
+  /* blocks */
+  .card { background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 20px 22px; }
+  .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  .grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+  .card h4 { margin: 0 0 8px; font-size: 15px; letter-spacing: 0.02em; }
+  .card ul { margin: 0; padding-left: 18px; }
+  .card li { margin: 3px 0; }
+  .card.accent { border-color: var(--orange); background: linear-gradient(180deg, var(--orange-soft), transparent 70%), var(--panel); }
+  .tag { display: inline-block; font-family: var(--mono); font-size: 11px; padding: 2px 8px; border-radius: 999px; border: 1px solid var(--line); color: var(--muted); margin-right: 4px; }
+  .tag.model { border-color: var(--blue); color: var(--blue); }
+  .tag.code { border-color: var(--green); color: var(--green); }
+  .tag.platform { border-color: var(--yellow); color: var(--yellow); }
+  .callout {
+    border-left: 3px solid var(--orange); background: var(--orange-soft); padding: 12px 16px; border-radius: 0 8px 8px 0; margin: 16px 0;
+  }
+  .callout b { color: var(--orange); }
+  figure { margin: 22px 0; }
+  figure svg { width: 100%; height: auto; display: block; }
+  figcaption { color: var(--muted); font-size: 13px; margin-top: 8px; text-align: center; }
+
+  table { width: 100%; border-collapse: collapse; margin: 14px 0; font-size: 14.5px; }
+  th, td { text-align: left; padding: 8px 10px; border-bottom: 1px solid var(--line); vertical-align: top; }
+  th { color: var(--muted); font-weight: 600; font-size: 12.5px; text-transform: uppercase; letter-spacing: 0.05em; }
+  td code { white-space: nowrap; }
+  tr:hover td { background: rgba(255, 255, 255, 0.02); }
+
+  ol.steps { counter-reset: step; list-style: none; padding: 0; margin: 14px 0; }
+  ol.steps > li {
+    counter-increment: step; position: relative; padding: 10px 14px 10px 52px; margin: 8px 0;
+    background: var(--panel); border: 1px solid var(--line); border-radius: 10px;
+  }
+  ol.steps > li::before {
+    content: counter(step); position: absolute; left: 14px; top: 10px; width: 26px; height: 26px; border-radius: 50%;
+    background: var(--orange); color: #1d1d20; font-weight: 800; font-size: 13px; display: flex; align-items: center; justify-content: center;
+  }
+  ol.steps ul { margin: 4px 0 0; padding-left: 18px; color: var(--muted); }
+
+  .split { display: flex; gap: 16px; align-items: stretch; }
+  .split > * { flex: 1; }
+  .pill-row { display: flex; flex-wrap: wrap; gap: 6px; margin: 8px 0; }
+  .pill { font-family: var(--mono); font-size: 12px; background: var(--panel-2); border: 1px solid var(--line); border-radius: 6px; padding: 3px 8px; }
+  .muted { color: var(--muted); }
+  .ex td:first-child { font-family: var(--mono); font-size: 13px; color: var(--text); }
+  .ex td:last-child { font-family: var(--mono); font-size: 13px; color: var(--green); }
+  footer { margin-top: 64px; padding-top: 20px; border-top: 1px solid var(--line); color: var(--muted); font-size: 13px; display: flex; justify-content: space-between; gap: 16px; flex-wrap: wrap; }
+
+  @media (max-width: 960px) {
+    .layout { grid-template-columns: 1fr; }
+    nav.toc { position: static; height: auto; border-right: 0; border-bottom: 1px solid var(--line); }
+    main { padding: 0 20px 60px; }
+    .grid-2, .grid-3, .split { grid-template-columns: 1fr; display: grid; }
+    .stats { grid-template-columns: repeat(2, 1fr); }
+  }
+</style>
+</head>
+<body>
+<div class="layout">
+
+<nav class="toc" aria-label="Contents">
+  <div class="brand">
+    <svg width="30" height="30" viewBox="0 0 120 120" aria-hidden="true">
+      <path fill="#ececef" d="M14 12H68C88 12 100 24 100 39C100 49 95 56 87 60C97 64 104 73 104 84C104 99 92 108 72 108H14V100L36 87H70C76 87 80 83 80 78C80 73 76 69 70 69H44V51H66C72 51 75 47 75 43C75 38 72 34 66 34H36L14 21Z"/>
+      <path fill="#f15a2b" d="M14 44L40 60L14 76Z"/>
+    </svg>
+    <span>BRAVE</span>
+  </div>
+  <ol>
+    <li><a href="#problem">The task</a></li>
+    <li><a href="#principle">Core principle</a></li>
+    <li><a href="#pipeline">Pipeline</a></li>
+    <li><a href="#tools">Reading the tool API</a></li>
+    <li><a href="#spec">Spec extraction</a></li>
+    <li><a href="#checks">Checks and repair</a></li>
+    <li><a href="#togen">Spec to engine config</a></li>
+    <li><a href="#workflow">The generated call flow</a></li>
+    <li><a href="#identity">Identity verification</a></li>
+    <li><a href="#engine">Negotiation engine</a></li>
+    <li><a href="#speech">Speech parsing</a></li>
+    <li><a href="#calendar">Calendar rules</a></li>
+    <li><a href="#embed">Fitting code nodes</a></li>
+    <li><a href="#validate">Validator</a></li>
+    <li><a href="#deploy">Deploy and run</a></li>
+    <li><a href="#platform">Platform facts</a></li>
+    <li><a href="#robust">Hardening</a></li>
+    <li><a href="#results">Results and tests</a></li>
+  </ol>
+</nav>
+
+<main>
+
+<!-- ============ HERO ============ -->
+<header class="hero">
+  <svg width="460" viewBox="0 0 600 140" role="img" aria-label="BRAVE">
+    <g transform="translate(0,10)">
+      <path fill="#ececef" d="M14 12H68C88 12 100 24 100 39C100 49 95 56 87 60C97 64 104 73 104 84C104 99 92 108 72 108H14V100L36 87H70C76 87 80 83 80 78C80 73 76 69 70 69H44V51H66C72 51 75 47 75 43C75 38 72 34 66 34H36L14 21Z"/>
+      <path fill="#f15a2b" d="M14 44L40 60L14 76Z"/>
+    </g>
+    <text x="108" y="117" fill="#ececef" font-family="system-ui, -apple-system, 'Segoe UI', Arial, sans-serif" font-weight="900" font-size="126" letter-spacing="2">RAVE</text>
+  </svg>
+  <h1><b>B</b>rief to <b>R</b>eliable <b>A</b>gent <b>V</b>alidation <b>E</b>ngine</h1>
+  <p>How BRAVE turns one written brief and one tool API file into a tested Freya phone agent for debt collection: every stage, every rule and the reasons behind them.</p>
+  <div class="stats">
+    <div class="stat"><b>30 min</b><span>budget for the whole build</span></div>
+    <div class="stat"><b>≤ 2</b><span>model calls at build time (extract, repair)</span></div>
+    <div class="stat"><b>0</b><span>bank values written by the model</span></div>
+    <div class="stat"><b>10/10 · 3/3</b><span>Brief A · Brief B, every customer 3 of 3 runs</span></div>
+  </div>
+</header>
+
+<!-- ============ 1 PROBLEM ============ -->
+<section id="problem">
+  <h2><span class="num">01</span>The task</h2>
+  <p class="lead">Build the builder: a program that reads a brief it has never seen and publishes a working phone agent on the Freya platform, without a human in the loop.</p>
+
+  <div class="grid-2">
+    <div class="card">
+      <h4>Input</h4>
+      <ul>
+        <li><b>Brief</b> (markdown): the bank's collections policy. Opening lines, identity questions, days-late bands, deadlines, holidays, floor amounts, persuasion attempts, the outcome table. Brief A has 47 numbered rules. A final brief may be raw material instead (mail, memo, code list).</li>
+        <li><b>Tool API</b> (OpenAPI JSON): <code>verify_identity</code>, <code>get_account</code>, <code>create_promise</code>, <code>add_note</code>, <code>schedule_callback</code>, <code>transfer_to_agent</code>, <code>close_call</code>. Field names and enums can change from brief to brief.</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h4>Output and scoring</h4>
+      <ul>
+        <li>A published Freya <b>workflow</b> (the agent), its export, and a trace of the build.</li>
+        <li>Simulated customers call the agent. A call passes only if <b>all three</b> hold: the bank ledger shows the right outcome (promises, notes, callbacks, transfers, close reason), the policy was kept, and the agent was honest.</li>
+        <li>No partial credit. A customer counts only if <b>3 of 3</b> runs pass, on different calendar days.</li>
+      </ul>
+    </div>
+  </div>
+  <div class="callout"><b>What this means for the design:</b> consistency matters more than eloquence. One wrong amount, one promise recorded without a clear yes, or one date off by a holiday fails the customer. The builder has to be right about numbers every time.</div>
+</section>
+
+<!-- ============ 2 PRINCIPLE ============ -->
+<section id="principle">
+  <h2><span class="num">02</span>Core principle: a deterministic skeleton around the model</h2>
+  <p class="lead">The model understands language. Code makes every decision that touches the bank.</p>
+
+  <div class="split">
+    <div class="card">
+      <h4><span class="tag model">model</span>What the model does</h4>
+      <ul>
+        <li><b>At build time:</b> reads the brief once and fills a fixed JSON spec (one call, one repair call at most).</li>
+        <li><b>At call time:</b> speaks the lines it is given, classifies each customer reply into an enum (<code>yes</code>, <code>offer</code>, <code>hardship</code> …), copies date and amount words exactly as said, answers a side question in one sentence.</li>
+        <li>Fills only the two <code>verify_identity</code> arguments, and a pre-hook normalises them.</li>
+      </ul>
+    </div>
+    <div class="card accent">
+      <h4><span class="tag code">code</span>What code does</h4>
+      <ul>
+        <li>Builds the whole workflow from a template. Same spec in, same workflow out.</li>
+        <li>Decides offers, amounts, dates, which product, when to record, transfer or close.</li>
+        <li>Parses spoken dates, times, amounts and birth dates against the call's own clock.</li>
+        <li>Every value sent to the bank comes from a code node or is baked into the request.</li>
+      </ul>
+    </div>
+  </div>
+
+  <h3>Why not let an agent write the workflow?</h3>
+  <ul>
+    <li>A model-written workflow varies from run to run. Here the score requires 3 of 3.</li>
+    <li>There are no practice customers for a hidden brief, so a build cannot test its way to correctness.</li>
+    <li>30 minutes fits one or two simulated calls, not an optimisation loop.</li>
+    <li>The agent model on the platform is weak at arithmetic and dates. Code is not.</li>
+  </ul>
+</section>
+
+<!-- ============ 3 PIPELINE ============ -->
+<section id="pipeline">
+  <h2><span class="num">03</span>The pipeline</h2>
+  <p class="lead"><code>python3 builder/build.py &lt;brief.md&gt; &lt;openapi.json&gt;</code>. Standard library only.</p>
+
+  <figure>
+    <svg viewBox="0 0 1000 300" role="img" aria-label="Pipeline diagram">
+      <defs>
+        <marker id="arr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0L10 5L0 10Z" fill="#a8a8b3"/></marker>
+      </defs>
+      <style>
+        .bx{fill:#323237;stroke:#4a4a52;stroke-width:1.5}
+        .bxo{fill:#3a2a26;stroke:#f15a2b;stroke-width:1.5}
+        .t{fill:#ececef;font:600 15px system-ui,sans-serif}
+        .s{fill:#a8a8b3;font:12px system-ui,sans-serif}
+        .ln{stroke:#a8a8b3;stroke-width:1.5;fill:none}
+      </style>
+      <!-- inputs -->
+      <rect class="bx" x="10" y="40" width="140" height="56" rx="10"/><text class="t" x="80" y="66" text-anchor="middle">brief.md</text><text class="s" x="80" y="84" text-anchor="middle">policy in words</text>
+      <rect class="bx" x="10" y="190" width="140" height="56" rx="10"/><text class="t" x="80" y="216" text-anchor="middle">openapi.json</text><text class="s" x="80" y="234" text-anchor="middle">tools, fields, enums</text>
+      <!-- stages -->
+      <rect class="bx" x="200" y="190" width="140" height="56" rx="10"/><text class="t" x="270" y="216" text-anchor="middle">1 · Tools</text><text class="s" x="270" y="234" text-anchor="middle">parse_openapi</text>
+      <rect class="bxo" x="200" y="40" width="140" height="56" rx="10"/><text class="t" x="270" y="66" text-anchor="middle">2 · Spec</text><text class="s" x="270" y="84" text-anchor="middle">model + checks</text>
+      <rect class="bx" x="390" y="115" width="140" height="56" rx="10"/><text class="t" x="460" y="141" text-anchor="middle">3 · Config</text><text class="s" x="460" y="159" text-anchor="middle">to_generator</text>
+      <rect class="bx" x="570" y="115" width="140" height="56" rx="10"/><text class="t" x="640" y="141" text-anchor="middle">4 · Workflow</text><text class="s" x="640" y="159" text-anchor="middle">template, no model</text>
+      <rect class="bx" x="750" y="115" width="110" height="56" rx="10"/><text class="t" x="805" y="141" text-anchor="middle">5 · Validate</text><text class="s" x="805" y="159" text-anchor="middle">graph, gates</text>
+      <rect class="bxo" x="890" y="40" width="100" height="206" rx="10"/>
+      <text class="t" x="940" y="70" text-anchor="middle">6 · Freya</text>
+      <text class="s" x="940" y="104" text-anchor="middle">dry run</text>
+      <text class="s" x="940" y="134" text-anchor="middle">save + publish</text>
+      <text class="s" x="940" y="164" text-anchor="middle">smoke test</text>
+      <text class="s" x="940" y="194" text-anchor="middle">export</text>
+      <text class="s" x="940" y="224" text-anchor="middle">trace END</text>
+      <!-- arrows -->
+      <path class="ln" d="M150 68H200" marker-end="url(#arr)"/>
+      <path class="ln" d="M150 218H200" marker-end="url(#arr)"/>
+      <path class="ln" d="M270 190V96" marker-end="url(#arr)"/>
+      <path class="ln" d="M340 68C370 68 370 143 390 143" marker-end="url(#arr)"/>
+      <path class="ln" d="M340 218C370 218 370 143 390 143" marker-end="url(#arr)"/>
+      <path class="ln" d="M530 143H570" marker-end="url(#arr)"/>
+      <path class="ln" d="M710 143H750" marker-end="url(#arr)"/>
+      <path class="ln" d="M860 143H890" marker-end="url(#arr)"/>
+      <text class="s" x="230" y="20">the only stage that uses a model</text>
+      <path d="M262 26V38" stroke="#f15a2b" stroke-width="1.5"/>
+    </svg>
+    <figcaption>The tool definitions feed the spec prompt, so the model sees the real field names and enum values of this brief's API.</figcaption>
+  </figure>
+
+  <table>
+    <thead><tr><th>Stage</th><th>Module</th><th>Result</th></tr></thead>
+    <tbody>
+      <tr><td>1 · Tools</td><td><code>builder/fb/openapi_tools.py</code></td><td>Typed tool definitions with resolved responses</td></tr>
+      <tr><td>2 · Spec</td><td><code>builder/fb/spec_extract.py</code>, <code>llm.py</code></td><td><code>submission/&lt;brief&gt;.spec.json</code>, written before any check</td></tr>
+      <tr><td>3 · Config</td><td><code>to_generator()</code></td><td>Engine configuration with defaults and neutral lines</td></tr>
+      <tr><td>4 · Workflow</td><td><code>builder/fb/generate.py</code>, <code>nodecode/</code></td><td>Freya workflow JSON + the policy the validator enforces</td></tr>
+      <tr><td>5 · Validate</td><td><code>builder/fb/validate.py</code></td><td>Errors stop the run before anything is saved</td></tr>
+      <tr><td>6 · Freya</td><td><code>kit/freya.py</code> via <code>bounded_api</code></td><td>Published agent, <code>submission/&lt;brief&gt;.workflow.json</code>, <code>traces/&lt;brief&gt;.log</code></td></tr>
+    </tbody>
+  </table>
+</section>
+
+<!-- ============ 4 TOOLS ============ -->
+<section id="tools">
+  <h2><span class="num">04</span>Reading the tool API</h2>
+  <p class="lead">Nothing about the bank's tools is assumed. Names, fields, required flags and enums all come from the OpenAPI file.</p>
+  <div class="grid-2">
+    <div class="card">
+      <h4>Tool definitions</h4>
+      <ul>
+        <li>Base URL from <code>servers[0]</code>. Tool name from <code>operationId</code>, else the last path segment.</li>
+        <li>Request body <code>$ref</code>s resolved. Each property becomes a field: type, description, enum, required, format, default.</li>
+        <li><b>Response view:</b> the 200 JSON schema is followed through <code>$ref</code>, <code>allOf</code>, <code>oneOf</code>, <code>anyOf</code> (depth cap 20). Example: <code>create_promise</code> 200 written as <code>allOf[$ref Error, {promise_id}]</code> still lists <code>promise_id</code>.</li>
+        <li><b>Fixed values:</b> a field's default, or the only value of a one-value enum, is baked in.</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h4>How success is read</h4>
+      <ul>
+        <li>An <code>ok</code> flag, if the response has one.</li>
+        <li>Else the first field that is not an error or message (e.g. <code>promise_id</code> present).</li>
+        <li>Else "no error field".</li>
+        <li>A flag is only wired if the response really has it. Wiring a flag that never arrives would read every call as failed.</li>
+        <li>Baked fields are sent as <code>{{var}}</code>: the model never sees or fills them.</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<!-- ============ 5 SPEC ============ -->
+<section id="spec">
+  <h2><span class="num">05</span>Spec extraction</h2>
+  <p class="lead">One model call turns the brief into a fixed JSON schema. Temperature 0, OpenRouter, model set by <code>BUILDER_MODEL_BUILDER</code>.</p>
+
+  <h3>What the prompt contains</h3>
+  <ol class="steps">
+    <li><b>Role and precedence:</b> later or overriding sources win, judged against the call's <code>now</code>. Every such decision is written to <code>notes</code>.</li>
+    <li><b>Hard rules:</b> never invent; every code comes from the tool API's enums; state every product, then handle them one at a time (up to 3).</li>
+    <li><b>Policy help:</b> what each policy knob means and which values it takes; what each spoken line is for.</li>
+    <li><b>Tool summary:</b> per tool, method, URL, fields with type / required / enum / description, and the resolved response.</li>
+    <li><b>The schema</b>, then the brief between <code>&lt;&lt;&lt;</code> and <code>&gt;&gt;&gt;</code>.</li>
+  </ol>
+
+  <h3>The spec</h3>
+  <table>
+    <thead><tr><th>Key</th><th>Meaning</th></tr></thead>
+    <tbody>
+      <tr><td><code>call_variables</code></td><td>Role → variable name: customer_id, title, first/last/full name, now</td></tr>
+      <tr><td><code>lines</code></td><td>24 spoken sentences: opening, who_question, ai/scam answers, identity intro/why/failed, today question, confirm, recorded, sympathy, support offer, goodbye …</td></tr>
+      <tr><td><code>forbidden_before_verify</code></td><td>Words the agent must not say before identity is verified</td></tr>
+      <tr><td><code>identity</code></td><td>Questions <code>{field, ask, kind: date|digits|year|text}</code>, swap hint, date order DMY/MDY</td></tr>
+      <tr><td><code>outcomes</code></td><td><code>[close outcome, reason]</code> for unclear, callback, no_callback, wrong_number, deceased, failed, declined</td></tr>
+      <tr><td><code>callback</code>, <code>calendar</code></td><td>Callback window and days ahead; holidays and workdays</td></tr>
+      <tr><td><code>bands</code></td><td>Days-late ranges, each with a deadline (business or calendar days) and a number of persuasion attempts</td></tr>
+      <tr><td><code>attempt1</code>, <code>attempt_plan</code></td><td>The first offer date rule; one <code>{amount: current|full|floor, date: attempt1|deadline}</code> step per attempt</td></tr>
+      <tr><td><code>tool_fields</code>, <code>product_fields</code></td><td>Role → real request and response field names in this brief's API</td></tr>
+      <tr><td><code>floor_field</code>, <code>product_names</code></td><td>Where each product type keeps its floor; how to say its name</td></tr>
+      <tr><td><code>neg</code></td><td>Outcomes, note reasons, close reasons, transfer queues and reasons, notes on/off</td></tr>
+      <tr><td><code>policy</code></td><td>11 knobs, e.g. <code>human_requests_to_transfer</code> 2, <code>stop_requests_to_close</code> 2, <code>promise_attempts</code> 2, <code>hardship</code> offer_support / transfer / close, <code>floor_offers</code> 1, <code>reason_priority</code>, plus optional <code>product_order</code></td></tr>
+    </tbody>
+  </table>
+</section>
+
+<!-- ============ 6 CHECKS ============ -->
+<section id="checks">
+  <h2><span class="num">06</span>Checks and the repair round</h2>
+  <p class="lead">The model's spec is checked by code against the tool API and against the brief's own text.</p>
+
+  <div class="grid-3">
+    <div class="card"><h4>check()</h4><ul>
+      <li>Every close, note, queue and identity value is in the tool's enum</li>
+      <li>Holidays are ISO dates; bands are integers; all 11 knobs present</li>
+      <li><code>tool_fields</code> name real fields</li>
+      <li>Required lines present; no <code>{{</code> except in who_question</li>
+    </ul></div>
+    <div class="card"><h4>bindings() · responses()</h4><ul>
+      <li>Every required request field has a role or a fixed value</li>
+      <li>Response fields the workflow reads really exist (ok, verified, wrong_answers_left, hint, product list path)</li>
+      <li>Every product type has a floor field and a spoken name</li>
+      <li>Close reasons fit <code>close_call</code>'s enum</li>
+    </ul></div>
+    <div class="card"><h4>structure()</h4><ul>
+      <li>Bands do not overlap or leave gaps (next min = previous max + 1)</li>
+      <li>Callback times are HH:MM with start &lt; end</li>
+      <li><code>attempt_plan</code> is at least as long as the longest band's attempts</li>
+      <li>Reason priority maps to known reasons</li>
+    </ul></div>
+  </div>
+
+  <h3>Grounding: is it really in the brief?</h3>
+  <p>A heuristic check that the values that move the score appear in the brief's text: holiday dates (in any written form), band numbers (digits or words), callback times (24 h or am/pm), every outcome and reason code as a whole token, and a callback rule that says "business day".</p>
+
+  <ol class="steps">
+    <li><b>Repair round</b>, only if a check failed: the same conversation continues with "These checks failed: …". The model fixes them from the brief and the API. A value "not found in the brief" may stay only if the brief says it, with a note quoting where. The whole JSON is returned again. There is no second repair.</li>
+    <li><b>Deterministic overrides</b>: e.g. if a callback sentence names "business day" and no weekend, callbacks are forced onto business days (a real extraction once offered a Saturday).</li>
+    <li><b>Blocking:</b> only two problems stop the build: no identity question, or no usable band. Everything else is logged and the build continues.</li>
+  </ol>
+  <div class="callout"><b>An imperfect agent beats no agent.</b> One false positive in a check once ended a run with nothing published. Now open problems are logged (<code>ok_spec_problems</code>) and the agent is still built, validated and published.</div>
+</section>
+
+<!-- ============ 7 TO_GENERATOR ============ -->
+<section id="togen">
+  <h2><span class="num">07</span>From spec to engine config</h2>
+  <ul>
+    <li><b>Defaults</b> fill missing knobs: workdays Mon–Fri, callback 10:00–19:00, 1 business day ahead, DMY dates, attempt 1 on the last business day of the week.</li>
+    <li><b>Neutral lines:</b> every line the engine can say gets the brief's wording or a neutral sentence (24 keys). A hidden brief never inherits Brief A's wording such as "You will receive a text message" or "You can change it in the mobile app".</li>
+    <li><b>Bank codes mapped back:</b> a reason priority written as bank codes is mapped to the engine's semantic keys (refused, hardship, dispute, service_error).</li>
+    <li><b>Attempts capped</b> at the length of the attempt plan, so the agent never repeats an offer the customer already refused.</li>
+  </ul>
+</section>
+
+<!-- ============ 8 WORKFLOW ============ -->
+<section id="workflow">
+  <h2><span class="num">08</span>The generated call flow</h2>
+  <p class="lead">A deterministic template. Four node kinds: <span class="tag">conversation</span> <span class="tag code">code</span> <span class="tag platform">api_request</span> <span class="tag">end_call</span>, plus one lifecycle <code>close_call</code> that always runs at the end of the call.</p>
+
+  <figure>
+    <svg viewBox="0 0 1000 560" role="img" aria-label="Call flow">
+      <defs>
+        <marker id="a2" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0L10 5L0 10Z" fill="#a8a8b3"/></marker>
+      </defs>
+      <style>
+        .cv{fill:#323237;stroke:#a8a8b3;stroke-width:1.3}
+        .cd{fill:#263a2f;stroke:#5cc98b;stroke-width:1.3}
+        .ap{fill:#3d3524;stroke:#f2c14e;stroke-width:1.3}
+        .en{fill:#3a2a26;stroke:#f15a2b;stroke-width:1.3}
+        .n{fill:#ececef;font:600 13px ui-monospace,Consolas,monospace}
+        .l{fill:#a8a8b3;font:11px system-ui,sans-serif}
+        .e{stroke:#a8a8b3;stroke-width:1.2;fill:none}
+      </style>
+      <!-- row 1 -->
+      <rect class="cv" x="20" y="30" width="120" height="40" rx="8"/><text class="n" x="80" y="55" text-anchor="middle">opening</text>
+      <rect class="cd" x="200" y="30" width="110" height="40" rx="8"/><text class="n" x="255" y="55" text-anchor="middle">setup_id</text>
+      <rect class="cv" x="370" y="30" width="120" height="40" rx="8"/><text class="n" x="430" y="55" text-anchor="middle">identity</text>
+      <rect class="ap" x="550" y="30" width="110" height="40" rx="8"/><text class="n" x="605" y="55" text-anchor="middle">account</text>
+      <rect class="cd" x="720" y="30" width="100" height="40" rx="8"/><text class="n" x="770" y="55" text-anchor="middle">facts</text>
+      <path class="e" d="M140 50H200" marker-end="url(#a2)"/><text class="l" x="146" y="44">confirms</text>
+      <path class="e" d="M310 50H370" marker-end="url(#a2)"/>
+      <path class="e" d="M490 50H550" marker-end="url(#a2)"/><text class="l" x="497" y="44">verified</text>
+      <path class="e" d="M660 50H720" marker-end="url(#a2)"/>
+      <!-- identity side -->
+      <rect class="cd" x="370" y="110" width="120" height="36" rx="8"/><text class="n" x="430" y="133" text-anchor="middle">decline_check</text>
+      <rect class="cv" x="370" y="170" width="120" height="36" rx="8"/><text class="n" x="430" y="193" text-anchor="middle">identity2</text>
+      <path class="e" d="M430 70V110" marker-end="url(#a2)"/><text class="l" x="436" y="94">declines</text>
+      <path class="e" d="M430 146V170" marker-end="url(#a2)"/>
+      <!-- negotiation loop -->
+      <rect class="cv" x="720" y="130" width="140" height="40" rx="8"/><text class="n" x="790" y="155" text-anchor="middle">negotiate_say</text>
+      <rect class="cd" x="720" y="230" width="140" height="40" rx="8"/><text class="n" x="790" y="255" text-anchor="middle">decide</text>
+      <rect class="cv" x="890" y="230" width="100" height="40" rx="8"/><text class="n" x="940" y="255" text-anchor="middle">negotiate</text>
+      <rect class="ap" x="720" y="330" width="140" height="40" rx="8"/><text class="n" x="790" y="355" text-anchor="middle">record</text>
+      <rect class="cd" x="720" y="410" width="140" height="40" rx="8"/><text class="n" x="790" y="435" text-anchor="middle">after_record</text>
+      <path class="e" d="M770 70V130" marker-end="url(#a2)"/>
+      <path class="e" d="M790 170V230" marker-end="url(#a2)"/><text class="l" x="796" y="204">customer turn</text>
+      <path class="e" d="M750 230C700 210 700 190 720 160" marker-end="url(#a2)"/><text class="l" x="640" y="200">say next line</text>
+      <path class="e" d="M860 250H890" marker-end="url(#a2)"/><text class="l" x="866" y="226">question</text>
+      <path class="e" d="M940 230C940 160 900 150 860 150" marker-end="url(#a2)"/>
+      <path class="e" d="M790 270V330" marker-end="url(#a2)"/><text class="l" x="796" y="304">record</text>
+      <path class="e" d="M790 370V410" marker-end="url(#a2)"/>
+      <path class="e" d="M860 430C930 430 930 270 860 262" marker-end="url(#a2)"/><text class="l" x="900" y="380">same routes</text>
+      <!-- wrap -->
+      <rect class="ap" x="550" y="480" width="110" height="40" rx="8"/><text class="n" x="605" y="505" text-anchor="middle">transfer</text>
+      <rect class="cd" x="390" y="480" width="100" height="40" rx="8"/><text class="n" x="440" y="505" text-anchor="middle">wrap</text>
+      <rect class="ap" x="230" y="480" width="100" height="40" rx="8"/><text class="n" x="280" y="505" text-anchor="middle">note ⟲</text>
+      <rect class="en" x="40" y="480" width="130" height="40" rx="8"/><text class="n" x="105" y="505" text-anchor="middle">goodbye</text>
+      <path class="e" d="M740 270C640 330 620 440 605 480" marker-end="url(#a2)"/><text class="l" x="612" y="420">transfer</text>
+      <path class="e" d="M720 260C560 300 470 400 450 480" marker-end="url(#a2)"/><text class="l" x="520" y="360">finish</text>
+      <path class="e" d="M550 500H490" marker-end="url(#a2)"/>
+      <path class="e" d="M390 500H330" marker-end="url(#a2)"/>
+      <path class="e" d="M230 500H170" marker-end="url(#a2)"/>
+      <!-- third party -->
+      <rect class="cd" x="20" y="130" width="120" height="36" rx="8"/><text class="n" x="80" y="153" text-anchor="middle">setup_tp</text>
+      <rect class="cv" x="20" y="200" width="120" height="36" rx="8"/><text class="n" x="80" y="223" text-anchor="middle">third_party</text>
+      <rect class="cd" x="20" y="270" width="120" height="36" rx="8"/><text class="n" x="80" y="293" text-anchor="middle">cb_check</text>
+      <rect class="ap" x="20" y="340" width="120" height="36" rx="8"/><text class="n" x="80" y="363" text-anchor="middle">cb_book</text>
+      <path class="e" d="M80 70V130" marker-end="url(#a2)"/><text class="l" x="86" y="104">someone else</text>
+      <path class="e" d="M80 166V200" marker-end="url(#a2)"/>
+      <path class="e" d="M80 236V270" marker-end="url(#a2)"/><text class="l" x="86" y="258">gives a time</text>
+      <path class="e" d="M80 306V340" marker-end="url(#a2)"/><text class="l" x="86" y="328">ok</text>
+      <path class="e" d="M20 288C0 270 0 230 20 220" marker-end="url(#a2)"/>
+      <path class="e" d="M80 376V480" marker-end="url(#a2)"/>
+      <!-- fin nodes -->
+      <rect class="cd" x="200" y="230" width="130" height="150" rx="8"/>
+      <text class="n" x="265" y="254" text-anchor="middle">fin_* nodes</text>
+      <text class="l" x="212" y="276">fin_unclear</text>
+      <text class="l" x="212" y="294">fin_declined · fin_failed</text>
+      <text class="l" x="212" y="312">fin_id_error</text>
+      <text class="l" x="212" y="330">fin_callback</text>
+      <text class="l" x="212" y="348">fin_no_callback</text>
+      <text class="l" x="212" y="366">wrong number · deceased</text>
+      <path class="e" d="M370 190C340 200 340 230 330 250" marker-end="url(#a2)"/>
+      <path class="e" d="M265 380C265 430 160 450 130 480" marker-end="url(#a2)"/>
+      <!-- lifecycle -->
+      <rect class="en" x="20" y="535" width="960" height="0.1"/>
+      <text class="l" x="500" y="548" text-anchor="middle">close_call runs at end_of_call in every path (pre-hook rebuilds the outcome if the customer hung up)</text>
+    </svg>
+    <figcaption>Grey: conversation · green: code · yellow: api_request · orange: end_call. Simplified: person requests, failure retries and turn caps are left out.</figcaption>
+  </figure>
+
+  <h3>Phases of a call</h3>
+  <ol class="steps">
+    <li><b>Opening</b> (conversation, cap 3 then <code>opening2</code>): <code>who1</code> ∈ confirms, someone_else, wrong_number, deceased, wants_human, question, unclear. The first node is a conversation because a code node as first node never runs on the platform.</li>
+    <li><b>Identity</b>: <code>setup_id</code> computes calendar facts, then <code>identity</code> holds <code>verify_identity</code>. Turn cap 60. A refusal goes through <code>decline_check</code> to <code>identity2</code> before closing as declined.</li>
+    <li><b>Account</b>: <code>get_account</code> maps the product list; <code>facts</code> builds per-product facts. The facts the model sees leave out the floor and the deadline, so it cannot make offers on its own.</li>
+    <li><b>Negotiation loop</b>: <code>negotiate_say</code> speaks the engine's line; after each customer turn <code>decide</code> runs the engine and routes on <code>neg_action</code>: say, record, transfer, finish, or answer a question (<code>negotiate</code>).</li>
+    <li><b>Recording</b>: <code>record</code> calls <code>create_promise</code> with values from code; <code>after_record</code> reads the result and routes like <code>decide</code>.</li>
+    <li><b>Wrap</b>: <code>wrap</code> → <code>note</code> (loops once per product that needs a note) → <code>goodbye</code>.</li>
+    <li><b>Third party</b>: someone else answers → ask for a callback time, check it in code (<code>cb_check</code>), book it with <code>schedule_callback</code>.</li>
+  </ol>
+
+  <h3>What the model extracts on each negotiation turn</h3>
+  <div class="pill-row">
+    <span class="pill">reply_kind: yes · no · offer · too_much · vague · paid · dispute · hardship · restructure · human · stop · question · evasive · unclear</span>
+    <span class="pill">said_date_text</span><span class="pill">said_amount_text</span><span class="pill">all_products</span><span class="pill">has_question</span><span class="pill">about_product: p1 · p2 · p3 · none</span>
+  </div>
+  <p class="muted">Date and amount are copied as words. The engine parses them; the model never computes them.</p>
+
+  <h3>Writes to the bank</h3>
+  <ul>
+    <li>Write tools get a 25 s timeout (a slow <code>add_note</code> once arrived after <code>close_call</code>).</li>
+    <li>No automatic retry on writes, to avoid double promises. <code>get_account</code> retries once, <code>close_call</code> twice.</li>
+    <li>"Already recorded" or a bare 409 counts as success.</li>
+    <li>The <code>close_call</code> pre-hook: if the customer hung up with no outcome, it rebuilds one from the engine state (recorded promise → promise; all paid → paid; negotiating → no_promise with the right reason; never verified → not_reached).</li>
+  </ul>
+</section>
+
+<!-- ============ 9 IDENTITY ============ -->
+<section id="identity">
+  <h2><span class="num">09</span>Identity verification</h2>
+  <div class="grid-2">
+    <div class="card">
+      <h4>Pre-hook (before <code>verify_identity</code>)</h4>
+      <ul>
+        <li>Date answers go through <code>normalize_dob</code>. A lone century ("19", "198") is sent as <code>incomplete</code>, so the bank does not count it as a wrong answer.</li>
+        <li>Digit answers go through <code>digits_from_speech</code> ("double four seven one" → 4471). If the model joined pieces in the wrong order, the heard order wins.</li>
+        <li>The heard words (<code>id_heard</code>, <code>id_last</code>) are used once, then cleared.</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h4>Post-hook (after)</h4>
+      <ul>
+        <li>Writes one instruction for the model: year incomplete · day/month swapped hint · both correct · unreadable · locked · "Correct. Now ask: …" · wrong.</li>
+        <li>Verified when the bank says <code>all_verified</code>, or, when the API has no such flag, when the hook counts every question answered right (<code>id_all_ok</code>).</li>
+        <li><code>wrong_answers_left = 0</code> → failed. A second 5xx → service error close.</li>
+      </ul>
+    </div>
+  </div>
+  <div class="callout"><b>Gate:</b> <code>get_account</code>, <code>create_promise</code> and <code>add_note</code> are unreachable in the graph until the verified transition. The validator proves this before saving, and the smoke test fails if the agent says "debt", "overdue" or any forbidden word before verification.</div>
+</section>
+
+<!-- ============ 10 ENGINE ============ -->
+<section id="engine">
+  <h2><span class="num">10</span>The negotiation engine</h2>
+  <p class="lead"><code>negotiation_lib.py</code> runs inside code nodes. Every customer turn: read the reply, take one step, publish the next line and action.</p>
+
+  <div class="grid-2">
+    <div class="card">
+      <h4>State per product</h4>
+      <div class="pill-row">
+        <span class="pill">full</span><span class="pill">floor ≤ full</span><span class="pill">deadline</span><span class="pill">days_late</span><span class="pill">attempts</span><span class="pill">used</span><span class="pill">refused_offers</span><span class="pill">amount</span><span class="pill">date</span>
+      </div>
+      <p class="muted" style="margin:6px 0 0">status: open → agreed → recorded, or refused · hardship · paid · dispute · failed</p>
+    </div>
+    <div class="card">
+      <h4>Global state</h4>
+      <div class="pill-row">
+        <span class="pill">phase: ask_today · offer · confirm · recording · closing · hardship_offer</span><span class="pill">current product</span><span class="pill">human_asked</span><span class="pill">stop</span><span class="pill">notes</span><span class="pill">last_ask</span><span class="pill">unclear_run</span>
+      </div>
+    </div>
+  </div>
+
+  <h3>Opening the negotiation</h3>
+  <p>"Your <i>card</i> has <i>£X</i> past due and is <i>D</i> days late." for each product, then "Can you make this payment today?" or, with several products, "Can you pay all of them today?". A no to the combined question goes on with "Let us go through them one at a time." so it is not counted as attempt one on every product.</p>
+
+  <h3>Reading a reply</h3>
+  <ul>
+    <li>Date and amount words are parsed by code. "The minimum" / "all of it" map to floor / full. Unreadable number words → "Sorry, how much can you pay?" (twice, then evasive).</li>
+    <li>A yes, no or too_much that carries a date or an amount becomes an <b>offer</b>: a date the customer names is never a refusal.</li>
+    <li>The raw last message is read from the conversation. "Both" / "all of them" means every product, unless the same message refuses.</li>
+    <li><b>Cut-off turns</b> (no end mark): a cut stop / no / evasive without a value becomes unclear, so it uses no attempt. The third cut turn in a row is taken as said.</li>
+  </ul>
+
+  <h3>One step: the decision order</h3>
+  <ol class="steps">
+    <li>Join an amount said in two pieces ("Sorry, I think you were cut off. Please go on.").</li>
+    <li>Pick the product: the one named, else the current one. An offer for a refused product reopens it.</li>
+    <li>Price-style re-read: "three fifty" is read as 350 when 3.50 is outside [floor, full].</li>
+    <li>"Yes, that Tuesday" to an offered Tuesday keeps the offered date.</li>
+    <li>Restructure → transfer. Person requests: help first, transfer at <code>human_requests_to_transfer</code>.</li>
+    <li>Hardship → by policy: offer support (sympathy once, offer once), transfer, or close. No persuasion after hardship.</li>
+    <li>Stop: counted; at <code>stop_requests_to_close</code> open products are refused and the call ends.</li>
+    <li>Paid / dispute: set on the named product, move on.</li>
+    <li>Question → the model answers in one sentence, then repeats the last ask exactly.</li>
+    <li><b>Confirm phase:</b> a yes is checked again (floor ≤ amount ≤ full, date rules). Only then <code>action = record</code>. A no asks which promise to change; a new offer reopens it.</li>
+    <li><b>Offer phase:</b> yes accepts the offer on the table; no / evasive → next attempt; an offer is applied; too_much → the floor on a valid day, once.</li>
+  </ol>
+
+  <h3>Attempts and offers</h3>
+  <div class="split">
+    <div class="card">
+      <h4>Attempt plan (Brief A)</h4>
+      <ul>
+        <li><b>Attempt 1:</b> the current amount (the floor if the customer said too much) on the attempt-1 date, the last business day of this week.</li>
+        <li><b>Attempt 2:</b> the floor on the deadline.</li>
+        <li>Dates are clipped to the deadline. A refused (amount, date) pair is never offered again. "The rest stays overdue." when below full.</li>
+        <li>When all attempts are used, the product is refused.</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h4>Applying a customer offer</h4>
+      <ul>
+        <li>Amount capped at full. Below floor: "I cannot record X. The minimum is F. Could you pay F on D?"</li>
+        <li>No day → "On which day can you pay X?". Vague day → "On which exact day?", then "The latest date I can record is …".</li>
+        <li>Date check: ok · past · after deadline · not a business day → the next business day is offered.</li>
+        <li>With several products each keeps its own deadline.</li>
+      </ul>
+    </div>
+  </div>
+
+  <h3>Recording and closing</h3>
+  <ol class="steps">
+    <li>When nothing is open: read-back "To confirm: £X on Friday 23 October for your card; … Do you confirm?"</li>
+    <li>Only a yes to the read-back records. One <code>create_promise</code> per agreed product, values from code, up to <code>promise_attempts</code> tries; a failure continues or transfers by policy.</li>
+    <li>A recorded promise is never undone. A transfer drops agreed but unrecorded promises.</li>
+    <li>Finish: one note per product not recorded (when the brief uses notes); outcome = transferred · promise · paid · no_promise. The no_promise reason is the first product's status, or the first of <code>reason_priority</code> [dispute, hardship, service_error, refused].</li>
+  </ol>
+  <div class="callout"><b>Record only what the customer confirmed, inside the rules.</b> This single rule removes the most expensive failure: a promise in the ledger that the customer never agreed to.</div>
+</section>
+
+<!-- ============ 11 SPEECH ============ -->
+<section id="speech">
+  <h2><span class="num">11</span>Speech parsing</h2>
+  <p class="lead">Phone speech is messy: number words, self-corrections, cut-off sentences. <code>speech_lib.py</code> reads it relative to the call's <code>now</code>, because the platform's extractor anchors dates to the real clock.</p>
+  <ul>
+    <li><b>Self-corrections:</b> split on "sorry", "I mean", "no wait", "actually", "make it", or a bare "no" after punctuation; keep the last part that holds a value.</li>
+    <li><b>Number words:</b> "twenty-second" → 22nd, "four hundred and fifty-five" → 455; "thirty seven fifty" starts a new number.</li>
+    <li><b>Unsure means ask again:</b> two separate numbers, a percentage, a range or an unreadable year return nothing, and the agent asks again. It never guesses.</li>
+  </ul>
+  <table class="ex">
+    <thead><tr><th>Said (call on Wed 14 Oct 2026)</th><th>Read as</th></tr></thead>
+    <tbody>
+      <tr><td>"next Friday"</td><td>2026-10-23</td></tr>
+      <tr><td>"the 21st, sorry, I mean the 20th"</td><td>2026-10-20</td></tr>
+      <tr><td>"Monday? No, Friday."</td><td>2026-10-16</td></tr>
+      <tr><td>"the 5th"</td><td>2026-11-05 (this month's 5th has passed)</td></tr>
+      <tr><td>"Friday the 20th"</td><td>unclear (the 20th is a Tuesday) → ask again</td></tr>
+      <tr><td>"in a couple of weeks"</td><td>vague → "On which exact day?"</td></tr>
+      <tr><td>"three hundred, sorry, three hundred and fifty"</td><td>350</td></tr>
+      <tr><td>"six hundred thirty seven fifty"</td><td>637.50</td></tr>
+      <tr><td>"three fifty" with floor 200, full 637.50</td><td>350</td></tr>
+      <tr><td>"half five" · "quarter to one" · "4, no, 5"</td><td>17:30 · 12:45 · 17:00</td></tr>
+      <tr><td>"between 2 and 4"</td><td>nothing → ask for one time</td></tr>
+      <tr><td>"four four seven one, no, four four seven two"</td><td>4472</td></tr>
+      <tr><td>"14 March nineteen oh five" · "14 March 19"</td><td>1905-03-14 · incomplete</td></tr>
+    </tbody>
+  </table>
+</section>
+
+<!-- ============ 12 CALENDAR ============ -->
+<section id="calendar">
+  <h2><span class="num">12</span>Calendar rules</h2>
+  <div class="grid-2">
+    <div class="card"><h4>Business days</h4><ul>
+      <li>A business day is a workday that is not a holiday (both from the spec).</li>
+      <li>Deadline: the Nth business day after today, or N calendar days moved back to a business day.</li>
+      <li>Attempt-1 date: last business day of this week, or of next week if today is already that day.</li>
+    </ul></div>
+    <div class="card"><h4>Bands (Brief A)</h4><ul>
+      <li><b>early</b> 1–7 days late: deadline 12 business days, 1 attempt.</li>
+      <li><b>late</b> 8–45 days late: deadline 7 business days, 2 attempts.</li>
+      <li>Holiday 26 Oct 2026 is skipped in every count. A 28-day date table is computed once per call.</li>
+    </ul></div>
+  </div>
+</section>
+
+<!-- ============ 13 EMBED ============ -->
+<section id="embed">
+  <h2><span class="num">13</span>Fitting code into code nodes</h2>
+  <p class="lead">The platform's <code>code_exec</code> takes 131,072 bytes of code <i>plus</i> call data, and the data grows by about 1.3 KB per customer turn. A call failed at turn 51 with 66 KB of code.</p>
+  <figure>
+    <svg viewBox="0 0 1000 120" role="img" aria-label="Code size budget">
+      <style>.bt{font:12px system-ui,sans-serif;fill:#ececef}.bm{font:11px system-ui,sans-serif;fill:#a8a8b3}</style>
+      <rect x="10" y="30" width="980" height="36" rx="6" fill="#323237" stroke="#4a4a52"/>
+      <rect x="10" y="30" width="206" height="36" rx="6" fill="#5cc98b" opacity="0.85"/>
+      <rect x="216" y="30" width="774" height="36" fill="#6aa8ff" opacity="0.25"/>
+      <text class="bt" x="20" y="53" fill="#1d1d20">code ≤ ~28 KB</text>
+      <text class="bt" x="300" y="53">room for variables + conversation (~1.3 KB / turn)</text>
+      <line x1="234" y1="22" x2="234" y2="74" stroke="#f2c14e" stroke-dasharray="4 3"/><text class="bm" x="238" y="18">30 KB: pack above</text>
+      <line x1="279" y1="22" x2="279" y2="74" stroke="#f15a2b" stroke-dasharray="4 3"/><text class="bm" x="283" y="92">36 KB hard cap</text>
+      <text class="bm" x="990" y="92" text-anchor="end">131,072 bytes</text>
+    </svg>
+  </figure>
+  <ol class="steps">
+    <li><b>AST subset:</b> each node gets only the library functions, constants and imports its body actually reaches.</li>
+    <li>Snippet = header, library subset, <code>CFG = json.loads(…)</code> with the engine config, then the body in try/except that sets <code>code_error</code>.</li>
+    <li>Over 30 KB, the library is stripped of docstrings and packed with zlib + base64, then unpacked into <code>globals()</code>. The largest node drops from 36 KB to under 28 KB.</li>
+    <li>No <code>{{</code> or <code>}}</code> anywhere: the platform would read it as a template placeholder.</li>
+  </ol>
+</section>
+
+<!-- ============ 14 VALIDATE ============ -->
+<section id="validate">
+  <h2><span class="num">14</span>The validator</h2>
+  <p class="lead">Runs before anything is sent to Freya. An error stops the run; the exported file is checked again after save.</p>
+  <div class="grid-3">
+    <div class="card"><h4>Integrity and shape</h4><ul>
+      <li>Initial node exists; node names match keys</li>
+      <li>Tools only on conversation nodes; pre-actions only on api/code nodes</li>
+      <li>Passthrough nodes end with an <code>always</code> transition</li>
+      <li>end_call nodes have no transitions</li>
+    </ul></div>
+    <div class="card"><h4>Conditions and turns</h4><ul>
+      <li>Every conversation node has a turn cap that does not point to itself</li>
+      <li>Deterministic operators only; numeric operands for gt/lt</li>
+      <li>No dead transitions after an <code>always</code></li>
+      <li>Extraction confidence and prompts checked</li>
+    </ul></div>
+    <div class="card"><h4>Code safety</h4><ul>
+      <li>Syntax; size (error over 71 KB, warning over 36 KB)</li>
+      <li>No network, process or <code>__import__</code>; no eval of call data</li>
+      <li>Packed blobs unpacked and scanned too</li>
+    </ul></div>
+    <div class="card"><h4>Scope</h4><ul>
+      <li>URL, host and method match the OpenAPI file</li>
+      <li>Required fields present; enum values valid</li>
+      <li>No unknown parameters</li>
+    </ul></div>
+    <div class="card"><h4>Graph</h4><ul>
+      <li>Every node reachable</li>
+      <li>Every node has a path to an end</li>
+      <li>No passthrough cycles except bounded loops</li>
+    </ul></div>
+    <div class="card accent"><h4>Policy</h4><ul>
+      <li>Gated tools unreachable before verification</li>
+      <li><code>create_promise</code> only in <code>record</code></li>
+      <li>Exactly one lifecycle <code>close_call</code> at end of call</li>
+      <li>No debt variables exposed before verification</li>
+    </ul></div>
+  </div>
+</section>
+
+<!-- ============ 15 DEPLOY ============ -->
+<section id="deploy">
+  <h2><span class="num">15</span>Deploy and run</h2>
+  <ol class="steps">
+    <li><b>Dry run</b> (<code>dryRun=true</code>). A 4xx means the platform read the workflow and refused it: write the local file and stop. Any other failure is ignored, because saving validates again.</li>
+    <li><b>Save and publish</b> into one slot per brief: create on the first run, update and publish the newest version afterwards.</li>
+    <li><b>Smoke test</b> (if more than 60 s are left): one "Hello?" over the chat API with sample variables. It fails on an error, or if the reply says "debt", "collections", "past due", "overdue" or a forbidden word before verification.</li>
+    <li><b>Export</b> from the platform; if that fails, the workflow as sent is written instead. A submission file always exists once a workflow is saved.</li>
+  </ol>
+  <div class="grid-2">
+    <div class="card"><h4>Budget and retries</h4><ul>
+      <li>30 minutes in total; 3 kept for save and export; 60 s for the smoke test.</li>
+      <li>Freya calls: at most 120 s each, cut to the time left. 5xx, 429 and dropped connections are retried with backoff 4 → 30 s; a 4xx is an answer.</li>
+      <li>Model calls: 300 s each, retried, never started with less than 20 s left.</li>
+      <li>A previous run's trace and export move to <code>runs/&lt;brief&gt;/&lt;time&gt;/</code>, never overwritten.</li>
+    </ul></div>
+    <div class="card"><h4>The trace's END line</h4><ul>
+      <li><code>ok</code>: published and the smoke test passed.</li>
+      <li><code>ok_spec_problems</code>: published with logged spec problems.</li>
+      <li>Suffixes: <code>_smoke_failed</code>, <code>_smoke_skipped</code>, <code>_export_failed</code>.</li>
+      <li>Stops: <code>spec invalid</code>, <code>generation failed</code>, <code>invalid workflow</code>, <code>dry run refused</code>.</li>
+      <li>Every model call is logged with tokens and cost; keys are redacted.</li>
+    </ul></div>
+  </div>
+</section>
+
+<!-- ============ 16 PLATFORM ============ -->
+<section id="platform">
+  <h2><span class="num">16</span>Platform facts that shaped the design</h2>
+  <p class="lead">Measured with probes on the real platform, not assumed.</p>
+  <table>
+    <thead><tr><th>Fact</th><th>Consequence</th></tr></thead>
+    <tbody>
+      <tr><td>A code node as the initial node never runs on the chat route</td><td>The opening is a conversation node; setup runs after it</td></tr>
+      <tr><td>Code variables are baked into request bodies, numbers as JSON numbers</td><td>Promise amounts and dates come from code, not from the model</td></tr>
+      <tr><td>A 500 increments <code>&lt;node&gt;_failure_count</code></td><td>Retries and service-error closes are driven by that counter</td></tr>
+      <tr><td>The lifecycle <code>close_call</code> reads code-set variables</td><td>The outcome and reason are decided in code</td></tr>
+      <tr><td>Code nodes can read the raw last message, cut-off included</td><td>"Both", refusals and cut turns are checked on the real words</td></tr>
+      <tr><td>Enum variables reject <code>''</code></td><td>Every reply enum is cleared to a real value (unclear / none / no)</td></tr>
+      <tr><td>An extraction variable keeps its old value when nothing new is said</td><td>Heard identity words are cleared after use</td></tr>
+      <tr><td>The extractor anchors dates to the real clock</td><td>Dates are parsed in code against the call's <code>now</code></td></tr>
+    </tbody>
+  </table>
+</section>
+
+<!-- ============ 17 ROBUST ============ -->
+<section id="robust">
+  <h2><span class="num">17</span>Hardening: the talkative customer</h2>
+  <p class="lead">In the "talkative" style, 45–57% of customer messages arrive cut off. Before the fixes: Brief A 7/10, Brief B 0/3. Every call was replayed step by step; each failure got a fix and a test.</p>
+  <table>
+    <thead><tr><th>Failure seen</th><th>Fix</th></tr></thead>
+    <tbody>
+      <tr><td>Cut-off small talk read as a refusal to verify</td><td><code>decline_check</code> before closing as declined</td></tr>
+      <tr><td>Identity turn cap (16) closed long calls as declined</td><td>Cap raised to 60</td></tr>
+      <tr><td>Same re-ask repeated word for word; read-back repeated in a loop</td><td>Rotating short re-asks; "Do you confirm?"</td></tr>
+      <tr><td>"All of them today?" counted as attempt one on every product</td><td>"Let us go through them one at a time."</td></tr>
+      <tr><td>A hang-up sent an empty outcome</td><td><code>close_call</code> pre-hook rebuilds it from state</td></tr>
+      <tr><td>A cut "no" used up an attempt</td><td>Cut turns without a value count nothing</td></tr>
+      <tr><td>An 80-turn call went over the code size limit</td><td>AST subset and packed library</td></tr>
+      <tr><td>"Both" missed by the extractor</td><td>Raw-word check on the last message</td></tr>
+      <tr><td>Floor offer cut off 20–30 times in a row</td><td>"Can you do that, or is another day better for you?"</td></tr>
+      <tr><td>Enums cleared to <code>''</code> rejected by the platform</td><td>Cleared to an enum value</td></tr>
+      <tr><td>"Yes, that Tuesday" read as the nearest Tuesday</td><td>Keeps the offered day</td></tr>
+      <tr><td>Sympathy and support offer repeated</td><td>One sympathy, one offer, then "Would you like that?"</td></tr>
+    </tbody>
+  </table>
+</section>
+
+<!-- ============ 18 RESULTS ============ -->
+<section id="results">
+  <h2><span class="num">18</span>Results and tests</h2>
+  <div class="grid-2">
+    <div class="card accent"><h4>Public practice set (13 customers)</h4><ul>
+      <li>Model-extracted spec, full build: <b>Brief A 10/10</b>, <b>Brief B 3/3</b>, every customer 3 of 3 runs.</li>
+      <li>Hand-written spec, same generator: the same result.</li>
+      <li>Talkative style, after the fixes: Brief B 3/3 on all three runs; Brief A 10/10, 9/10 and 5/10 (the 5/10 on a slow-model run).</li>
+      <li>Spec extraction: about 50 s and $0.15 per build.</li>
+    </ul></div>
+    <div class="card"><h4>Tests</h4><ul>
+      <li><code>tests/hack</code>: 25 files, 355 test functions (more when parametrised). Engine, policy, invariants, speech, calendar, generator, validator, spec checks, regressions from reviews.</li>
+      <li>Local harness: the real code-node snippets run against a mock bank (3-wrong-answer lock, swap hint, injected faults) and are scored with the organisers' scorer.</li>
+      <li>Unseen-brief sample (<code>tests/metamorphic/northwind</code>) checks that nothing is tied to Brief A.</li>
+    </ul></div>
+  </div>
+
+  <h3>The ideas in one list</h3>
+  <ol class="steps">
+    <li><b>Language to the model, numbers to code.</b> The model talks and classifies; code decides and writes.</li>
+    <li><b>Everything from the inputs.</b> Field names, enums, bands, lines and policy come from this brief and this API.</li>
+    <li><b>Check the model against the source.</b> Enum checks against the API, grounding against the brief, one repair round.</li>
+    <li><b>Prove the gates before publishing.</b> The validator shows no account data or bank write is reachable before identity is verified.</li>
+    <li><b>Ask, never guess.</b> An unreadable date, amount or year is asked again.</li>
+    <li><b>Ship something.</b> A logged, imperfect agent scores more than none.</li>
+  </ol>
+
+  <footer>
+    <span>BRAVE: Brief to Reliable Agent Validation Engine</span>
+    <span>Source: <code>builder/build.py</code>, <code>builder/fb/</code>, <code>tests/hack/</code></span>
+  </footer>
+</section>
+
+</main>
+</div>
+</body>
+</html>

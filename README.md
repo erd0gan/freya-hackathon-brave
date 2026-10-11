@@ -27,6 +27,9 @@ brief.md + openapi.json
   → Freya        dry run → save and publish → chat smoke test → export
 ```
 
+The whole algorithm, stage by stage with diagrams: [`docs/brave-algorithm.html`](docs/brave-algorithm.html)
+(one self-contained file; open it in a browser).
+
 ## Quick start
 
 ```bash
