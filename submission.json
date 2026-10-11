@@ -1,0 +1,13 @@
+{
+  "team": "erd0gan",
+  "members": [
+    {"name": "Burak Erdoğan", "email": "burak.erd0g4n@gmail.com"}
+  ],
+  "repo": "https://github.com/erd0gan/brave",
+  "commit": "bc307f3",
+  "run_command": "python3 builder/build.py {case_folder} {mock_url}",
+  "workflow": "submission/final.workflow.json",
+  "trace": "traces/final.log",
+  "agent_session_log": "traces/final.agent.jsonl",
+  "mock_url": "https://freyabank-statement-mock.burak-erd0g4n.workers.dev"
+}
