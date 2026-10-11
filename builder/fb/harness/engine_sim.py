@@ -58,6 +58,8 @@ def simulate(case: dict[str, Any], replies: list[dict[str, Any]], cfg: dict[str,
         if v.get("neg_action") in ("finish", "transfer"):
             break
         v.update(reply_vars(r))
+        # the customer's words, as the platform hands them to code nodes
+        v["system.conversation"] = [{"role": "user", "content": r.get("text", "")}]
         run_body(bodies.DECIDE, cfg, v, res.code_errors)
         while v.get("neg_action") == "record":
             st, out = bank.call(

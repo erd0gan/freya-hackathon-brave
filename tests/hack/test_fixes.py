@@ -5,11 +5,12 @@ import datetime
 from fb.harness.engine_sim import simulate
 from fb.nodecode import bodies
 from fb.nodecode.embed import LIB_CALENDAR, namespace, snippet
-from test_engine import CASES, CFG_A
+from test_engine import CASES, CFG, CFG_A
 
 NS = namespace()
 TODAY = datetime.date(2026, 10, 14)
 Y = {"kind": "yes"}
+N = {"kind": "no"}
 BYE = {"kind": "unclear"}
 
 
@@ -111,3 +112,33 @@ def test_unclear_after_floor_offer_does_not_repeat_it():
     r = simulate(CASES["PUB-06"], [{"kind": "too_much"}, {"kind": "unclear"}], CFG_A)
     assert "637.50" in r.says[1]
     assert r.says[2] == "Sorry, I did not catch that. Can you do that?"
+
+
+# talkative B PUB-13: "both" in the customer's words, all_products not extracted. The loan must
+# get its own latest date (23 Oct), not attempt 1 on its own.
+def test_both_in_the_words_applies_to_all_products():
+    said = (
+        "I've been so swamped with work today. I would like to pay both the credit card and the "
+        "loan on the thirtieth of October."
+    )
+    seq = [N, {"kind": "offer", "date": "the thirtieth of October", "text": said}, Y, BYE]
+    r = simulate(CASES["PUB-13"], seq, CFG)
+    rb = next(s for s in r.says if s.startswith("To confirm"))
+    assert "30 October" in rb and "23 October" in rb
+    assert r.score["pass"], (r.score["failed"], r.says)
+
+
+# talkative B PUB-12: about_product came back "p1, p2" and the date went to all three products
+def test_one_product_named_with_a_refusal_is_not_applied_to_all():
+    said = "I will pay the credit card tomorrow, but I am not paying the personal loan"
+    first = {"kind": "offer", "date": "tomorrow", "product": "p1, p2", "text": said}
+    r = simulate(CASES["PUB-12"], [first, N, N, N, Y, BYE], CFG)
+    assert r.says[1].startswith("I have noted the credit card"), r.says[1]
+    assert r.score["pass"], (r.score["failed"], r.says)
+
+
+def test_offer_with_a_refusal_and_no_product_goes_to_the_current_product_only():
+    said = "I can't pay today. I can pay tomorrow but not the loans"
+    first = {"kind": "offer", "date": "tomorrow", "text": said}
+    r = simulate(CASES["PUB-12"], [first], CFG)
+    assert not r.says[1].startswith("To confirm"), r.says[1]

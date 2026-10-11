@@ -700,7 +700,12 @@ def step(st, r, neg, cal, now, cfg):
             cfg,
             multi
             and amount is None
-            and (bool(r.get("all")) or (phase == "ask_today" and r.get("product") is None)),
+            and (
+                bool(r.get("all"))
+                # an answer to "all of them today?" that names a day and no product means all
+                # of them, unless the same message refuses something
+                or (phase == "ask_today" and r.get("product") is None and not r.get("mixed"))
+            ),
         )
         if say is None:
             say = _advance(st, neg, cal)
@@ -843,6 +848,26 @@ def answer_first(st, r):
     return st
 
 
+def last_customer_text(v):
+    """The customer's last message word for word. Code nodes get the conversation as
+    vars['system.conversation'] (a list of role/content entries, measured 11 Oct); empty
+    when it is missing (local tests)."""
+    conv = v.get("system.conversation")
+    if isinstance(conv, list):
+        for m in reversed(conv):
+            if isinstance(m, dict) and m.get("role") == "user":
+                return str(m.get("content") or "")
+    return ""
+
+
+# The customer means every product: read from the words, because the all_products extraction
+# was missed once on "I would like to pay both the credit card and the loan on the 30th".
+ALL_WORDS = re.compile(r"\b(both|all of them|all (two|three|four|five|2|3|4|5)( of them)?)\b", re.I)
+# A refusal in the same message ("the card tomorrow, but I am not paying the loan"): an offer
+# that names no product must not go to every product.
+REFUSAL_WORDS = re.compile(r"\b(not|never|refuse|won't|can't|cannot|don't)\b|n't\b", re.I)
+
+
 def read_reply(v, today):
     kind = str(v.get("reply_kind") or "").strip().lower()
     if kind not in SEMANTIC_KINDS:
@@ -861,8 +886,13 @@ def read_reply(v, today):
     if kind == "offer" and not iso and amount is None and dk == "vague":
         kind = "vague"
     prod = str(v.get("about_product") or "").strip().lower()
-    pi = int(prod[1:]) - 1 if re.fullmatch(r"p[1-9]", prod) else None
+    # "p1, p2" (seen once) is not a single product: take the first one named
+    codes = re.findall(r"p([1-9])", prod)
+    pi = int(codes[0]) - 1 if codes else None
+    raw = last_customer_text(v)
     allp = str(v.get("all_products") or "").strip().lower() in ("yes", "true", "all")
+    if raw and ALL_WORDS.search(raw):
+        allp = True
     return {
         "kind": kind,
         "amount": amount,
@@ -870,6 +900,7 @@ def read_reply(v, today):
         "date_kind": dk,
         "all": allp,
         "product": pi,
+        "mixed": bool(raw and REFUSAL_WORDS.search(raw)),
         "question": str(v.get("has_question") or "").strip().lower() in ("yes", "true"),
     }
 
