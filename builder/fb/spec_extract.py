@@ -204,6 +204,9 @@ only what one example bank used, never copy it without reading the brief):
 - vague_date_asks [1]: times to ask for the exact day after a vague answer before proposing
   the deadline.
 - floor_offers [1]: times the floor may be offered after "too much" / an amount below it.
+- product_order ["get_account"]: optional. The order products are stated and handled in:
+  "get_account" (the order the tool returns them), "days_late_desc" (most days late first) or
+  "past_due_desc" (largest past-due amount first). Set it only when the brief orders them.
 Semantic reasons/outcomes map to the exact enum values of the tool API."""
 
 PROMPT = """You turn a bank's brief into a JSON specification for a debt-collection phone agent.
@@ -220,7 +223,7 @@ Rules:
 - Sentences in "lines" are spoken to the customer: short, plain English. Where the brief gives
   exact words, use them exactly.
 - The agent states every late product before asking anything, then handles products one by one
-  in get_account order (customers can have up to three products even if the brief shows one).
+  in neg.product_order (customers can have up to three products even if the brief shows one).
 
 {policy_help}
 
@@ -616,6 +619,7 @@ ENUMS = {
     "no_promise_reason": ("first_product", "priority"),
     "record_failure_queue": ("restructuring", "human", "support"),
     "hardship_queue": ("restructuring", "human", "support"),
+    "product_order": ("get_account", "days_late_desc", "past_due_desc"),
 }
 
 

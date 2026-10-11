@@ -323,3 +323,16 @@ def test_tools_without_ok_flag_build_without_success_checks():
     assert "'note_check': False" in str(n["after_note"]) or '"note_check": false' in str(
         n["after_note"]
     )
+
+
+# a brief may order the products (most overdue first); "first_product" stays get_account order
+def test_product_order_from_the_brief():
+    pf = {"product_count": "2"}
+    for i, (due, late) in enumerate(((100, 5), (900, 30))):
+        k = f"p{i + 1}"
+        pf.update({f"{k}_id": k, f"{k}_past_due": due, f"{k}_days_late": late})
+        pf[f"{k}_deadline"] = "2026-10-30"
+    st = NS["new_state"](pf, {**CFG["neg"], "product_order": "days_late_desc"}, "2026-10-14")
+    assert [q["id"] for q in st["p"]] == ["p2", "p1"]
+    st = NS["new_state"](pf, CFG["neg"], "2026-10-14")
+    assert [q["id"] for q in st["p"]] == ["p1", "p2"]

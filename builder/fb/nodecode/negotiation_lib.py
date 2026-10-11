@@ -152,6 +152,13 @@ def new_state(pf, neg, now):
         "final_lines": [],
         "last_ask": "",
     }
+    order = str(neg.get("product_order") or "get_account")
+    for n, q in enumerate(ps):
+        q["n"] = n  # get_account order, for "first_product"
+    if order == "days_late_desc":
+        ps.sort(key=lambda q: -_num(q.get("days_late")))
+    elif order == "past_due_desc":
+        ps.sort(key=lambda q: -q["full"])
     if not ps:
         # get_account failed or gave nothing usable: no negotiation on made-up values
         st["phase"] = "closing"
@@ -241,6 +248,13 @@ def _short(st, neg):
 
 def _rest(neg):
     return _line(neg, "rest_overdue", "The rest stays overdue.")
+
+
+def _num(x):
+    try:
+        return float(x)
+    except Exception:
+        return 0.0
 
 
 def _days(p):
@@ -555,7 +569,8 @@ def _finish(st, neg):
         st["final_outcome"] = oc.get("promise", "promise")
         st["final_reason"] = ""
         return
-    left = [sem.get(q["status"], "refused") for q in st["p"] if q["status"] != "paid"]
+    by_account = sorted(st["p"], key=lambda q: q.get("n", 0))
+    left = [sem.get(q["status"], "refused") for q in by_account if q["status"] != "paid"]
     if not left:
         st["final_outcome"] = oc.get("paid", "paid")
         st["final_reason"] = ""
