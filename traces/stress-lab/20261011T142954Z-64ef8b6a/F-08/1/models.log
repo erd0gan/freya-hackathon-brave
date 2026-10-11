@@ -1,0 +1,9 @@
+14:29:54  RUN    start 2026-10-11T14:29:54Z case=F-08 engine=baseline agent_model=anthropic/claude-opus-5.5 customer_model=anthropic/claude-opus-5.5
+14:30:04  MODEL  anthropic:claude-opus-5-5  purpose: stress-agent-baseline (11s)  tokens=7199 cost=$0.0297
+14:30:08  MODEL  anthropic:claude-opus-5-5  purpose: stress-customer (3s)  tokens=314 cost=$0.0025
+14:30:11  MODEL  anthropic:claude-opus-5-5  purpose: stress-agent-baseline (3s)  tokens=7374 cost=$0.0320
+14:30:14  MODEL  anthropic:claude-opus-5-5  purpose: stress-agent-baseline (3s)  tokens=7432 cost=$0.0313
+14:30:17  MODEL  anthropic:claude-opus-5-5  purpose: stress-customer (3s)  tokens=357 cost=$0.0023
+14:30:22  MODEL  anthropic:claude-opus-5-5  purpose: stress-agent-baseline (5s)  tokens=7485 cost=$0.0313
+14:30:39  MODEL  anthropic:claude-opus-5-5  purpose: stress-judge (17s)  tokens=6938 cost=$0.0580
+14:30:39  END    end 2026-10-11T14:30:39Z duration=0m45s model_calls=7 model_cost=$0.19 status=pass

@@ -1,0 +1,153 @@
+{
+  "wrong": 0,
+  "closed": true,
+  "calls": [
+    {
+      "tool": "verify_identity",
+      "body": {
+        "customer_id": "sl-h5y5NSe5_lmXVOcn8Yz1VtccPkQ2Kiq_",
+        "field": "postcode",
+        "answer": "LT06"
+      },
+      "sequence": 1,
+      "status": 200,
+      "result": {
+        "ok": true,
+        "verified": true,
+        "wrong_answers": 0
+      }
+    },
+    {
+      "tool": "verify_identity",
+      "body": {
+        "customer_id": "sl-h5y5NSe5_lmXVOcn8Yz1VtccPkQ2Kiq_",
+        "field": "birth_year",
+        "answer": "1988"
+      },
+      "sequence": 2,
+      "status": 200,
+      "result": {
+        "ok": true,
+        "verified": true,
+        "wrong_answers": 0
+      }
+    },
+    {
+      "tool": "get_account",
+      "body": {
+        "customer_id": "sl-h5y5NSe5_lmXVOcn8Yz1VtccPkQ2Kiq_"
+      },
+      "sequence": 3,
+      "status": 200,
+      "result": {
+        "ok": true,
+        "products": [
+          {
+            "product_id": "card-r4",
+            "type": "car_loan",
+            "display_name": "car loan",
+            "past_due": 900.0,
+            "floor": 300.0,
+            "days_late": 4
+          },
+          {
+            "product_id": "loan-r4",
+            "type": "personal_loan",
+            "display_name": "personal loan",
+            "past_due": 600.0,
+            "floor": 200.0,
+            "days_late": 4
+          },
+          {
+            "product_id": "car-r4",
+            "type": "car_loan",
+            "display_name": "car loan",
+            "past_due": 450.0,
+            "floor": 150.0,
+            "days_late": 4
+          }
+        ]
+      }
+    },
+    {
+      "tool": "create_promise",
+      "body": {
+        "customer_id": "sl-h5y5NSe5_lmXVOcn8Yz1VtccPkQ2Kiq_",
+        "product_id": "loan-r4",
+        "amount": 200.0,
+        "date": "2026-10-14"
+      },
+      "sequence": 4,
+      "status": 200,
+      "result": {
+        "ok": true
+      }
+    },
+    {
+      "tool": "add_note",
+      "body": {
+        "customer_id": "sl-h5y5NSe5_lmXVOcn8Yz1VtccPkQ2Kiq_",
+        "product_id": "card-r4",
+        "reason": "F_DISPUTE"
+      },
+      "sequence": 5,
+      "status": 200,
+      "result": {
+        "ok": true
+      }
+    },
+    {
+      "tool": "add_note",
+      "body": {
+        "customer_id": "sl-h5y5NSe5_lmXVOcn8Yz1VtccPkQ2Kiq_",
+        "product_id": "car-r4",
+        "reason": "F_DISPUTE"
+      },
+      "sequence": 6,
+      "status": 200,
+      "result": {
+        "ok": true
+      }
+    },
+    {
+      "tool": "close_call",
+      "body": {
+        "customer_id": "sl-h5y5NSe5_lmXVOcn8Yz1VtccPkQ2Kiq_",
+        "outcome": "F_PTP"
+      },
+      "sequence": 7,
+      "status": 200,
+      "result": {
+        "ok": true
+      }
+    }
+  ],
+  "promises": [
+    {
+      "product_id": "loan-r4",
+      "amount": "200.00",
+      "date": "2026-10-14"
+    }
+  ],
+  "notes": [
+    {
+      "product_id": "card-r4",
+      "reason": "F_DISPUTE"
+    },
+    {
+      "product_id": "car-r4",
+      "reason": "F_DISPUTE"
+    }
+  ],
+  "callbacks": [],
+  "transfers": [],
+  "claims": [],
+  "inspections": [],
+  "rentals": [],
+  "endorsements": [],
+  "renewals": [],
+  "close": {
+    "outcome": "F_PTP"
+  },
+  "now": "2026-10-14T11:00:00"
+}

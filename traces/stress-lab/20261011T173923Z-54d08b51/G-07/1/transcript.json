@@ -1,0 +1,81 @@
+[
+  {
+    "role": "customer",
+    "content": "Hello?"
+  },
+  {
+    "role": "agent",
+    "content": "Hello, I am Cedar Insurance's digital assistant. This call is recorded. Am I speaking with Mx Alex Rowan?",
+    "after_tool_sequence": 0
+  },
+  {
+    "role": "customer",
+    "content": "Yes, this is Alex Rowan speaking.",
+    "after_tool_sequence": 0
+  },
+  {
+    "role": "agent",
+    "content": "Before we continue, I need to confirm your identity. Could you please tell me your policyholder code?",
+    "after_tool_sequence": 0
+  },
+  {
+    "role": "customer",
+    "content": "Sure, it's zero zero zero eight one nine.",
+    "after_tool_sequence": 0
+  },
+  {
+    "role": "agent",
+    "content": "Thank you. Could you please tell me your postcode?",
+    "after_tool_sequence": 1
+  },
+  {
+    "role": "customer",
+    "content": "It's C D zero nine.",
+    "after_tool_sequence": 1
+  },
+  {
+    "role": "agent",
+    "content": "Thank you. I am calling about overdue insurance premiums. Your motor premium has 480.00 past due and is 3 days late. Can you pay the full overdue amount today?",
+    "after_tool_sequence": 3
+  },
+  {
+    "role": "customer",
+    "content": "Four hundred and eighty is too much for me right now, I'm afraid.",
+    "after_tool_sequence": 3
+  },
+  {
+    "role": "agent",
+    "content": "The minimum for the motor premium is 160.00. Could you pay 160.00 on Wednesday 14 October 2026? The remaining balance stays overdue.",
+    "after_tool_sequence": 3
+  },
+  {
+    "role": "customer",
+    "content": "I could manage the one hundred and sixty, but could I pay it on October fifteenth instead of today? And would that clear everything?",
+    "after_tool_sequence": 3
+  },
+  {
+    "role": "agent",
+    "content": "No, this will not clear everything. To confirm: the motor premium, 160.00 on Thursday 15 October 2026. Do you confirm this?",
+    "after_tool_sequence": 3
+  },
+  {
+    "role": "customer",
+    "content": "I understand the rest stays overdue. Yes, I confirm.",
+    "after_tool_sequence": 3
+  },
+  {
+    "role": "agent",
+    "content": "Your promise is recorded: the motor premium, 160.00 on Thursday 15 October 2026. A premium-promise receipt will be placed in the secure inbox. Is there anything else I can help you with?",
+    "after_tool_sequence": 4
+  },
+  {
+    "role": "customer",
+    "content": "No, that's everything, thank you for your help. Goodbye.",
+    "after_tool_sequence": 4
+  },
+  {
+    "role": "agent",
+    "content": "Thank you for your time. Goodbye.",
+    "after_tool_sequence": 4
+  }
+]

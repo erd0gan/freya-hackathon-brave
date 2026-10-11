@@ -1,0 +1,48 @@
+{
+  "wrong": 0,
+  "closed": true,
+  "calls": [
+    {
+      "tool": "verify_identity",
+      "body": {
+        "field": "postcode",
+        "answer": "0073",
+        "customer_id": "sl-cKhsx13Nr60JC_ux3_7CBfOVCqzjnV8C"
+      },
+      "sequence": 1,
+      "status": 200,
+      "result": {
+        "ok": true,
+        "verified": true,
+        "wrong_answers": 0
+      }
+    },
+    {
+      "tool": "close_call",
+      "body": {
+        "reason": "C_DECLINED",
+        "outcome": "C_NO_ID",
+        "customer_id": "sl-cKhsx13Nr60JC_ux3_7CBfOVCqzjnV8C"
+      },
+      "sequence": 2,
+      "status": 200,
+      "result": {
+        "ok": true
+      }
+    }
+  ],
+  "promises": [],
+  "notes": [],
+  "callbacks": [],
+  "transfers": [],
+  "claims": [],
+  "inspections": [],
+  "rentals": [],
+  "endorsements": [],
+  "renewals": [],
+  "close": {
+    "reason": "C_DECLINED",
+    "outcome": "C_NO_ID"
+  },
+  "now": "2026-10-14T11:00:00"
+}

@@ -1,0 +1,81 @@
+[
+  {
+    "role": "customer",
+    "content": "Hello?"
+  },
+  {
+    "role": "agent",
+    "content": "Hello, I am Alder Credit's digital assistant. This call is recorded. Am I speaking with Mx Kendall Grove?",
+    "after_tool_sequence": 0
+  },
+  {
+    "role": "customer",
+    "content": "Yes, this is Kendall Grove speaking.",
+    "after_tool_sequence": 0
+  },
+  {
+    "role": "agent",
+    "content": "Before we continue, I need to ask two short security questions. What is your postcode?",
+    "after_tool_sequence": 0
+  },
+  {
+    "role": "customer",
+    "content": "My current postcode is ZX21, though I moved recently, so I'm not sure whether you still have my old address on file.",
+    "after_tool_sequence": 0
+  },
+  {
+    "role": "agent",
+    "content": "That answer is not correct. Could you please tell me your postcode again?",
+    "after_tool_sequence": 1
+  },
+  {
+    "role": "customer",
+    "content": "In that case, you might still have my old address. My previous postcode was AB07.",
+    "after_tool_sequence": 1
+  },
+  {
+    "role": "agent",
+    "content": "Thank you. What is your year of birth?",
+    "after_tool_sequence": 2
+  },
+  {
+    "role": "customer",
+    "content": "It's 1988.",
+    "after_tool_sequence": 2
+  },
+  {
+    "role": "agent",
+    "content": "Thank you. I am calling about overdue payments on your account. Your credit card has 900.00 past due and is 4 days late. Can you pay the full past-due amount today?",
+    "after_tool_sequence": 4
+  },
+  {
+    "role": "customer",
+    "content": "I can't do it today, I'm afraid, but I can pay the full 900 on October fifteenth, which is tomorrow.",
+    "after_tool_sequence": 4
+  },
+  {
+    "role": "agent",
+    "content": "To confirm: the credit card, 900.00 on Thursday 15 October 2026. Do you confirm this?",
+    "after_tool_sequence": 4
+  },
+  {
+    "role": "customer",
+    "content": "Yes, I confirm: 900 pounds on the credit card on Thursday the 15th of October.",
+    "after_tool_sequence": 4
+  },
+  {
+    "role": "agent",
+    "content": "Your promise is recorded: the credit card, 900.00 on Thursday 15 October 2026. A letter confirming the promise will be sent. Is there anything else I can help you with?",
+    "after_tool_sequence": 5
+  },
+  {
+    "role": "customer",
+    "content": "No, that's everything, thanks. Just note that I've moved to ZX21, so I'd want the letter to go to my new address rather than the old one.",
+    "after_tool_sequence": 5
+  },
+  {
+    "role": "agent",
+    "content": "Thank you for your time. Goodbye.",
+    "after_tool_sequence": 5
+  }
+]

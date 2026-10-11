@@ -1,0 +1,61 @@
+[
+  {
+    "role": "customer",
+    "content": "Hello?"
+  },
+  {
+    "role": "agent",
+    "content": "Hello, I am Vector Bank's digital assistant. This call is recorded. Am I speaking with Mx Alex Rowan?",
+    "after_tool_sequence": 0
+  },
+  {
+    "role": "customer",
+    "content": "Yes, this is Alex Rowan speaking.",
+    "after_tool_sequence": 0
+  },
+  {
+    "role": "agent",
+    "content": "Before we continue, I need to ask you two security questions. Could you please tell me your member code?",
+    "after_tool_sequence": 0
+  },
+  {
+    "role": "customer",
+    "content": "Sure, my member code is zero zero four two seven one.",
+    "after_tool_sequence": 0
+  },
+  {
+    "role": "agent",
+    "content": "I'm sorry, that answer is not correct. Could you please tell me your member code again?",
+    "after_tool_sequence": 1
+  },
+  {
+    "role": "customer",
+    "content": "Oh, are you sure? I have it as zero zero four two seven one, so let me say it again slowly: zero, zero, four, two, seven, one.",
+    "after_tool_sequence": 1
+  },
+  {
+    "role": "agent",
+    "content": "I'm sorry, that answer is not correct. Could you please tell me your member code again?",
+    "after_tool_sequence": 2
+  },
+  {
+    "role": "customer",
+    "content": "That's strange, zero zero four two seven one is the only member code I have. Could you check your records, or would it help to verify me with my birth year instead?",
+    "after_tool_sequence": 2
+  },
+  {
+    "role": "agent",
+    "content": "I'm sorry, that answer is not correct. Could you please tell me your member code again?",
+    "after_tool_sequence": 2
+  },
+  {
+    "role": "customer",
+    "content": "I've given you the same code three times now, zero zero four two seven one, and I don't have any other. Can you verify me another way, or transfer me to someone who can help?",
+    "after_tool_sequence": 2
+  },
+  {
+    "role": "agent",
+    "content": "I am transferring you to a colleague now. Thank you for your time. Goodbye.",
+    "after_tool_sequence": 4
+  }
+]

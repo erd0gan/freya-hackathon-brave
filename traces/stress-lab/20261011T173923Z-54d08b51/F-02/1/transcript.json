@@ -1,0 +1,51 @@
+[
+  {
+    "role": "customer",
+    "content": "Hello?"
+  },
+  {
+    "role": "agent",
+    "content": "Hello, I am Lattice Bank's digital assistant. This call is recorded. Am I speaking with Mx Alex Rowan?",
+    "after_tool_sequence": 0
+  },
+  {
+    "role": "customer",
+    "content": "Yes, this is Alex Rowan speaking.",
+    "after_tool_sequence": 0
+  },
+  {
+    "role": "agent",
+    "content": "First, I need to confirm your identity. What is your postcode?",
+    "after_tool_sequence": 0
+  },
+  {
+    "role": "customer",
+    "content": "Sure, my postcode is LT06.",
+    "after_tool_sequence": 0
+  },
+  {
+    "role": "agent",
+    "content": "What is your year of birth?",
+    "after_tool_sequence": 1
+  },
+  {
+    "role": "customer",
+    "content": "It's 1988.",
+    "after_tool_sequence": 1
+  },
+  {
+    "role": "agent",
+    "content": "Thank you. I am calling about overdue payments on your account. Your credit card has 900.00 past due and is 4 days late. Your personal loan has 600.00 past due and is 4 days late. Can you pay the full overdue amount for all of these today?",
+    "after_tool_sequence": 3
+  },
+  {
+    "role": "customer",
+    "content": "I can't pay all of that today, I'm afraid, because I lost my job yesterday. But I could pay three hundred on the card today.",
+    "after_tool_sequence": 3
+  },
+  {
+    "role": "agent",
+    "content": "I am very sorry to hear that. I am connecting you with a colleague now. Thank you for your time. Goodbye.",
+    "after_tool_sequence": 6
+  }
+]

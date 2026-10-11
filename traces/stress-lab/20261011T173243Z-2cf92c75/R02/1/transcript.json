@@ -1,0 +1,51 @@
+[
+  {
+    "role": "customer",
+    "content": "Hello?"
+  },
+  {
+    "role": "agent",
+    "content": "Hello, I am Meridian Bank's digital assistant. This call is recorded. Am I speaking with Mx Morgan Vale?",
+    "after_tool_sequence": 0
+  },
+  {
+    "role": "customer",
+    "content": "Before I confirm anything, can you tell me exactly who's calling and what this is about? And how can I verify this call is really from Meridian Bank independently?",
+    "after_tool_sequence": 0
+  },
+  {
+    "role": "agent",
+    "content": "I am Meridian Bank's digital assistant calling regarding your account, and you can verify this by calling the number on the back of your bank card. Am I speaking with Mx Morgan Vale?",
+    "after_tool_sequence": 0
+  },
+  {
+    "role": "customer",
+    "content": "Yes, this is Morgan. But I wasn't expecting this call, so I won't share any personal or security details. If it's about my account, I'd rather call that number on my card myself.",
+    "after_tool_sequence": 0
+  },
+  {
+    "role": "agent",
+    "content": "First, I need to confirm your identity. What is your postcode?",
+    "after_tool_sequence": 0
+  },
+  {
+    "role": "customer",
+    "content": "I'm sorry, but I don't give out my postcode or any security details on calls I wasn't expecting. I'll call the number on the back of my card if there's something I need to deal with.",
+    "after_tool_sequence": 0
+  },
+  {
+    "role": "agent",
+    "content": "I understand your caution. I need to confirm your identity to protect your privacy before we can continue. \n What is your postcode?",
+    "after_tool_sequence": 0
+  },
+  {
+    "role": "customer",
+    "content": "I understand, but I'm still not comfortable sharing that on a call I didn't expect. I'll ring the number on my card myself. Thanks, goodbye.",
+    "after_tool_sequence": 0
+  },
+  {
+    "role": "agent",
+    "content": "Thank you for your time. Goodbye.",
+    "after_tool_sequence": 0
+  }
+]

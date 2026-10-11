@@ -1,0 +1,15 @@
+{
+  "record_status": "pass",
+  "failures": [],
+  "conversation_status": "not_reviewed",
+  "overall_status": "unassessed",
+  "review_error": "model call failed after 1 attempts: HTTPError: HTTP Error 400: Bad Request {\"type\":\"error\",\"error\":{\"type\":\"invalid_request_error\",\"message\":\"messages: at least one message is required\"},\"request_id\":\"req_011CfvcEphfiLwqk3GMpX1By\"}",
+  "case_id": "F-08",
+  "engine": "baseline",
+  "official": false,
+  "audio_tested": false,
+  "error": null,
+  "freya_call_id": null,
+  "reported_model_cost_usd": 0.129864,
+  "model_calls": 6
+}

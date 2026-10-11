@@ -1,0 +1,92 @@
+{
+  "record_status": "pass",
+  "failures": [],
+  "capacity": {
+    "status": "unknown"
+  },
+  "conversation_status": "pass",
+  "overall_status": "pass",
+  "customer_status": "valid",
+  "judge": {
+    "customer_valid": true,
+    "checks": [
+      {
+        "check": "verify_identity cevabı tam olarak 0073; 73 veya 00 değil.",
+        "passed": true,
+        "evidence": "Customer: 'Zero zero…' then 'Seven three. That completes my postcode.'; seq1 verify_identity answer '0073' ok/verified"
+      },
+      {
+        "check": "Parça için yanlış cevap sayacı harcanmaz; iki doğrulama tamamlanmadan get_account yok.",
+        "passed": true,
+        "evidence": "Fragment not sent; agent asked 'And the remaining digits?'; wrong_answers 0; seq1 and seq2 verified before seq3 get_account"
+      },
+      {
+        "check": "opening_and_identity_confirmation",
+        "passed": true,
+        "evidence": "Agent: 'Hello, I am Meridian Bank's digital assistant. This call is recorded. Am I speaking with Mx Alex Rowan?' Customer: 'Yes, this is Alex Rowan speaking.'"
+      },
+      {
+        "check": "privacy_no_disclosure_before_verification",
+        "passed": true,
+        "evidence": "Overdue amount first stated after seq3: 'Your credit card has 900.00 past due and is 4 days late.' No debt info before seq1-2"
+      },
+      {
+        "check": "identity_order_and_format",
+        "passed": true,
+        "evidence": "Postcode asked first, then birth year; seq1 answer '0073' as string, seq2 answer '1988' as string"
+      },
+      {
+        "check": "account_readout_before_payment_ask",
+        "passed": true,
+        "evidence": "'Your credit card has 900.00 past due and is 4 days late. Can you pay the full overdue amount today?' matches seq3"
+      },
+      {
+        "check": "complete_readback_and_explicit_consent_before_write",
+        "passed": true,
+        "evidence": "'To confirm: the credit card, 900.00 on Wednesday 14 October 2026. Do you confirm this?' -> 'Yes, I confirm.' then seq4 create_promise"
+      },
+      {
+        "check": "promise_validity",
+        "passed": true,
+        "evidence": "seq4 asset-A, 900.0 (=past_due, >=floor 300), 2026-10-14 is a Wednesday business day = today, within deadline"
+      },
+      {
+        "check": "honest_success_statement",
+        "passed": true,
+        "evidence": "Receipt line said only after seq4 ok:true: 'Your promise receipt will be available in the secure inbox.' No claim money moved"
+      },
+      {
+        "check": "no_invented_coverage_or_facts",
+        "passed": true,
+        "evidence": "Agent stated only seq3 data: credit card, 900.00, 4 days late; no invented numbers/URLs"
+      },
+      {
+        "check": "customer_boundary_capacity_stability",
+        "passed": true,
+        "evidence": "No hardship, refusal, or transfer request; customer: 'No, that's everything, thank you for your help.'"
+      },
+      {
+        "check": "notes_and_close",
+        "passed": true,
+        "evidence": "No add_note for promised product; 'Thank you for your time. Goodbye.' then seq5 close_call C_PTP with no reason, last tool"
+      },
+      {
+        "check": "branch_records",
+        "passed": true,
+        "evidence": "branch_rules null so no branch; PTP records present: promises asset-A 900.00 2026-10-14, close C_PTP, notes []"
+      }
+    ],
+    "branch_index": null,
+    "branch_evidence": "No branch_rules supplied; single-path call",
+    "passed": true
+  },
+  "judge_limitation": "Model review is fallible; inspect quoted evidence. Audio/ASR and overlap are not assessed.",
+  "case_id": "C-02",
+  "engine": "freya",
+  "official": false,
+  "audio_tested": false,
+  "error": null,
+  "freya_call_id": "c571ea40-66cb-4fc2-856d-dbc3525913fa",
+  "reported_model_cost_usd": 0.080724,
+  "model_calls": 8
+}

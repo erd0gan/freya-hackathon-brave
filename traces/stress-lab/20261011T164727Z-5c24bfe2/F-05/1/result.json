@@ -1,0 +1,97 @@
+{
+  "record_status": "pass",
+  "failures": [],
+  "capacity": {
+    "status": "unknown"
+  },
+  "conversation_status": "fail",
+  "overall_status": "fail",
+  "customer_status": "valid",
+  "judge": {
+    "customer_valid": true,
+    "checks": [
+      {
+        "check": "Her ürüne 900 yazılıp toplam 2700 oluşturulmaz.",
+        "passed": true,
+        "evidence": "Ledger seq 4-6 each amount 300.0 for asset-A/B/C; total 900, not 2700."
+      },
+      {
+        "check": "Dağılım kullanıcıdan gelir; her floor ayrı kontrol edilir.",
+        "passed": false,
+        "evidence": "Agent never asked how to split 900 and assigned it all to one product itself: 'I have noted the credit card for 900.00 on Wednesday 14 October 2026.'"
+      },
+      {
+        "check": "floors_per_product",
+        "passed": true,
+        "evidence": "Final 300/300/300 meets floors 300/200/150 (get_account seq 3)."
+      },
+      {
+        "check": "privacy_before_verification",
+        "passed": true,
+        "evidence": "Debt details were disclosed only after seq 1-2 returned verified=true: 'Your credit card has 900.00 past due...' after_tool_sequence 3."
+      },
+      {
+        "check": "identity_flow",
+        "passed": true,
+        "evidence": "Postcode and birth year asked separately; seq1 'LT06' and seq2 '1988' sent as strings, both verified."
+      },
+      {
+        "check": "handles_corrections",
+        "passed": false,
+        "evidence": "After 'three hundred to each product today', agent read back 'credit card, 900.00... car loan, 450.00' twice, then said 'I did not catch the amount' twice."
+      },
+      {
+        "check": "no_persuasion_on_specific_counteroffer",
+        "passed": false,
+        "evidence": "Customer offered a split, yet agent asked 'Could you pay 600.00 for the personal loan on Thursday 15 October 2026?' and the same for the car loan at 450.00."
+      },
+      {
+        "check": "complete_readback_and_consent_before_writes",
+        "passed": true,
+        "evidence": "Final read-back of 300.00 x3 on 14 Oct, then 'Yes, I confirm those three promises.' Writes followed at seq 4-6."
+      },
+      {
+        "check": "conditional_not_treated_as_consent",
+        "passed": true,
+        "evidence": "'Once you read it back that way, I'll confirm' did not lead to any write; no create_promise before seq 4."
+      },
+      {
+        "check": "honest_success_statements",
+        "passed": true,
+        "evidence": "'Your promise has been saved in your customer portal.' was said after seq 4-6 returned ok=true."
+      },
+      {
+        "check": "no_invented_coverage",
+        "passed": true,
+        "evidence": "No coverage, waiver or instalment plan was mentioned anywhere in the transcript."
+      },
+      {
+        "check": "close_disposition",
+        "passed": true,
+        "evidence": "Seq 7 close_call outcome F_PTP, the last tool, after 'Thank you for your time. Goodbye.' No notes were needed because all products have promises."
+      },
+      {
+        "check": "customer_boundary_stability",
+        "passed": true,
+        "evidence": "Customer consistently held to 300 each, 900 total: 'It needs to be three hundred each... nine hundred in total.'"
+      },
+      {
+        "check": "branch_records",
+        "passed": true,
+        "evidence": "Not a branching pilot (branch_rules null). Ledger promises match confirmed 300.00 x3 on 2026-10-14."
+      }
+    ],
+    "branch_index": null,
+    "branch_evidence": "branch_rules null; not a branching pilot",
+    "passed": false
+  },
+  "judge_limitation": "Model review is fallible; inspect quoted evidence. Audio/ASR and overlap are not assessed.",
+  "case_id": "F-05",
+  "engine": "freya",
+  "official": false,
+  "audio_tested": false,
+  "error": null,
+  "freya_call_id": "f628009b-f36d-4d9e-8fa0-1d25640d0cdd",
+  "reported_model_cost_usd": 0.130976,
+  "model_calls": 15
+}

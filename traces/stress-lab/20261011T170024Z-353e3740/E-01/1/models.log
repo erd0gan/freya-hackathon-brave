@@ -1,0 +1,5 @@
+17:00:25  RUN    start 2026-10-11T17:00:25Z case=E-01 engine=freya agent_model=Freya configured workflow customer_model=anthropic/claude-opus-5.5
+17:00:30  MODEL  anthropic:claude-opus-5-5  purpose: stress-customer (2s)  tokens=293 cost=$0.0018
+17:00:34  MODEL  anthropic:claude-opus-5-5  purpose: stress-customer (attempt 1)  FAILED after 1.5s: error body: empty reply: {"model": "claude-opus-5-5", "id": "msg_011Cfvoo4nR3j7RBV9qZBGru", "type": "message", "role": "assistant", "content": [], "container": null, "stop_reason": "refusal", "stop_sequence": null, "stop_deta
+17:00:36  MODEL  anthropic/claude-opus-5.5  purpose: stress-customer (attempt 2)  FAILED after 2.1s: error body: empty reply: {"id": "gen-1791738034-MAEf69FMwnU6n3uouofr", "object": "chat.completion", "created": 1791738034, "model": "anthropic/claude-opus-5.5", "provider": "Claude Platform on AWS", "system_fingerprint": null
+17:00:51  END    end 2026-10-11T17:00:51Z duration=0m25s model_calls=1 model_cost=$0.00 model_failures=2 status=error

@@ -1,0 +1,71 @@
+[
+  {
+    "role": "customer",
+    "content": "Hello?"
+  },
+  {
+    "role": "agent",
+    "content": "Hello, I am Cedar Insurance's digital assistant. This call is recorded. Am I speaking with Mx Alex Rowan?",
+    "after_tool_sequence": 0
+  },
+  {
+    "role": "customer",
+    "content": "Yes, this is Alex Rowan speaking.",
+    "after_tool_sequence": 0
+  },
+  {
+    "role": "agent",
+    "content": "Before we continue, I need to confirm your identity. Could you please tell me your policyholder code?",
+    "after_tool_sequence": 0
+  },
+  {
+    "role": "customer",
+    "content": "Sure, my policyholder code is 000819.",
+    "after_tool_sequence": 0
+  },
+  {
+    "role": "agent",
+    "content": "Thank you. Could you please tell me your postcode?",
+    "after_tool_sequence": 1
+  },
+  {
+    "role": "customer",
+    "content": "It's CD09.",
+    "after_tool_sequence": 1
+  },
+  {
+    "role": "agent",
+    "content": "Thank you. I am calling about overdue insurance premiums. Your motor premium has 480.00 past due and is 3 days late. Your home premium has 360.00 past due and is 4 days late. Your health premium has 720.00 past due and is 8 days late. Can you pay the full overdue amount for all of them today?",
+    "after_tool_sequence": 3
+  },
+  {
+    "role": "customer",
+    "content": "I actually paid the motor arrears yesterday, and the home premium isn't mine. I'll pay the health premium today, though.",
+    "after_tool_sequence": 3
+  },
+  {
+    "role": "agent",
+    "content": "Thank you for letting me know. Posting may take two business days. I have noted that. To confirm: the health premium, 720.00 on Wednesday 14 October 2026. Do you confirm this?",
+    "after_tool_sequence": 3
+  },
+  {
+    "role": "customer",
+    "content": "Yes, I confirm the health premium only.",
+    "after_tool_sequence": 3
+  },
+  {
+    "role": "agent",
+    "content": "Your promise is recorded: the health premium, 720.00 on Wednesday 14 October 2026. A premium-promise receipt will be placed in the secure inbox. Is there anything else I can help you with?",
+    "after_tool_sequence": 4
+  },
+  {
+    "role": "customer",
+    "content": "No, that's everything, thanks for your help. Goodbye.",
+    "after_tool_sequence": 4
+  },
+  {
+    "role": "agent",
+    "content": "Thank you for your time. Goodbye.",
+    "after_tool_sequence": 6
+  }
+]

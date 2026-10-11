@@ -1,0 +1,102 @@
+{
+  "wrong": 0,
+  "closed": true,
+  "calls": [
+    {
+      "tool": "verify_identity",
+      "body": {
+        "field": "postcode",
+        "answer": "AB07",
+        "customer_id": "sl-huxwN1uCto-hxYs1AHSHSsMZqR1TkSUq"
+      },
+      "sequence": 1,
+      "status": 200,
+      "result": {
+        "ok": true,
+        "verified": true,
+        "wrong_answers": 0
+      }
+    },
+    {
+      "tool": "verify_identity",
+      "body": {
+        "field": "birth_year",
+        "answer": "1988",
+        "customer_id": "sl-huxwN1uCto-hxYs1AHSHSsMZqR1TkSUq"
+      },
+      "sequence": 2,
+      "status": 200,
+      "result": {
+        "ok": true,
+        "verified": true,
+        "wrong_answers": 0
+      }
+    },
+    {
+      "tool": "get_account",
+      "body": {
+        "customer_id": "sl-huxwN1uCto-hxYs1AHSHSsMZqR1TkSUq"
+      },
+      "sequence": 3,
+      "status": 200,
+      "result": {
+        "ok": true,
+        "products": [
+          {
+            "product_id": "loan-r17",
+            "type": "personal_loan",
+            "display_name": "personal loan",
+            "past_due": 900.0,
+            "floor": 300.0,
+            "days_late": 16
+          }
+        ]
+      }
+    },
+    {
+      "tool": "add_note",
+      "body": {
+        "reason": "D_REFUSED",
+        "product_id": "loan-r17",
+        "customer_id": "sl-huxwN1uCto-hxYs1AHSHSsMZqR1TkSUq"
+      },
+      "sequence": 4,
+      "status": 200,
+      "result": {
+        "ok": true
+      }
+    },
+    {
+      "tool": "close_call",
+      "body": {
+        "reason": "D_REFUSED",
+        "outcome": "D_NO_PTP",
+        "customer_id": "sl-huxwN1uCto-hxYs1AHSHSsMZqR1TkSUq"
+      },
+      "sequence": 5,
+      "status": 200,
+      "result": {
+        "ok": true
+      }
+    }
+  ],
+  "promises": [],
+  "notes": [
+    {
+      "product_id": "loan-r17",
+      "reason": "D_REFUSED"
+    }
+  ],
+  "callbacks": [],
+  "transfers": [],
+  "claims": [],
+  "inspections": [],
+  "rentals": [],
+  "endorsements": [],
+  "renewals": [],
+  "close": {
+    "reason": "D_REFUSED",
+    "outcome": "D_NO_PTP"
+  },
+  "now": "2026-10-14T11:00:00"
+}

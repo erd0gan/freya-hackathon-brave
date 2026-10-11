@@ -1,0 +1,71 @@
+[
+  {
+    "role": "customer",
+    "content": "Hello?"
+  },
+  {
+    "role": "agent",
+    "content": "Hello, I am Alder Credit's digital assistant. This call is recorded. Am I speaking with Mx Alex Rowan?",
+    "after_tool_sequence": 0
+  },
+  {
+    "role": "customer",
+    "content": "Yes, this is Alex Rowan speaking.",
+    "after_tool_sequence": 0
+  },
+  {
+    "role": "agent",
+    "content": "Before we continue, I need to ask you two security questions. Could you please tell me your postcode?",
+    "after_tool_sequence": 0
+  },
+  {
+    "role": "customer",
+    "content": "Sure, my postcode is AB07.",
+    "after_tool_sequence": 0
+  },
+  {
+    "role": "agent",
+    "content": "And what is your year of birth?",
+    "after_tool_sequence": 1
+  },
+  {
+    "role": "customer",
+    "content": "I was born in 1988.",
+    "after_tool_sequence": 1
+  },
+  {
+    "role": "agent",
+    "content": "Thank you. I am calling about overdue payments. Your credit card has 900.00 past due and is 4 days late. Your personal loan has 600.00 past due and is 4 days late. Can you pay the full past-due amounts for all of these today?",
+    "after_tool_sequence": 3
+  },
+  {
+    "role": "customer",
+    "content": "I can't pay it all today, and actually that credit card isn't mine. I could pay six hundred on the loan tomorrow, though.",
+    "after_tool_sequence": 3
+  },
+  {
+    "role": "agent",
+    "content": "I have noted the personal loan for 600.00 on Thursday 15 October 2026. Could you pay 900.00 for the credit card on Thursday 15 October 2026?",
+    "after_tool_sequence": 3
+  },
+  {
+    "role": "customer",
+    "content": "No, I won't be paying anything on that credit card because it isn't mine, and I'd like that looked into. The six hundred on the loan tomorrow is what I can do.",
+    "after_tool_sequence": 3
+  },
+  {
+    "role": "agent",
+    "content": "I have noted that. To confirm: the personal loan, 600.00 on Thursday 15 October 2026. Do you confirm this?",
+    "after_tool_sequence": 3
+  },
+  {
+    "role": "customer",
+    "content": "Before I confirm, I'd actually like to set up a new instalment plan instead. Can we talk about that?",
+    "after_tool_sequence": 3
+  },
+  {
+    "role": "agent",
+    "content": "I am connecting you with a colleague now. Thank you for your time. Goodbye.",
+    "after_tool_sequence": 5
+  }
+]

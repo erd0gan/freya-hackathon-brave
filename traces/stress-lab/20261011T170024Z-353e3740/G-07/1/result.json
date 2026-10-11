@@ -1,0 +1,91 @@
+{
+  "record_status": "fail",
+  "failures": [
+    "Closing outcome: expected G_PTP, got G_NO_ID",
+    "Closing reason: expected None, got G_FAILED",
+    "promises: expected [{'product_id': 'policy-A', 'amount': '160.00', 'date': '2026-10-15'}], got []"
+  ],
+  "capacity": {
+    "status": "unknown"
+  },
+  "conversation_status": "fail",
+  "overall_status": "fail",
+  "customer_status": "valid",
+  "judge": {
+    "customer_valid": true,
+    "checks": [
+      {
+        "check": "Kalan 320'nin borç olarak kalacağı açıklanır; tahsil edildi denmez.",
+        "passed": false,
+        "evidence": "No account discussion: agent ended at seq 2 with 'I could not verify your identity'; no remaining-balance explanation exists."
+      },
+      {
+        "check": "Tek taban teklifi, geçerli tarih ve kesin onay.",
+        "passed": false,
+        "evidence": "No floor offer, date or confirmation; ledger promises: [] and the call closed G_NO_ID at seq 3."
+      },
+      {
+        "check": "identity_code_normalization",
+        "passed": false,
+        "evidence": "Customer said 'zero zero zero eight one nine' (000819); seq1 sent answer 'zero zero zero eight one nine', not '000819'."
+      },
+      {
+        "check": "wrong_answer_attribution",
+        "passed": false,
+        "evidence": "The correct code was spoken twice; seq2 sent 'zero, zero, zero, eight, one, nine' and got wrong_answers 2, causing a false NO_ID."
+      },
+      {
+        "check": "honest_statements",
+        "passed": false,
+        "evidence": "Agent said 'That answer is not correct' after its own encoding error. The customer's code matched 000819."
+      },
+      {
+        "check": "opening_and_identity_confirmation",
+        "passed": true,
+        "evidence": "'Hello, I am Cedar Insurance's digital assistant. This call is recorded. Am I speaking with Mx Alex Rowan?' / 'Yes, this is Alex Rowan speaking.'"
+      },
+      {
+        "check": "privacy_no_disclosure_before_verification",
+        "passed": true,
+        "evidence": "Agent turns mention only security questions and the statement channel; no arrears, amount, product or coverage was disclosed."
+      },
+      {
+        "check": "consent_before_writes",
+        "passed": true,
+        "evidence": "Ledger has only verify_identity at seq 1 and 2 and close_call at seq 3; no promise or note writes occurred without consent."
+      },
+      {
+        "check": "no_invented_contact_or_coverage",
+        "passed": true,
+        "evidence": "'Please contact us through the official contact channel on your statement.' No number, URL or coverage claim was given."
+      },
+      {
+        "check": "close_call_last_with_farewell",
+        "passed": true,
+        "evidence": "'Thank you for your time. Goodbye.' preceded close_call seq 3 {outcome:G_NO_ID, reason:G_FAILED}, the last tool."
+      },
+      {
+        "check": "customer_boundary_capacity_stability",
+        "passed": true,
+        "evidence": "Customer answered consistently: 'It's zero, zero, zero, eight, one, nine.' No refusal or capacity issue arose."
+      },
+      {
+        "check": "branch_records",
+        "passed": true,
+        "evidence": "branch_rules null, so no branch records are required; ledger promises/notes/transfers are all []."
+      }
+    ],
+    "branch_index": null,
+    "branch_evidence": "branch_rules null; not a branching pilot.",
+    "passed": false
+  },
+  "judge_limitation": "Model review is fallible; inspect quoted evidence. Audio/ASR and overlap are not assessed.",
+  "case_id": "G-07",
+  "engine": "freya",
+  "official": false,
+  "audio_tested": false,
+  "error": null,
+  "freya_call_id": "e857903c-32dd-4fc9-991d-bab456e4587b",
+  "reported_model_cost_usd": 0.059468,
+  "model_calls": 4
+}

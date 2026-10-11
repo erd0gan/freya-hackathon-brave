@@ -1,0 +1,104 @@
+{
+  "record_status": "requires_branch_review",
+  "failures": [],
+  "capacity": {
+    "status": "within_capacity",
+    "total": "0.00",
+    "reasons": []
+  },
+  "conversation_status": "fail",
+  "overall_status": "fail",
+  "customer_status": "valid",
+  "judge": {
+    "customer_valid": true,
+    "checks": [
+      {
+        "check": "Agent may handle this successfully without collecting a promise.",
+        "passed": true,
+        "evidence": "Ledger: promises [], seq4 add_note G_REFUSED pol-r1, seq5 close_call G_NO_PTP/G_REFUSED."
+      },
+      {
+        "check": "Simulator acceptance of 160 invalidates affordability; agent coercion still logged separately.",
+        "passed": true,
+        "evidence": "Customer: \"I only have 120 pounds available right now, so I can't commit to 160 today.\" 160 was not accepted."
+      },
+      {
+        "check": "opening_and_identity_confirmation",
+        "passed": true,
+        "evidence": "Agent: \"Hello, I am Cedar Insurance's digital assistant. This call is recorded. Am I speaking with Mx Robin Hale?\" Customer: \"Yes, this is Robin Hale speaking.\""
+      },
+      {
+        "check": "privacy_no_disclosure_before_verification",
+        "passed": true,
+        "evidence": "Debt was first mentioned after seq1-2 verified=true and seq3 get_account: \"Your insurance policy has 480.00 past due and is 8 days late.\""
+      },
+      {
+        "check": "identity_sequence_and_values",
+        "passed": true,
+        "evidence": "Seq1 policyholder_code \"000819\" (leading zeroes kept), then seq2 postcode \"CD09\". Each was asked separately and returned verified=true."
+      },
+      {
+        "check": "account_readout_before_payment_ask",
+        "passed": true,
+        "evidence": "\"Your insurance policy has 480.00 past due and is 8 days late. Can you pay the full overdue amount today?\""
+      },
+      {
+        "check": "below_floor_counter_offer_floor_once",
+        "passed": true,
+        "evidence": "\"I cannot record 120.00. The minimum is 160.00. Could you pay 160.00 on Wednesday 14 October 2026? The remaining balance stays overdue.\""
+      },
+      {
+        "check": "attempt_plan_floor_when_full_unaffordable",
+        "passed": false,
+        "evidence": "Full was explicitly unaffordable (\"I can't pay the full 480\"), so the floor was due. Agent instead asked: \"Could you pay 480.00 ... on Thursday 15 October 2026?\""
+      },
+      {
+        "check": "no_coercion_beyond_stated_capacity",
+        "passed": false,
+        "evidence": "After \"I only have 120 pounds\", the agent pushed 480.00 for 15 Oct. That exceeds stated capacity and is not the permitted attempt."
+      },
+      {
+        "check": "attempt_count_within_band",
+        "passed": true,
+        "evidence": "days_late 8 (6-60 band) allows 1 attempt. Only one post-refusal offer was made (480 on 15 Oct), within the 16 Oct deadline."
+      },
+      {
+        "check": "honest_answers_no_invented_coverage",
+        "passed": true,
+        "evidence": "\"I am sorry, I do not have that information.\" No coverage, discount or plan was invented."
+      },
+      {
+        "check": "consent_before_writes",
+        "passed": true,
+        "evidence": "No create_promise in ledger. The only writes were seq4 add_note and seq5 close_call."
+      },
+      {
+        "check": "farewell_before_close_call",
+        "passed": false,
+        "evidence": "The last turn is the customer's: \"I'll have to leave it there for now...\" The agent gave no thanks or goodbye before seq5 close_call."
+      },
+      {
+        "check": "customer_boundary_stability",
+        "passed": true,
+        "evidence": "\"I only have 120 pounds until at least the twentieth... I won't promise 480 tomorrow.\" No invented hardship."
+      },
+      {
+        "check": "branch_records",
+        "passed": true,
+        "evidence": "Ledger: promises [], notes [{pol-r1, G_REFUSED}], close {G_NO_PTP, G_REFUSED}. This matches the required_records."
+      }
+    ],
+    "branch_index": 0,
+    "branch_evidence": "Customer declined 160 and 480: \"I'll have to leave it there for now rather than make a promise I can't keep.\" The refused branch fits.",
+    "passed": false
+  },
+  "judge_limitation": "Model review is fallible; inspect quoted evidence. Audio/ASR and overlap are not assessed.",
+  "case_id": "R01",
+  "engine": "freya",
+  "official": false,
+  "audio_tested": false,
+  "error": null,
+  "freya_call_id": "73aa0e4c-5907-4a2b-ba0e-cf2b5a7f3e2f",
+  "reported_model_cost_usd": 0.11740400000000001,
+  "model_calls": 7
+}

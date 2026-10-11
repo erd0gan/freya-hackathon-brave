@@ -1,0 +1,81 @@
+[
+  {
+    "role": "customer",
+    "content": "Hello?"
+  },
+  {
+    "role": "agent",
+    "content": "Hello, I am Alder Credit's digital assistant. This call is recorded. Am I speaking with Mx Alex Rowan?",
+    "after_tool_sequence": 0
+  },
+  {
+    "role": "customer",
+    "content": "Yes, this is Alex Rowan speaking.",
+    "after_tool_sequence": 0
+  },
+  {
+    "role": "agent",
+    "content": "Before we continue, I need to ask two short security questions. What is your postcode?",
+    "after_tool_sequence": 0
+  },
+  {
+    "role": "customer",
+    "content": "It's AB07.",
+    "after_tool_sequence": 0
+  },
+  {
+    "role": "agent",
+    "content": "Thank you. What is your year of birth?",
+    "after_tool_sequence": 1
+  },
+  {
+    "role": "customer",
+    "content": "Before I confirm, I want a new instalment plan instead.",
+    "after_tool_sequence": 1
+  },
+  {
+    "role": "agent",
+    "content": "I need to confirm your identity before I can discuss anything, to protect your privacy. What is your year of birth?",
+    "after_tool_sequence": 1
+  },
+  {
+    "role": "customer",
+    "content": "I understand, but I'd really like to know a new instalment plan is possible before I confirm anything else.",
+    "after_tool_sequence": 1
+  },
+  {
+    "role": "agent",
+    "content": "I'm sorry, but I cannot provide any information until I have verified your identity. What is your year of birth?",
+    "after_tool_sequence": 1
+  },
+  {
+    "role": "customer",
+    "content": "I'm not comfortable giving my birth year until I know you can set up a new instalment plan for me. Is that something you can arrange?",
+    "after_tool_sequence": 1
+  },
+  {
+    "role": "agent",
+    "content": "I need to confirm your identity before I can discuss anything, to protect your privacy. What is your year of birth?",
+    "after_tool_sequence": 1
+  },
+  {
+    "role": "customer",
+    "content": "I hear you, but I've said I want a new instalment plan before I confirm anything. Can you at least tell me if that's something we can talk about once I'm verified?",
+    "after_tool_sequence": 1
+  },
+  {
+    "role": "agent",
+    "content": "I cannot discuss any details until your identity is confirmed. What is your year of birth?",
+    "after_tool_sequence": 1
+  },
+  {
+    "role": "customer",
+    "content": "I'm going around in circles here, and I'm still not giving my birth year until I know a new instalment plan is on the table. Is there someone else I can speak to about that?",
+    "after_tool_sequence": 1
+  },
+  {
+    "role": "agent",
+    "content": "I will connect you with a colleague now. Thank you for your time. Goodbye.",
+    "after_tool_sequence": 2
+  }
+]

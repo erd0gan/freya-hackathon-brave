@@ -1,0 +1,31 @@
+[
+  {
+    "role": "customer",
+    "content": "Hello?"
+  },
+  {
+    "role": "agent",
+    "content": "Hello, I am Beacon Assurance's digital assistant. This call is recorded. Am I speaking with Mx Alex Rowan?",
+    "after_tool_sequence": 0
+  },
+  {
+    "role": "customer",
+    "content": "No, Alex is away right now. Could you call them back at seven this evening?",
+    "after_tool_sequence": 0
+  },
+  {
+    "role": "agent",
+    "content": "Could you please confirm that you would like me to call back today, Monday 2 November 2026, at 19:00?",
+    "after_tool_sequence": 0
+  },
+  {
+    "role": "customer",
+    "content": "Yes, today at seven this evening works; Alex should be back by then.",
+    "after_tool_sequence": 0
+  },
+  {
+    "role": "agent",
+    "content": "Thank you, we will call you back then. Thank you for your time. Goodbye.",
+    "after_tool_sequence": 1
+  }
+]

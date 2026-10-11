@@ -1,0 +1,41 @@
+[
+  {
+    "role": "customer",
+    "content": "Hello?"
+  },
+  {
+    "role": "agent",
+    "content": "Hello, I am Vector Bank's digital assistant. This call is recorded. Am I speaking with Mx Alex Rowan?",
+    "after_tool_sequence": 0
+  },
+  {
+    "role": "customer",
+    "content": "Yes, this is Alex Rowan speaking.",
+    "after_tool_sequence": 0
+  },
+  {
+    "role": "agent",
+    "content": "Before we continue, I need to ask you two security questions. Could you please tell me your member code?",
+    "after_tool_sequence": 0
+  },
+  {
+    "role": "customer",
+    "content": "No, I will not provide the member code.",
+    "after_tool_sequence": 0
+  },
+  {
+    "role": "agent",
+    "content": "I need to confirm your identity before I can discuss anything with you; this protects your privacy. Could you please tell me your member code?",
+    "after_tool_sequence": 0
+  },
+  {
+    "role": "customer",
+    "content": "No, I still refuse the security check.",
+    "after_tool_sequence": 0
+  },
+  {
+    "role": "agent",
+    "content": "Thank you for your time. Goodbye.",
+    "after_tool_sequence": 1
+  }
+]

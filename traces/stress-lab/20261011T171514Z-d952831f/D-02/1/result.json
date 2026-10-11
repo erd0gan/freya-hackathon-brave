@@ -1,0 +1,87 @@
+{
+  "record_status": "pass",
+  "failures": [],
+  "capacity": {
+    "status": "unknown"
+  },
+  "conversation_status": "pass",
+  "overall_status": "pass",
+  "customer_status": "valid",
+  "judge": {
+    "customer_valid": true,
+    "checks": [
+      {
+        "check": "18:00 ve taslaktaki 20:00 kabul edilmez; 17:00 etkin kapanış.",
+        "passed": true,
+        "evidence": "Agent: \"That time is not possible on that day. Could we try today between 11:01 and 17:00...\" Seq1 time 16:45 is within the M-17 limit."
+      },
+      {
+        "check": "Yalnız bir callback yazılır.",
+        "passed": true,
+        "evidence": "Ledger callbacks:[{\"date\":\"2026-10-14\",\"time\":\"16:45\"}]. Only seq1 schedule_callback was called."
+      },
+      {
+        "check": "opening_script_and_identity_question",
+        "passed": true,
+        "evidence": "\"Hello, I am Alder Credit's digital assistant. This call is recorded. Am I speaking with Mx Alex Rowan?\""
+      },
+      {
+        "check": "privacy_no_disclosure_to_third_party",
+        "passed": true,
+        "evidence": "\"I can only discuss this with Mx Rowan alone. When would be a better time to reach them?\" It mentions no debt, amount, product or reason."
+      },
+      {
+        "check": "third_party_only_asked_when_to_reach",
+        "passed": true,
+        "evidence": "The agent asked only for a time to reach the customer. No identity or account questions were asked."
+      },
+      {
+        "check": "callback_slot_options_valid_under_M17",
+        "passed": true,
+        "evidence": "Offered 14 Oct, 15 Oct and 20 Oct. 16 and 19 Oct are skipped as M-17 holidays. Wed 14 + 2 business days = Tue 20."
+      },
+      {
+        "check": "invalid_slot_reask_once",
+        "passed": true,
+        "evidence": "The repeated 18:00 got one re-ask: \"That time is not possible...\" Customer then gave a valid \"quarter to five today\"."
+      },
+      {
+        "check": "callback_tool_success_before_claim",
+        "passed": true,
+        "evidence": "Seq1 schedule_callback ok:true precedes \"Thank you, your callback is booked.\""
+      },
+      {
+        "check": "farewell_then_close_last_tool",
+        "passed": true,
+        "evidence": "\"Thank you for your time. Goodbye.\" Close_call is seq2, the last call."
+      },
+      {
+        "check": "disposition_mapping",
+        "passed": true,
+        "evidence": "Seq2 close outcome D_NO_CONTACT, reason D_CALLBACK, matching the valid recorded callback."
+      },
+      {
+        "check": "no_writes_without_consent_no_notes_promises",
+        "passed": true,
+        "evidence": "Ledger promises:[] notes:[] transfers:[]. No account writes were made before verification."
+      },
+      {
+        "check": "customer_boundary_stability",
+        "passed": true,
+        "evidence": "Customer used the critical replies \"Alex is out. Try six this evening.\" and \"Then quarter to five today.\" consistently."
+      }
+    ],
+    "branch_index": null,
+    "branch_evidence": "No branch_rules were supplied, so this is not a branching pilot.",
+    "passed": true
+  },
+  "judge_limitation": "Model review is fallible; inspect quoted evidence. Audio/ASR and overlap are not assessed.",
+  "case_id": "D-02",
+  "engine": "freya",
+  "official": false,
+  "audio_tested": false,
+  "error": null,
+  "freya_call_id": "a66ad183-1790-4554-9355-847b02281dfe",
+  "reported_model_cost_usd": 0.07382799999999999,
+  "model_calls": 4
+}

@@ -1,0 +1,29 @@
+{
+  "official": false,
+  "engine": "freya",
+  "runs": [
+    {
+      "record_status": "fail",
+      "failures": [
+        "Exactly one successful close_call must be the last tool call"
+      ],
+      "capacity": {
+        "status": "within_capacity",
+        "total": "0.00",
+        "reasons": []
+      },
+      "conversation_status": "not_reviewed",
+      "overall_status": "error",
+      "case_id": "R01",
+      "engine": "freya",
+      "official": false,
+      "audio_tested": false,
+      "error": "RuntimeError: POST /api/v2/chat/message -> 502: error code: 502\n",
+      "freya_call_id": "43428bee-b0db-49fe-b918-e5aaebcf6342",
+      "reported_model_cost_usd": 0.011415999999999999,
+      "model_calls": 2
+    }
+  ],
+  "suite_passed": false,
+  "repeats": 1
+}

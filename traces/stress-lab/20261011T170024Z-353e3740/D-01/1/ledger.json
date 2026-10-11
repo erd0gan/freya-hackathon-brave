@@ -1,0 +1,63 @@
+{
+  "wrong": 2,
+  "closed": true,
+  "calls": [
+    {
+      "tool": "verify_identity",
+      "body": {
+        "field": "postcode",
+        "answer": "A B zero seven",
+        "customer_id": "sl-lR4HayeO3tRMoj6wQx1AgwUo9OB2ttUE"
+      },
+      "sequence": 1,
+      "status": 200,
+      "result": {
+        "ok": true,
+        "verified": false,
+        "wrong_answers": 1
+      }
+    },
+    {
+      "tool": "verify_identity",
+      "body": {
+        "field": "postcode",
+        "answer": "A B zero seven",
+        "customer_id": "sl-lR4HayeO3tRMoj6wQx1AgwUo9OB2ttUE"
+      },
+      "sequence": 2,
+      "status": 200,
+      "result": {
+        "ok": true,
+        "verified": false,
+        "wrong_answers": 2
+      }
+    },
+    {
+      "tool": "close_call",
+      "body": {
+        "reason": "D_FAILED",
+        "outcome": "D_NO_ID",
+        "customer_id": "sl-lR4HayeO3tRMoj6wQx1AgwUo9OB2ttUE"
+      },
+      "sequence": 3,
+      "status": 200,
+      "result": {
+        "ok": true
+      }
+    }
+  ],
+  "promises": [],
+  "notes": [],
+  "callbacks": [],
+  "transfers": [],
+  "claims": [],
+  "inspections": [],
+  "rentals": [],
+  "endorsements": [],
+  "renewals": [],
+  "close": {
+    "reason": "D_FAILED",
+    "outcome": "D_NO_ID"
+  },
+  "now": "2026-10-14T11:00:00"
+}

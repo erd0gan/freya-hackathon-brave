@@ -1,0 +1,89 @@
+{
+  "wrong": 2,
+  "closed": true,
+  "calls": [
+    {
+      "tool": "verify_identity",
+      "body": {
+        "response": "zero zero four two seven one",
+        "challenge": "member_code",
+        "session_ref": "sl-Lav9wi4nlP8Wf8k43AV3ztWB418R94VB"
+      },
+      "sequence": 1,
+      "status": 200,
+      "result": {
+        "status": "APPLIED",
+        "payload": {
+          "accepted": true,
+          "verified": false,
+          "wrong_answers": 1
+        }
+      }
+    },
+    {
+      "tool": "verify_identity",
+      "body": {
+        "response": "zero, zero, four, two, seven, one",
+        "challenge": "member_code",
+        "session_ref": "sl-Lav9wi4nlP8Wf8k43AV3ztWB418R94VB"
+      },
+      "sequence": 2,
+      "status": 200,
+      "result": {
+        "status": "APPLIED",
+        "payload": {
+          "accepted": true,
+          "verified": false,
+          "wrong_answers": 2
+        }
+      }
+    },
+    {
+      "tool": "transfer_to_agent",
+      "body": {
+        "team": "E_GENERAL",
+        "session_ref": "sl-Lav9wi4nlP8Wf8k43AV3ztWB418R94VB"
+      },
+      "sequence": 3,
+      "status": 200,
+      "result": {
+        "status": "APPLIED",
+        "payload": {
+          "accepted": true
+        }
+      }
+    },
+    {
+      "tool": "close_call",
+      "body": {
+        "detail": "E_HUMAN",
+        "disposition": "E_XFER",
+        "session_ref": "sl-Lav9wi4nlP8Wf8k43AV3ztWB418R94VB"
+      },
+      "sequence": 4,
+      "status": 200,
+      "result": {
+        "status": "APPLIED",
+        "payload": {
+          "accepted": true
+        }
+      }
+    }
+  ],
+  "promises": [],
+  "notes": [],
+  "callbacks": [],
+  "transfers": [
+    "E_GENERAL"
+  ],
+  "claims": [],
+  "inspections": [],
+  "rentals": [],
+  "endorsements": [],
+  "renewals": [],
+  "close": {
+    "detail": "E_HUMAN",
+    "disposition": "E_XFER"
+  },
+  "now": "2026-10-14T11:00:00"
+}

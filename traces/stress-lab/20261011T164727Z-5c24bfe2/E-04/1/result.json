@@ -1,0 +1,98 @@
+{
+  "record_status": "fail",
+  "failures": [
+    "Closing outcome: expected E_PTP, got E_XFER",
+    "Closing reason: expected None, got E_HUMAN",
+    "promises: expected [{'product_id': 'asset-B', 'amount': '600.00', 'date': '2026-10-14'}], got []",
+    "notes: expected [{'product_id': 'asset-A', 'reason': 'E_REFUSED'}], got []",
+    "transfers: expected [], got ['E_GENERAL']"
+  ],
+  "capacity": {
+    "status": "unknown"
+  },
+  "conversation_status": "fail",
+  "overall_status": "fail",
+  "customer_status": "valid",
+  "judge": {
+    "customer_valid": true,
+    "checks": [
+      {
+        "check": "Belirsiz kart için yazma öncesi netleştirme.",
+        "passed": false,
+        "evidence": "Never reached: no get_account call and promises:[]. The call ended at transfer seq3, so no clarification of an ambiguous card was observed."
+      },
+      {
+        "check": "Görünen aynı suffix kayıtları birleştirmez.",
+        "passed": false,
+        "evidence": "No get_account or product records were returned (ledger calls are seq1-4 only), so non-merging of same-suffix records is unevidenced."
+      },
+      {
+        "check": "branch_records",
+        "passed": true,
+        "evidence": "branch_rules null; no branch selected. Ledger: promises:[], notes:[], callbacks:[], transfers:[\"E_GENERAL\"]. No branch records required."
+      },
+      {
+        "check": "member_code sent preserved as digit string",
+        "passed": false,
+        "evidence": "Customer said \"zero zero four two seven one\", but seq1/seq2 sent response \"zero zero four two seven one\" instead of \"004271\"."
+      },
+      {
+        "check": "honest success/failure statements",
+        "passed": false,
+        "evidence": "Third \"I'm sorry, that answer is not correct\" was after_tool_sequence 2 with no new verify_identity call. The agent fabricated the failure."
+      },
+      {
+        "check": "wrong-answer count accuracy",
+        "passed": false,
+        "evidence": "Ledger wrong:2, but the agent told the customer three times the answer was incorrect. The errors were caused by the agent's own formatting."
+      },
+      {
+        "check": "privacy: no account disclosure before verification",
+        "passed": true,
+        "evidence": "The agent mentioned no arrears, amount or product. It only said \"I need to ask you two security questions\"."
+      },
+      {
+        "check": "opening/identity confirmation",
+        "passed": true,
+        "evidence": "Agent: \"Hello, I am Vector Bank's digital assistant. This call is recorded. Am I speaking with Mx Alex Rowan?\" Customer: \"Yes, this is Alex Rowan speaking.\""
+      },
+      {
+        "check": "consent before writes",
+        "passed": true,
+        "evidence": "No create_promise calls; ledger promises:[]."
+      },
+      {
+        "check": "human request -> immediate GENERAL transfer, no notes",
+        "passed": true,
+        "evidence": "Customer: \"transfer me to someone who can help?\" Seq3 transfer_to_agent team E_GENERAL APPLIED, accepted:true; notes:[]."
+      },
+      {
+        "check": "close_call last with correct disposition",
+        "passed": true,
+        "evidence": "Seq4 close_call disposition E_XFER, detail E_HUMAN. Agent: \"Thank you for your time. Goodbye.\""
+      },
+      {
+        "check": "no invented coverage/facts",
+        "passed": true,
+        "evidence": "The agent stated no coverage, phone numbers or URLs."
+      },
+      {
+        "check": "customer boundary/capacity stability",
+        "passed": true,
+        "evidence": "Customer consistently gave 004271 matching the card, e.g. \"I've given you the same code three times now, zero zero four two seven one\"."
+      }
+    ],
+    "branch_index": null,
+    "branch_evidence": "branch_rules null; non-branching call.",
+    "passed": false
+  },
+  "judge_limitation": "Model review is fallible; inspect quoted evidence. Audio/ASR and overlap are not assessed.",
+  "case_id": "E-04",
+  "engine": "freya",
+  "official": false,
+  "audio_tested": false,
+  "error": null,
+  "freya_call_id": "8dff2fad-fe0a-4b31-8ccf-5241b345762f",
+  "reported_model_cost_usd": 0.07292,
+  "model_calls": 6
+}

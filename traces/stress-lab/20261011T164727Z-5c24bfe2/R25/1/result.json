@@ -1,0 +1,94 @@
+{
+  "record_status": "requires_branch_review",
+  "failures": [],
+  "capacity": {
+    "status": "within_capacity",
+    "total": "420.50",
+    "reasons": []
+  },
+  "conversation_status": "pass",
+  "overall_status": "pass",
+  "customer_status": "valid",
+  "judge": {
+    "customer_valid": true,
+    "checks": [
+      {
+        "check": "The clarity question itself is not final consent.",
+        "passed": true,
+        "evidence": "Customer: 'Could you repeat just the amount, including the pence?' No create_promise until after explicit 'Yes, I confirm'; seq4 follows that."
+      },
+      {
+        "check": "Text clarity is not a measurement of hearing, speech recognition or voice speed.",
+        "passed": true,
+        "evidence": "Agent: 'The amount is 420.50.' It repeats the figure without commenting on hearing or capacity; the customer then says 'I heard it that time.'"
+      },
+      {
+        "check": "privacy_before_verification",
+        "passed": true,
+        "evidence": "Debt was first disclosed at 'I am calling about overdue payments...', after_tool_sequence 3, following seq1-2 verified=true."
+      },
+      {
+        "check": "opening_and_identity_order",
+        "passed": true,
+        "evidence": "Exact opening line, then 'Yes, this is Remy Oak speaking.' Member code (seq1 '004271') was asked before birth_year (seq2 '1988'), separately."
+      },
+      {
+        "check": "account_readout_and_today_ask",
+        "passed": true,
+        "evidence": "Agent: 'Your credit card has 1210.05 past due and is 4 days late. Can you pay the full overdue amount today?' This matches seq3."
+      },
+      {
+        "check": "offer_validity",
+        "passed": true,
+        "evidence": "Offer 420.50 equals floor_minor 42050. 2026-10-15 is a Thursday business day, within the 7-business-day deadline (2026-10-26)."
+      },
+      {
+        "check": "complete_readback_and_consent_before_write",
+        "passed": true,
+        "evidence": "Read-back: 'the credit card, 420.50 on Thursday 15 October 2026'. Customer: 'Yes, I confirm 420.50...'; then seq4 create_promise."
+      },
+      {
+        "check": "write_accuracy",
+        "passed": true,
+        "evidence": "seq4 asset_ref card-r25, amount_minor 42050, due_on 2026-10-15. Status APPLIED, accepted=true, single call with no retry."
+      },
+      {
+        "check": "honest_success_statements",
+        "passed": true,
+        "evidence": "'Your promise is recorded... The record is available in the secure portal.' This came after the seq4 success and implies no money moved."
+      },
+      {
+        "check": "no_invented_coverage",
+        "passed": true,
+        "evidence": "Agent turns mention only the credit card past_due, days_late and the promise. No coverage, waiver or plan is claimed."
+      },
+      {
+        "check": "customer_boundary_capacity_stability",
+        "passed": true,
+        "evidence": "Customer: 'I can't manage the full 1,210.05... pay 420.50 on October fifteenth.' Stayed within the 420.50 max and asked for clarity only once."
+      },
+      {
+        "check": "close_call",
+        "passed": true,
+        "evidence": "Agent: 'Thank you for your time. Goodbye.' seq5 close_call E_PTP is the last tool, with the reason field omitted and no notes."
+      },
+      {
+        "check": "branch_records",
+        "passed": true,
+        "evidence": "Ledger promises: card-r25 420.50 on 2026-10-15; close disposition E_PTP. This matches the required_records."
+      }
+    ],
+    "branch_index": 0,
+    "branch_evidence": "Customer asked 'Could you repeat just the amount, including the pence?', then 'I heard it that time... Yes, I confirm 420.50'.",
+    "passed": true
+  },
+  "judge_limitation": "Model review is fallible; inspect quoted evidence. Audio/ASR and overlap are not assessed.",
+  "case_id": "R25",
+  "engine": "freya",
+  "official": false,
+  "audio_tested": false,
+  "error": null,
+  "freya_call_id": "386aa81a-820b-41ad-9ae8-8b98a332d0a1",
+  "reported_model_cost_usd": 0.118564,
+  "model_calls": 8
+}

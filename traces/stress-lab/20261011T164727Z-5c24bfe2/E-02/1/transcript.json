@@ -1,0 +1,71 @@
+[
+  {
+    "role": "customer",
+    "content": "Hello?"
+  },
+  {
+    "role": "agent",
+    "content": "Hello, I am Vector Bank's digital assistant. This call is recorded. Am I speaking with Mx Alex Rowan?",
+    "after_tool_sequence": 0
+  },
+  {
+    "role": "customer",
+    "content": "Yes, this is Alex Rowan speaking.",
+    "after_tool_sequence": 0
+  },
+  {
+    "role": "agent",
+    "content": "Before we continue, I need to ask you two security questions. Could you please tell me your member code?",
+    "after_tool_sequence": 0
+  },
+  {
+    "role": "customer",
+    "content": "Sure, it's zero zero four two seven one.",
+    "after_tool_sequence": 0
+  },
+  {
+    "role": "agent",
+    "content": "I'm sorry, that answer is not correct. Could you please tell me your member code again?",
+    "after_tool_sequence": 1
+  },
+  {
+    "role": "customer",
+    "content": "That's strange, I'm pretty sure it's zero zero four two seven one. Let me say it slowly: zero, zero, four, two, seven, one.",
+    "after_tool_sequence": 1
+  },
+  {
+    "role": "agent",
+    "content": "I'm sorry, but that is still not correct. Could you please check your member code and tell me again?",
+    "after_tool_sequence": 2
+  },
+  {
+    "role": "customer",
+    "content": "I've just double-checked and the code I have is zero zero four two seven one, so I'm not sure why it isn't matching. Is there another way you can verify me, like my birth year?",
+    "after_tool_sequence": 2
+  },
+  {
+    "role": "agent",
+    "content": "I need to confirm your identity before I can discuss anything with you; this protects your privacy. Could you please tell me your member code?",
+    "after_tool_sequence": 2
+  },
+  {
+    "role": "customer",
+    "content": "I understand, but the only member code I have is zero zero four two seven one, and I don't want to guess a different number. Could you check whether there's an issue on your end, or verify me with my birth year instead?",
+    "after_tool_sequence": 2
+  },
+  {
+    "role": "agent",
+    "content": "I need to confirm your identity before I can discuss anything with you; this protects your privacy. Could you please tell me your member code?",
+    "after_tool_sequence": 2
+  },
+  {
+    "role": "customer",
+    "content": "My member code is zero zero four two seven one, and that's the only one I have. If it still isn't matching, could you transfer me to a person who can help sort this out?",
+    "after_tool_sequence": 2
+  },
+  {
+    "role": "agent",
+    "content": "I am transferring you to a colleague now. Thank you for your time. Goodbye.",
+    "after_tool_sequence": 4
+  }
+]

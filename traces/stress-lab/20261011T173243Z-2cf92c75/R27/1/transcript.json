@@ -1,0 +1,71 @@
+[
+  {
+    "role": "customer",
+    "content": "Hello?"
+  },
+  {
+    "role": "agent",
+    "content": "Hello, I am Meridian Bank's digital assistant. This call is recorded. Am I speaking with Mx Lane Birch?",
+    "after_tool_sequence": 0
+  },
+  {
+    "role": "customer",
+    "content": "Yes, this is Lane Birch speaking.",
+    "after_tool_sequence": 0
+  },
+  {
+    "role": "agent",
+    "content": "First, I need to confirm your identity. What is your postcode?",
+    "after_tool_sequence": 0
+  },
+  {
+    "role": "customer",
+    "content": "It's 0073.",
+    "after_tool_sequence": 0
+  },
+  {
+    "role": "agent",
+    "content": "Thank you. What is your year of birth?",
+    "after_tool_sequence": 1
+  },
+  {
+    "role": "customer",
+    "content": "1988.",
+    "after_tool_sequence": 1
+  },
+  {
+    "role": "agent",
+    "content": "Thank you. I am calling about overdue payments on your account. Your credit card has 900.00 past due and is 4 days late. Can you pay the full overdue amount today?",
+    "after_tool_sequence": 3
+  },
+  {
+    "role": "customer",
+    "content": "I can't pay the full 900, I'm afraid. I do have money in the account, but most of it is already set aside for household bills, and only 200 is available for this.",
+    "after_tool_sequence": 3
+  },
+  {
+    "role": "agent",
+    "content": "I cannot record 200.00. The minimum is 300.00. Could you pay 300.00 on Wednesday 14 October 2026? The remaining balance stays overdue.",
+    "after_tool_sequence": 3
+  },
+  {
+    "role": "customer",
+    "content": "No, I'm sorry, I can't commit to 300. Two hundred is all I have for this, and I'm not going to take it from the household money.",
+    "after_tool_sequence": 3
+  },
+  {
+    "role": "agent",
+    "content": "Could you pay 900.00 for the credit card on Thursday 15 October 2026?",
+    "after_tool_sequence": 3
+  },
+  {
+    "role": "customer",
+    "content": "No, a different date doesn't change anything. I can't pay 900 tomorrow either; 200 is the most I can put towards this card.",
+    "after_tool_sequence": 3
+  },
+  {
+    "role": "agent",
+    "content": "Thank you for your time. Goodbye.",
+    "after_tool_sequence": 4
+  }
+]

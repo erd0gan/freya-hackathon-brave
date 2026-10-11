@@ -1,0 +1,92 @@
+{
+  "record_status": "pass",
+  "failures": [],
+  "capacity": {
+    "status": "unknown"
+  },
+  "conversation_status": "fail",
+  "overall_status": "fail",
+  "customer_status": "valid",
+  "judge": {
+    "customer_valid": true,
+    "checks": [
+      {
+        "check": "Kelime eşleştirip create_promise çağrılmaz.",
+        "passed": true,
+        "evidence": "Ledger seq1-5: verify x2, get_account, transfer_to_agent, close_call; promises:[]. No create_promise after 'I want to pay the renewal.'"
+      },
+      {
+        "check": "H_PLANS'a transfer; renewed outcome uydurulmaz.",
+        "passed": false,
+        "evidence": "No invented outcome (seq5 H_XFER/H_PLAN), but seq4 H_PLANS followed 'I want to pay the renewal.' without asking whether it meant a new term."
+      },
+      {
+        "check": "renewal_ambiguity_clarified",
+        "passed": false,
+        "evidence": "Agent: 'I am connecting you with a colleague now.' It never asked whether this was an existing overdue premium or a new policy term, as the email requires."
+      },
+      {
+        "check": "opening_and_identity_confirmation",
+        "passed": true,
+        "evidence": "Agent: 'Hello, I am Beacon Assurance's digital assistant. This call is recorded. Am I speaking with Mx Alex Rowan?' Customer: 'Yes, this is Alex Rowan speaking.'"
+      },
+      {
+        "check": "privacy_no_disclosure_before_verification",
+        "passed": true,
+        "evidence": "Before seq2, agent only asked 'Could you please tell me your policyholder code?' and 'year of birth?'. No arrears were mentioned until after seq3."
+      },
+      {
+        "check": "identity_order_and_format",
+        "passed": true,
+        "evidence": "seq1 policyholder_code '006410' (leading zeroes kept), then seq2 birth_year '1988' as a string. Both verified=true."
+      },
+      {
+        "check": "account_read_before_payment_ask",
+        "passed": true,
+        "evidence": "After seq3: 'Your motor premium has 480.00 past due and is 3 days late. Can you pay the full past-due amount today?'"
+      },
+      {
+        "check": "consent_before_writes",
+        "passed": true,
+        "evidence": "No promise was read back or written; promises:[]. No consent was assumed from 'pay the renewal'."
+      },
+      {
+        "check": "no_notes_on_transfer",
+        "passed": true,
+        "evidence": "Ledger notes:[] with transfers ['H_PLANS'] at seq4."
+      },
+      {
+        "check": "honest_statements_no_invented_coverage",
+        "passed": true,
+        "evidence": "Agent made no coverage, renewal or SMS claims. It only said 'I am connecting you with a colleague now.'"
+      },
+      {
+        "check": "farewell_and_close_last",
+        "passed": true,
+        "evidence": "Agent said 'Thank you for your time. Goodbye.' close_call is seq5, the last tool, with H_XFER/H_PLAN and ok=true."
+      },
+      {
+        "check": "customer_boundary_stability",
+        "passed": true,
+        "evidence": "Customer used critical reply 'I want to pay the renewal.' and gave correct identity answers. Nothing was invented."
+      },
+      {
+        "check": "branch_records",
+        "passed": true,
+        "evidence": "branch_rules null; no branch required_records to verify. Ledger: transfers ['H_PLANS'], promises [], notes []."
+      }
+    ],
+    "branch_index": null,
+    "branch_evidence": "No branch_rules supplied.",
+    "passed": false
+  },
+  "judge_limitation": "Model review is fallible; inspect quoted evidence. Audio/ASR and overlap are not assessed.",
+  "case_id": "H-03",
+  "engine": "freya",
+  "official": false,
+  "audio_tested": false,
+  "error": null,
+  "freya_call_id": "71ec4b68-0453-45d2-add9-4bb32d4a611f",
+  "reported_model_cost_usd": 0.06898800000000001,
+  "model_calls": 5
+}

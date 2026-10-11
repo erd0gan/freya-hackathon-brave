@@ -1,0 +1,96 @@
+[
+  {
+    "role": "customer",
+    "content": "Hello?"
+  },
+  {
+    "role": "agent",
+    "content": "Hello, I am Lattice Bank's digital assistant. This call is recorded. Am I speaking with Mx Taylor Reed?",
+    "after_tool_sequence": 0
+  },
+  {
+    "role": "customer",
+    "content": "Yes, this is Taylor Reed speaking.",
+    "after_tool_sequence": 0
+  },
+  {
+    "role": "agent",
+    "content": "Thank you. Before we continue, I need to verify your identity. Could you please tell me your postcode?",
+    "after_tool_sequence": 0
+  },
+  {
+    "role": "customer",
+    "content": "It's LT06.",
+    "after_tool_sequence": 0
+  },
+  {
+    "role": "agent",
+    "content": "Thank you. And could you please tell me your year of birth?",
+    "after_tool_sequence": 1
+  },
+  {
+    "role": "customer",
+    "content": "It's 1988.",
+    "after_tool_sequence": 1
+  },
+  {
+    "role": "agent",
+    "content": "Thank you, you're verified. I'm calling about overdue amounts on three products. Your credit card has 900 pounds past due and is 4 days late. Your personal loan has 600 pounds past due and is 4 days late. Your car loan has 450 pounds past due and is 4 days late. Together that's 1,950 pounds. Could you pay the full 1,950 pounds today?",
+    "after_tool_sequence": 3
+  },
+  {
+    "role": "customer",
+    "content": "No, I can't manage 1,950 today. I've got five hundred altogether to put towards these.",
+    "after_tool_sequence": 3
+  },
+  {
+    "role": "agent",
+    "content": "Thank you for letting me know. I can't split that 500 pounds across the products myself, so could you tell me how much you'd like to put towards each one? For reference, the minimum I can accept is 300 pounds for the credit card, 200 pounds for the personal loan, and 150 pounds for the car loan.",
+    "after_tool_sequence": 3
+  },
+  {
+    "role": "customer",
+    "content": "I'd like to put 300 to the credit card and 200 to the personal loan, which uses up the full 500. I can't put anything towards the car loan today.",
+    "after_tool_sequence": 3
+  },
+  {
+    "role": "agent",
+    "content": "Thank you. 300 pounds for the credit card and 200 pounds for the personal loan are both acceptable, though please note the remaining balances, 600 pounds on the card and 400 pounds on the loan, will still be overdue. On what date will you make those two payments? It can be today or any business day up to Wednesday the 28th of October.",
+    "after_tool_sequence": 3
+  },
+  {
+    "role": "customer",
+    "content": "I can make both payments today, the 14th. I understand the rest will still be overdue.",
+    "after_tool_sequence": 3
+  },
+  {
+    "role": "agent",
+    "content": "Thank you, that's noted: 300 pounds for the credit card and 200 pounds for the personal loan, both today, the 14th of October. Regarding the car loan, could you pay the full 450 pounds tomorrow, Thursday the 15th of October?",
+    "after_tool_sequence": 3
+  },
+  {
+    "role": "customer",
+    "content": "No, I can't do that. The 500 is all I have, and there's no other money coming in for the car loan, so I can't commit to anything on it right now.",
+    "after_tool_sequence": 3
+  },
+  {
+    "role": "agent",
+    "content": "I understand, so I won't record a promise for the car loan today. Let me confirm your promises: 300 pounds towards your credit card and 200 pounds towards your personal loan, both on Wednesday the 14th of October. Do you confirm these promises?",
+    "after_tool_sequence": 3
+  },
+  {
+    "role": "customer",
+    "content": "Yes, I confirm: 300 to the credit card and 200 to the personal loan, both today, the 14th of October. Nothing on the car loan.",
+    "after_tool_sequence": 3
+  },
+  {
+    "role": "agent",
+    "content": "Your promise has been saved in your customer portal. That's 300 pounds towards your credit card and 200 pounds towards your personal loan, both due today, the 14th of October. The car loan remains overdue, and no promise has been recorded for it. Thank you for your time today, Mx Reed. Goodbye.",
+    "after_tool_sequence": 6
+  },
+  {
+    "role": "customer",
+    "content": "Thanks for your help. Goodbye.",
+    "after_tool_sequence": 6
+  }
+]

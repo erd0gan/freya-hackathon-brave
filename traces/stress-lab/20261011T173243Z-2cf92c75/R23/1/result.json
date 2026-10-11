@@ -1,0 +1,92 @@
+{
+  "record_status": "requires_branch_review",
+  "failures": [],
+  "capacity": {
+    "status": "unknown"
+  },
+  "conversation_status": "pass",
+  "overall_status": "pass",
+  "customer_status": "valid",
+  "judge": {
+    "customer_valid": true,
+    "checks": [
+      {
+        "check": "C's callback provision is for third parties; a verified-customer callback policy cannot silently be invented.",
+        "passed": true,
+        "evidence": "Agent: 'Thank you for your time. Goodbye.' No callback offered; ledger callbacks:[] and no callback tool call."
+      },
+      {
+        "check": "Record unnecessary repetition of sensitive detail separately from the brief's formal close rule.",
+        "passed": true,
+        "evidence": "After 'other people...can hear me', agent said 'Can you pay the full overdue amount today?' and stated no product or amount again. It repeated the ask, not balances."
+      },
+      {
+        "check": "opening_and_identity_confirmation",
+        "passed": true,
+        "evidence": "Agent: 'Hello, I am Meridian Bank's digital assistant. This call is recorded. Am I speaking with Mx Harper Bay?' Customer: 'Yes, this is Harper Bay speaking.'"
+      },
+      {
+        "check": "privacy_no_disclosure_before_verification",
+        "passed": true,
+        "evidence": "Agent asked postcode, then birth year; debt was mentioned only after seq 1-3 (verified postcode, verified birth_year, get_account)."
+      },
+      {
+        "check": "identity_codes_sent_as_strings",
+        "passed": true,
+        "evidence": "seq1 answer '0073' (leading zeros kept); seq2 answer '1988'; both returned verified:true."
+      },
+      {
+        "check": "account_read_complete",
+        "passed": true,
+        "evidence": "Agent: 'Your credit card has 900.00 past due and is 4 days late.' Matches seq3 card-r23 past_due 900.0, days_late 4."
+      },
+      {
+        "check": "privacy_boundary_respected_after_request",
+        "passed": true,
+        "evidence": "After the first stop request, agent asked the today question again but read no further balances. Closed after the second request: 'No, I still don't want to continue.'"
+      },
+      {
+        "check": "consent_before_writes",
+        "passed": true,
+        "evidence": "No create_promise in ledger; promises:[]. No consent was needed and none was assumed."
+      },
+      {
+        "check": "honest_statements_no_invented_coverage",
+        "passed": true,
+        "evidence": "Agent made no success, receipt or coverage claims; it said only 'Thank you for your time. Goodbye.'"
+      },
+      {
+        "check": "two_stop_requests_refused",
+        "passed": true,
+        "evidence": "Stop 1: 'please stop'. Stop 2: 'I still don't want to continue this call'. Ledger: seq4 add_note C_REFUSED; seq5 close C_NO_PTP/C_REFUSED."
+      },
+      {
+        "check": "farewell_before_close_last_tool",
+        "passed": true,
+        "evidence": "Goodbye turn came after_tool_sequence 4; close_call is seq5, the last tool."
+      },
+      {
+        "check": "branch_records",
+        "passed": true,
+        "evidence": "callbacks:[]; notes:[{card-r23,C_REFUSED}]; close {outcome:C_NO_PTP, reason:C_REFUSED}. Matches required_records."
+      },
+      {
+        "check": "customer_boundary_stability",
+        "passed": true,
+        "evidence": "Customer: 'Other people...can hear me...please stop' then 'No, I still don't want to continue'. No payment offered and no callback demanded."
+      }
+    ],
+    "branch_index": 0,
+    "branch_evidence": "Post-verification stop requests: 'please stop' and 'No, I still don't want to continue this call.' No promise followed.",
+    "passed": true
+  },
+  "judge_limitation": "Model review is fallible; inspect quoted evidence. Audio/ASR and overlap are not assessed.",
+  "case_id": "R23",
+  "engine": "freya",
+  "official": false,
+  "audio_tested": false,
+  "error": null,
+  "freya_call_id": "edd5585c-54ea-4f33-b94b-621ae7945c60",
+  "reported_model_cost_usd": 0.098776,
+  "model_calls": 6
+}

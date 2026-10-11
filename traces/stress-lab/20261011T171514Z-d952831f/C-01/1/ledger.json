@@ -1,0 +1,92 @@
+{
+  "wrong": 0,
+  "closed": true,
+  "calls": [
+    {
+      "tool": "verify_identity",
+      "body": {
+        "field": "postcode",
+        "answer": "0073",
+        "customer_id": "sl-YIlBpkptEBa1urq3QEVfyfWsmV5Bdx1h"
+      },
+      "sequence": 1,
+      "status": 200,
+      "result": {
+        "ok": true,
+        "verified": true,
+        "wrong_answers": 0
+      }
+    },
+    {
+      "tool": "verify_identity",
+      "body": {
+        "field": "birth_year",
+        "answer": "1988",
+        "customer_id": "sl-YIlBpkptEBa1urq3QEVfyfWsmV5Bdx1h"
+      },
+      "sequence": 2,
+      "status": 200,
+      "result": {
+        "ok": true,
+        "verified": true,
+        "wrong_answers": 0
+      }
+    },
+    {
+      "tool": "get_account",
+      "body": {
+        "customer_id": "sl-YIlBpkptEBa1urq3QEVfyfWsmV5Bdx1h"
+      },
+      "sequence": 3,
+      "status": 200,
+      "result": {
+        "ok": true,
+        "products": [
+          {
+            "product_id": "asset-A",
+            "type": "credit_card",
+            "display_name": "credit card",
+            "past_due": 900.0,
+            "floor": 300.0,
+            "days_late": 4
+          },
+          {
+            "product_id": "asset-B",
+            "type": "personal_loan",
+            "display_name": "personal loan",
+            "past_due": 600.0,
+            "floor": 200.0,
+            "days_late": 12
+          }
+        ]
+      }
+    },
+    {
+      "tool": "close_call",
+      "body": {
+        "reason": "C_REFUSED",
+        "outcome": "C_NO_PTP",
+        "customer_id": "sl-YIlBpkptEBa1urq3QEVfyfWsmV5Bdx1h"
+      },
+      "sequence": 4,
+      "status": 200,
+      "result": {
+        "ok": true
+      }
+    }
+  ],
+  "promises": [],
+  "notes": [],
+  "callbacks": [],
+  "transfers": [],
+  "claims": [],
+  "inspections": [],
+  "rentals": [],
+  "endorsements": [],
+  "renewals": [],
+  "close": {
+    "reason": "C_REFUSED",
+    "outcome": "C_NO_PTP"
+  },
+  "now": "2026-10-14T11:00:00"
+}

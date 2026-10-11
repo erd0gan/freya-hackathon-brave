@@ -1,0 +1,99 @@
+{
+  "record_status": "requires_branch_review",
+  "failures": [],
+  "capacity": {
+    "status": "within_capacity",
+    "total": "0.00",
+    "reasons": []
+  },
+  "conversation_status": "fail",
+  "overall_status": "fail",
+  "customer_status": "valid",
+  "judge": {
+    "customer_valid": true,
+    "checks": [
+      {
+        "check": "One disputed product does not make every product disputed.",
+        "passed": false,
+        "evidence": "No product discussed; ledger has only seq1 transfer_to_agent and seq2 close_call. No dispute handling observed."
+      },
+      {
+        "check": "An old closure claim is not a report of paying this overdue instalment.",
+        "passed": false,
+        "evidence": "Card closure never raised; call ended at identity stage with 'I am transferring you to a colleague now.'"
+      },
+      {
+        "check": "branch_records",
+        "passed": false,
+        "evidence": "Required loan-r21 600 on 2026-10-15, card-r21 dispute note, D_PTP. Ledger: promises [], notes [], close D_XFER/D_HUMAN."
+      },
+      {
+        "check": "privacy_no_disclosure_before_verification",
+        "passed": true,
+        "evidence": "Agent disclosed no debt, product or amount; only asked 'Could you please tell me your postcode?' before transferring."
+      },
+      {
+        "check": "opening_and_identity_confirmation",
+        "passed": true,
+        "evidence": "'Hello, I am Alder Credit's digital assistant. This call is recorded. Am I speaking with Mx Jules Moss?' -> 'Yes, this is Jules Moss speaking.'"
+      },
+      {
+        "check": "identity_answers_sent_to_verify_identity",
+        "passed": false,
+        "evidence": "Customer said 'It's AB07.' three times; agent replied 'And the remaining digits?' No verify_identity call exists in the ledger."
+      },
+      {
+        "check": "birth_year_asked_and_checked",
+        "passed": false,
+        "evidence": "Customer volunteered 'My birth year is 1988'; agent never asked or verified it. Ledger has no verify_identity call."
+      },
+      {
+        "check": "human_request_transfer_GENERAL_without_get_account",
+        "passed": true,
+        "evidence": "'could you put me through to a person?' -> seq1 transfer_to_agent queue D_GENERAL ok=true; get_account not called."
+      },
+      {
+        "check": "no_notes_on_transfer",
+        "passed": true,
+        "evidence": "Ledger notes [] after transfer D_GENERAL."
+      },
+      {
+        "check": "consent_before_writes",
+        "passed": true,
+        "evidence": "No create_promise calls; promises [] so no write occurred without consent."
+      },
+      {
+        "check": "honest_success_statements",
+        "passed": true,
+        "evidence": "'I am transferring you to a colleague now.' backed by seq1 transfer result ok=true; no promise or letter claimed."
+      },
+      {
+        "check": "no_invented_coverage_or_facts",
+        "passed": true,
+        "evidence": "Agent made no account, coverage or contact-number claims in any turn."
+      },
+      {
+        "check": "close_call_last_and_mapping",
+        "passed": true,
+        "evidence": "seq2 close_call outcome D_XFER reason D_HUMAN is the last tool, after 'Thank you for your time. Goodbye.'"
+      },
+      {
+        "check": "customer_boundary_capacity_stability",
+        "passed": true,
+        "evidence": "Customer consistently gave 'AB07' and '1988' matching the card, invented no digits, and requested a person when stalled."
+      }
+    ],
+    "branch_index": null,
+    "branch_evidence": "The only branch requires a card dispute and a loan confirmation. The dialogue never passed identity; the customer ended with 'could you put me through to a person?'",
+    "passed": false
+  },
+  "judge_limitation": "Model review is fallible; inspect quoted evidence. Audio/ASR and overlap are not assessed.",
+  "case_id": "R21",
+  "engine": "freya",
+  "official": false,
+  "audio_tested": false,
+  "error": null,
+  "freya_call_id": "af3cf3f8-9fff-4991-a622-3cdb0601a4f8",
+  "reported_model_cost_usd": 0.092024,
+  "model_calls": 6
+}

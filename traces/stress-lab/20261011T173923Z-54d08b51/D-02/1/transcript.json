@@ -1,0 +1,41 @@
+[
+  {
+    "role": "customer",
+    "content": "Hello?"
+  },
+  {
+    "role": "agent",
+    "content": "Hello, I am Alder Credit's digital assistant. This call is recorded. Am I speaking with Mx Alex Rowan?",
+    "after_tool_sequence": 0
+  },
+  {
+    "role": "customer",
+    "content": "Alex is out right now. Could you try again at six this evening?",
+    "after_tool_sequence": 0
+  },
+  {
+    "role": "agent",
+    "content": "Could you please confirm that you would like me to call back today, Wednesday 14 October 2026, at 6:00 PM?",
+    "after_tool_sequence": 0
+  },
+  {
+    "role": "customer",
+    "content": "Yes, six this evening works, so please try Alex then.",
+    "after_tool_sequence": 0
+  },
+  {
+    "role": "agent",
+    "content": "I am sorry, but that time is not possible today. Could we try today between 11:01 and 17:00, Thursday 15 October between 09:00 and 17:00, or Tuesday 20 October between 09:00 and 17:00?",
+    "after_tool_sequence": 0
+  },
+  {
+    "role": "customer",
+    "content": "Then quarter to five today, please.",
+    "after_tool_sequence": 0
+  },
+  {
+    "role": "agent",
+    "content": "Thank you, we will call back then. Thank you for your time. Goodbye.",
+    "after_tool_sequence": 1
+  }
+]

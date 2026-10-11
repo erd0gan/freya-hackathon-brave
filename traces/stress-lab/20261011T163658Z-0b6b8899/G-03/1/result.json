@@ -1,0 +1,82 @@
+{
+  "record_status": "pass",
+  "failures": [],
+  "capacity": {
+    "status": "unknown"
+  },
+  "conversation_status": "pass",
+  "overall_status": "pass",
+  "customer_status": "valid",
+  "judge": {
+    "customer_valid": true,
+    "checks": [
+      {
+        "check": "Yakının bilgileri verify için kullanılmaz; prim tutarı açıklanmaz.",
+        "passed": true,
+        "evidence": "Spouse: 'No, this is Alex's spouse'. Agent asked only 'When can Mx Rowan be reached?' Ledger has no verify_identity or get_account; no amount said."
+      },
+      {
+        "check": "Yalnız callback ve close; teklif para alma yetkisi oluşturmaz.",
+        "passed": true,
+        "evidence": "Ledger has only seq1 schedule_callback and seq2 close_call. promises: [] and no payment discussion with the spouse."
+      },
+      {
+        "check": "opening_and_identity_question",
+        "passed": true,
+        "evidence": "Agent: 'Hello, I am Cedar Insurance's digital assistant. This call is recorded. Am I speaking with Mx Alex Rowan?'"
+      },
+      {
+        "check": "privacy_no_disclosure_to_third_party",
+        "passed": true,
+        "evidence": "No arrears, product, coverage or call reason was disclosed. Agent said only 'When can Mx Rowan be reached?'"
+      },
+      {
+        "check": "callback_validity",
+        "passed": true,
+        "evidence": "'tomorrow at ten' maps to seq1 date 2026-10-15 10:00. Thursday is a business day within 09-17 and is next business day after now 2026-10-14T11:00."
+      },
+      {
+        "check": "honest_success_statement",
+        "passed": true,
+        "evidence": "'your callback is booked' was said after seq1 result ok:true."
+      },
+      {
+        "check": "consent_before_writes",
+        "passed": true,
+        "evidence": "No promise writes; promises: []. The callback was requested by the third party: 'You can reach Alex tomorrow at ten.'"
+      },
+      {
+        "check": "no_invented_coverage",
+        "passed": true,
+        "evidence": "Agent made no coverage or status statements in any turn."
+      },
+      {
+        "check": "farewell_and_close_last",
+        "passed": true,
+        "evidence": "'Thank you for your time. Goodbye.' after_tool_sequence 2. close_call seq2 is the last call: G_NO_CONTACT/G_CALLBACK."
+      },
+      {
+        "check": "customer_boundary_stability",
+        "passed": true,
+        "evidence": "Spouse consistently identified as third party and gave only availability. No invented consent or money."
+      },
+      {
+        "check": "branch_records",
+        "passed": true,
+        "evidence": "branch_rules null; no branch required. Ledger callbacks [{2026-10-15,10:00}] and close G_NO_CONTACT/G_CALLBACK match the observed dialogue."
+      }
+    ],
+    "branch_index": null,
+    "branch_evidence": "No branch_rules supplied; the non-branching third-party callback path is supported by 'You can reach Alex tomorrow at ten.'",
+    "passed": true
+  },
+  "judge_limitation": "Model review is fallible; inspect quoted evidence. Audio/ASR and overlap are not assessed.",
+  "case_id": "G-03",
+  "engine": "freya",
+  "official": false,
+  "audio_tested": false,
+  "error": null,
+  "freya_call_id": "adb13718-e840-41de-9d00-3d0996957a88",
+  "reported_model_cost_usd": 0.06434000000000001,
+  "model_calls": 3
+}

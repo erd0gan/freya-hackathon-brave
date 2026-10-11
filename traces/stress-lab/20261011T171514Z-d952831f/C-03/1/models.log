@@ -1,0 +1,8 @@
+17:15:14  RUN    start 2026-10-11T17:15:14Z case=C-03 engine=freya agent_model=Freya configured workflow customer_model=anthropic/claude-opus-5.5
+17:15:20  MODEL  anthropic:claude-opus-5-5  purpose: stress-customer (3s)  tokens=373 cost=$0.0030
+17:15:24  MODEL  anthropic:claude-opus-5-5  purpose: stress-customer (attempt 1)  FAILED after 1.4s: error body: empty reply: {"model": "claude-opus-5-5", "id": "msg_011CfvpvejQ1PT4S5d4Z5Fr6", "type": "message", "role": "assistant", "content": [], "container": null, "stop_reason": "refusal", "stop_sequence": null, "stop_deta
+17:15:32  MODEL  anthropic/claude-opus-5.5  purpose: stress-customer (8s)  tokens=515 cost=$0.0051
+17:15:37  MODEL  anthropic:claude-opus-5-5  purpose: stress-customer (2s)  tokens=401 cost=$0.0023
+17:15:44  MODEL  anthropic:claude-opus-5-5  purpose: stress-customer (2s)  tokens=425 cost=$0.0023
+17:16:15  MODEL  anthropic:claude-opus-5-5  purpose: stress-judge (13s)  tokens=7087 cost=$0.0516
+17:16:15  END    end 2026-10-11T17:16:15Z duration=1m00s model_calls=5 model_cost=$0.06 model_failures=1 status=pass

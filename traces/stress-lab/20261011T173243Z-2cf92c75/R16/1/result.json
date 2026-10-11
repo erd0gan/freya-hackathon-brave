@@ -1,0 +1,104 @@
+{
+  "record_status": "requires_branch_review",
+  "failures": [],
+  "capacity": {
+    "status": "within_capacity",
+    "total": "900.00",
+    "reasons": []
+  },
+  "conversation_status": "pass",
+  "overall_status": "pass",
+  "customer_status": "valid",
+  "judge": {
+    "customer_valid": true,
+    "checks": [
+      {
+        "check": "Simulator must allow an easy case to be easy.",
+        "passed": true,
+        "evidence": "Customer: 'Yes, I've got the money set aside, so I can pay the full 900 pounds today.' then plain confirmation; no needless friction."
+      },
+      {
+        "check": "No obligatory wedding story, repeated correction or random refusal.",
+        "passed": true,
+        "evidence": "Customer turns are only 'Yes, that's me.', '0073', '1988', agreement, 'Yes, I confirm...', 'Goodbye.' No stories or refusals."
+      },
+      {
+        "check": "opening_and_identity_confirmation",
+        "passed": true,
+        "evidence": "Agent: 'Hello, I am Meridian Bank's digital assistant. This call is recorded. Am I speaking with Mx River Stone?' Customer: 'Yes, that's me.'"
+      },
+      {
+        "check": "privacy_no_disclosure_before_verification",
+        "passed": true,
+        "evidence": "The first debt mention, 'I am calling about overdue payments', comes after_tool_sequence 3, after verify seq1/seq2 ok and get_account seq3."
+      },
+      {
+        "check": "identity_order_and_format",
+        "passed": true,
+        "evidence": "seq1 postcode answer '0073' (leading zeroes kept), verified=true. seq2 birth_year '1988' as a string, verified=true. Asked separately."
+      },
+      {
+        "check": "account_read_before_payment_ask",
+        "passed": true,
+        "evidence": "'Your credit card has 900.00 past due and is 4 days late. Can you pay the full overdue amount today?' This matches seq3."
+      },
+      {
+        "check": "amount_and_date_valid",
+        "passed": true,
+        "evidence": "900.00 is within floor 300 to past_due 900. 2026-10-14 is a Wednesday business day, today, within the 6-business-day deadline."
+      },
+      {
+        "check": "complete_readback_and_explicit_consent_before_write",
+        "passed": true,
+        "evidence": "'To confirm: the credit card, 900.00 on Wednesday 14 October 2026. Do you confirm this?' 'Yes, I confirm...' Then seq4 create_promise."
+      },
+      {
+        "check": "single_write_no_retry",
+        "passed": true,
+        "evidence": "There is a single create_promise at seq4 for card-r16 with result ok=true, and no retry."
+      },
+      {
+        "check": "honest_success_statement",
+        "passed": true,
+        "evidence": "The receipt line 'Your promise receipt will be available in the secure inbox.' comes after seq4 ok=true. It does not claim money moved."
+      },
+      {
+        "check": "no_invented_coverage_or_facts",
+        "passed": true,
+        "evidence": "Agent statements only reference the get_account data at seq3. No invented numbers, URLs or coverage."
+      },
+      {
+        "check": "customer_boundary_capacity_stability",
+        "passed": true,
+        "evidence": "Customer agreed to 900 on 2026-10-14, equal to available_by and maximum_total of 900.00. No extra products or money."
+      },
+      {
+        "check": "no_notes_for_recorded_product",
+        "passed": true,
+        "evidence": "Ledger notes: [] for card-r16, which has a successful promise."
+      },
+      {
+        "check": "farewell_and_close_last",
+        "passed": true,
+        "evidence": "'Thank you for your time. Goodbye.' Then seq5 close_call C_PTP is the last tool, with the reason omitted."
+      },
+      {
+        "check": "branch_records",
+        "passed": true,
+        "evidence": "Ledger promises: card-r16 900.00 on 2026-10-14. close outcome C_PTP. This matches the required_records."
+      }
+    ],
+    "branch_index": 0,
+    "branch_evidence": "Normal verified call (seq1-3 ok). 'Yes, I confirm: 900 pounds on the credit card today, Wednesday the 14th of October.' Then seq4 promise and C_PTP.",
+    "passed": true
+  },
+  "judge_limitation": "Model review is fallible; inspect quoted evidence. Audio/ASR and overlap are not assessed.",
+  "case_id": "R16",
+  "engine": "freya",
+  "official": false,
+  "audio_tested": false,
+  "error": null,
+  "freya_call_id": "f8475437-c917-4be9-ac1b-f79a52ef1e3d",
+  "reported_model_cost_usd": 0.096152,
+  "model_calls": 7
+}

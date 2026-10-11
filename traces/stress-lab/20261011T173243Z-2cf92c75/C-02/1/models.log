@@ -1,0 +1,13 @@
+17:32:44  RUN    start 2026-10-11T17:32:44Z case=C-02 engine=freya agent_model=Freya configured workflow customer_model=anthropic/claude-opus-5.5
+17:32:51  MODEL  anthropic:claude-opus-5-5  purpose: stress-customer (2s)  tokens=381 cost=$0.0031
+17:32:55  MODEL  anthropic:claude-opus-5-5  purpose: stress-customer (attempt 1)  FAILED after 1.7s: error body: empty reply: {"model": "claude-opus-5-5", "id": "msg_011CfvrG7YM3apk7MD3oXqFC", "type": "message", "role": "assistant", "content": [{"type": "thinking", "thinking": "", "signature": "CAQSzgUKEAgSGAI4AUIIdGhpbmtpbm
+17:32:58  MODEL  anthropic/claude-opus-5.5  purpose: stress-customer (attempt 2)  FAILED after 3.5s: error body: empty reply: {"id": "gen-1791739975-67uDlOH1XXNSSYvHVv1U", "object": "chat.completion", "created": 1791739975, "model": "anthropic/claude-opus-5.5", "provider": "Claude Platform on AWS", "system_fingerprint": null
+17:33:03  MODEL  anthropic:claude-opus-5-5  purpose: stress-customer (attempt 1)  FAILED after 1.8s: error body: empty reply: {"model": "claude-opus-5-5", "id": "msg_011CfvrGjLu3aB7dRCVdUsse", "type": "message", "role": "assistant", "content": [{"type": "thinking", "thinking": "", "signature": "CAQSpgUKEAgSGAI4AUIIdGhpbmtpbm
+17:33:08  MODEL  anthropic/claude-opus-5.5  purpose: stress-customer (5s)  tokens=433 cost=$0.0032
+17:33:13  MODEL  anthropic:claude-opus-5-5  purpose: stress-customer (2s)  tokens=377 cost=$0.0021
+17:33:18  MODEL  anthropic:claude-opus-5-5  purpose: stress-customer (2s)  tokens=395 cost=$0.0021
+17:33:23  MODEL  anthropic:claude-opus-5-5  purpose: stress-customer (2s)  tokens=505 cost=$0.0032
+17:33:29  MODEL  anthropic:claude-opus-5-5  purpose: stress-customer (3s)  tokens=657 cost=$0.0053
+17:33:36  MODEL  anthropic:claude-opus-5-5  purpose: stress-customer (2s)  tokens=610 cost=$0.0032
+17:34:07  MODEL  anthropic:claude-opus-5-5  purpose: stress-judge (16s)  tokens=7755 cost=$0.0585
+17:34:07  END    end 2026-10-11T17:34:07Z duration=1m22s model_calls=8 model_cost=$0.08 model_failures=3 status=pass

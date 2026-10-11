@@ -1,0 +1,92 @@
+{
+  "record_status": "requires_branch_review",
+  "failures": [],
+  "capacity": {
+    "status": "unknown"
+  },
+  "conversation_status": "fail",
+  "overall_status": "fail",
+  "customer_status": "valid",
+  "judge": {
+    "customer_valid": true,
+    "checks": [
+      {
+        "check": "No unnecessary request for illness/employer details.",
+        "passed": true,
+        "evidence": "Agent: 'I am very sorry to hear that. I am connecting you with a colleague now.' No employer or detail questions were asked."
+      },
+      {
+        "check": "Immediate transfer is F-specific, not a universal hardship rule.",
+        "passed": true,
+        "evidence": "Brief F §6 job loss -> SUPPORT. Seq4 transfer_to_agent F_SUPPORT follows the job-loss turn, with no persuasion or consent question."
+      },
+      {
+        "check": "branch_records",
+        "passed": false,
+        "evidence": "Seq4 transfer F_SUPPORT precedes seq5/seq6 add_note F_HARDSHIP. Required: two hardship notes BEFORE the transfer. No promises; seq7 close F_XFER/F_SUPPORT."
+      },
+      {
+        "check": "privacy_no_disclosure_before_verification",
+        "passed": true,
+        "evidence": "Before seq1-2 verified=true, the agent only said 'I need to ask you two security questions. What is your postcode?'"
+      },
+      {
+        "check": "identity_order_and_format",
+        "passed": true,
+        "evidence": "Seq1 postcode 'LT06', then seq2 birth_year '1988', both strings. get_account at seq3 came after both passed."
+      },
+      {
+        "check": "opening_and_identity_confirmation",
+        "passed": true,
+        "evidence": "'Hello, I am Lattice Bank's digital assistant. This call is recorded. Am I speaking with Mx Avery Shaw?' / 'Yes, this is Avery Shaw speaking.'"
+      },
+      {
+        "check": "all_products_read_before_payment_ask",
+        "passed": true,
+        "evidence": "'credit card has 900.00 past due and is 4 days late. Your personal loan has 900.00 past due and is 4 days late. Can you pay...today?'"
+      },
+      {
+        "check": "no_write_without_consent",
+        "passed": true,
+        "evidence": "Ledger promises: []. No create_promise call was made, and no consent was sought after the hardship disclosure."
+      },
+      {
+        "check": "hardship_one_sympathy_no_persuasion",
+        "passed": true,
+        "evidence": "Agent: 'I am very sorry to hear that. I am connecting you with a colleague now.' No offers followed."
+      },
+      {
+        "check": "honest_statements_no_invented_coverage",
+        "passed": true,
+        "evidence": "Agent made no claim that a promise was saved or that money moved, and invented no coverage or numbers."
+      },
+      {
+        "check": "notes_flushed_before_transfer",
+        "passed": false,
+        "evidence": "Brief §7: 'Flush notes only at the final disposition, then transfer.' The ledger shows the transfer at seq4 and notes at seq5-6."
+      },
+      {
+        "check": "close_call_last_with_farewell",
+        "passed": true,
+        "evidence": "'Thank you for your time. Goodbye.' was said before seq7 close_call F_XFER/F_SUPPORT, the last tool call."
+      },
+      {
+        "check": "customer_boundary_stability",
+        "passed": true,
+        "evidence": "'I lost my job yesterday, so my usual salary isn't coming...glad to talk with someone from support.' No former payday was promised."
+      }
+    ],
+    "branch_index": 0,
+    "branch_evidence": "Customer: 'I lost my job yesterday...' after verification. Seq4 transfer F_SUPPORT ok=true. Branch records fail: the notes came after the transfer.",
+    "passed": false
+  },
+  "judge_limitation": "Model review is fallible; inspect quoted evidence. Audio/ASR and overlap are not assessed.",
+  "case_id": "R06",
+  "engine": "freya",
+  "official": false,
+  "audio_tested": false,
+  "error": null,
+  "freya_call_id": "df46f4ce-8b28-4e28-ac89-7d2dd485291f",
+  "reported_model_cost_usd": 0.08018,
+  "model_calls": 5
+}

@@ -1,0 +1,6 @@
+17:39:23  RUN    start 2026-10-11T17:39:23Z case=D-02 engine=freya agent_model=Freya configured workflow customer_model=anthropic/claude-opus-5.5
+17:39:28  MODEL  anthropic:claude-opus-5-5  purpose: stress-customer (2s)  tokens=326 cost=$0.0026
+17:39:35  MODEL  anthropic:claude-opus-5-5  purpose: stress-customer (3s)  tokens=456 cost=$0.0042
+17:39:40  MODEL  anthropic:claude-opus-5-5  purpose: stress-customer (2s)  tokens=444 cost=$0.0025
+17:40:12  MODEL  anthropic:claude-opus-5-5  purpose: stress-judge (15s)  tokens=7381 cost=$0.0540
+17:40:12  END    end 2026-10-11T17:40:12Z duration=0m48s model_calls=4 model_cost=$0.06 status=pass

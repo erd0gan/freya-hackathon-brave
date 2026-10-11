@@ -1,0 +1,20 @@
+{
+  "record_status": "fail",
+  "failures": [
+    "Closing outcome: expected E_NO_ID, got E_NO_CONTACT",
+    "Closing reason: expected E_DECLINED, got E_UNCLEAR"
+  ],
+  "capacity": {
+    "status": "unknown"
+  },
+  "conversation_status": "not_reviewed",
+  "overall_status": "error",
+  "case_id": "E-08",
+  "engine": "freya",
+  "official": false,
+  "audio_tested": false,
+  "error": "LLMError: model call failed after 2 attempts: empty reply: {\"id\": \"gen-1791740560-TD5Qhd7pqjE4LhmmD5bv\", \"object\": \"chat.completion\", \"created\": 1791740560, \"model\": \"anthropic/claude-opus-5.5\", \"provider\": \"Claude Platform on AWS\", \"system_fingerprint\": null",
+  "freya_call_id": "2c4dcddd-1040-42c3-8fce-09595e1d1e4f",
+  "reported_model_cost_usd": 0.004708,
+  "model_calls": 1
+}

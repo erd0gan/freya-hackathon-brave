@@ -1,0 +1,87 @@
+{
+  "record_status": "pass",
+  "failures": [],
+  "capacity": {
+    "status": "unknown"
+  },
+  "conversation_status": "pass",
+  "overall_status": "pass",
+  "customer_status": "valid",
+  "judge": {
+    "customer_valid": true,
+    "checks": [
+      {
+        "check": "İki paid notu; H_PAID'de reason yok.",
+        "passed": true,
+        "evidence": "seq4 add_note policy-A H_PAID; seq5 add_note policy-B H_PAID; seq6 close_call {outcome:'H_PAID'} has no reason field"
+      },
+      {
+        "check": "Bir iş günü gibi A varsayımı yerine bu brief'in iki iş günü açıklaması.",
+        "passed": true,
+        "evidence": "Agent: 'Please note that posting a payment may take two business days.'"
+      },
+      {
+        "check": "opening_and_identity_confirmation",
+        "passed": true,
+        "evidence": "Agent: 'Hello, I am Beacon Assurance's digital assistant. This call is recorded. Am I speaking with Mx Alex Rowan?' Customer: 'Yes, this is Alex Rowan speaking.'"
+      },
+      {
+        "check": "privacy_no_disclosure_before_verification",
+        "passed": true,
+        "evidence": "The agent named products and arrears only after seq1/seq2 returned verified=true and seq3 get_account. Earlier turns asked only security questions."
+      },
+      {
+        "check": "identity_sequence_and_format",
+        "passed": true,
+        "evidence": "seq1 policyholder_code '006410' kept the leading zeroes as a string; seq2 birth_year '1988' as a string; both were asked separately."
+      },
+      {
+        "check": "account_readout_before_payment_ask",
+        "passed": true,
+        "evidence": "'Your motor premium has 480.00 past due and is 3 days late. Your home premium has 360.00 past due and is 3 days late.'"
+      },
+      {
+        "check": "paid_handling_no_promise",
+        "passed": true,
+        "evidence": "Customer: 'I paid both overdue premiums yesterday'. Ledger promises: []. No persuasion followed."
+      },
+      {
+        "check": "consent_before_writes",
+        "passed": true,
+        "evidence": "No create_promise was called. The only writes were paid notes (seq4, seq5), which do not require promise consent."
+      },
+      {
+        "check": "honest_statements_no_invented_coverage",
+        "passed": true,
+        "evidence": "The agent made no coverage, receipt, renewal or money-moved claims. Final turn: posting note plus goodbye only."
+      },
+      {
+        "check": "farewell_and_close_last",
+        "passed": true,
+        "evidence": "'Thank you for your time. Goodbye.' came after seq5. close_call seq6 is the last tool."
+      },
+      {
+        "check": "customer_stability",
+        "passed": true,
+        "evidence": "The customer gave the card identity answers and the critical reply consistently: 'I paid both overdue premiums yesterday, the motor and the home amounts'."
+      },
+      {
+        "check": "branch_records",
+        "passed": true,
+        "evidence": "branch_rules null, so no branch applies. Ledger matches the paid path: notes seq4/seq5 H_PAID and close seq6 H_PAID."
+      }
+    ],
+    "branch_index": null,
+    "branch_evidence": "branch_rules is null; not a branching pilot.",
+    "passed": true
+  },
+  "judge_limitation": "Model review is fallible; inspect quoted evidence. Audio/ASR and overlap are not assessed.",
+  "case_id": "H-05",
+  "engine": "freya",
+  "official": false,
+  "audio_tested": false,
+  "error": null,
+  "freya_call_id": "146cd33b-a120-45d0-9eee-a37db2bce86e",
+  "reported_model_cost_usd": 0.068112,
+  "model_calls": 5
+}

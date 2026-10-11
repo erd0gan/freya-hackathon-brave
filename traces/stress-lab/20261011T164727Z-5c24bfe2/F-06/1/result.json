@@ -1,0 +1,92 @@
+{
+  "record_status": "pass",
+  "failures": [],
+  "capacity": {
+    "status": "unknown"
+  },
+  "conversation_status": "fail",
+  "overall_status": "fail",
+  "customer_status": "valid",
+  "judge": {
+    "customer_valid": true,
+    "checks": [
+      {
+        "check": "Geç ürün deadline 20 Ekim; early ürün tarihini gereksiz erkenleştirme.",
+        "passed": true,
+        "evidence": "Seq4 asset-A 2026-10-23 (within the 28 Oct deadline); seq5 asset-B 2026-10-20 (4 business days after Wed 14 Oct)."
+      },
+      {
+        "check": "Tek ortak onay öncesi iki farklı tarih açıkça okunur.",
+        "passed": true,
+        "evidence": "Agent: 'credit card, 900.00 on Friday 23 October 2026; the personal loan, 600.00 on Tuesday 20 October 2026... Do you confirm this?'"
+      },
+      {
+        "check": "opening_and_identity_order",
+        "passed": true,
+        "evidence": "Recorded-call opening, then 'Yes, this is Alex Rowan speaking.' Postcode seq1 and birth_year seq2 were asked separately; get_account ran at seq3."
+      },
+      {
+        "check": "privacy_no_disclosure_before_verification",
+        "passed": true,
+        "evidence": "Debt was first mentioned at after_tool_sequence 3: 'I am calling about overdue payments...', after both verifications."
+      },
+      {
+        "check": "account_readout_complete",
+        "passed": true,
+        "evidence": "'credit card has 900.00 past due and is 4 days late... personal loan has 600.00 past due and is 14 days late' before the payment ask."
+      },
+      {
+        "check": "date_clip_explained",
+        "passed": true,
+        "evidence": "'600.00 on Tuesday 20 October 2026, which is the latest date I can record for it' explains the change from the requested 23rd."
+      },
+      {
+        "check": "explicit_consent_before_writes",
+        "passed": true,
+        "evidence": "'Yes, I confirm the card on the twenty-third and the loan on the twentieth.' came at seq3, before create_promise seq4-5."
+      },
+      {
+        "check": "honest_success_statement",
+        "passed": true,
+        "evidence": "Both create_promise calls returned ok:true. The portal sentence came only after seq5. No claim that money moved."
+      },
+      {
+        "check": "no_invented_coverage_or_discount",
+        "passed": true,
+        "evidence": "No discount, waiver, plan, URL or phone number was offered anywhere in the transcript."
+      },
+      {
+        "check": "customer_boundary_capacity_stable",
+        "passed": true,
+        "evidence": "No hardship, refusal or capacity issue arose: 'No, that's everything, thank you for your help.'"
+      },
+      {
+        "check": "farewell_before_close_call",
+        "passed": false,
+        "evidence": "'Thank you for your time. Goodbye.' has after_tool_sequence 6, so close_call (seq6) ran before the farewell."
+      },
+      {
+        "check": "final_disposition",
+        "passed": true,
+        "evidence": "close_call outcome F_PTP with reason omitted. Two promises were recorded, so no notes are needed."
+      },
+      {
+        "check": "branch_records",
+        "passed": true,
+        "evidence": "branch_rules null, so no branch applies. Ledger promises: asset-A 900.00 2026-10-23, asset-B 600.00 2026-10-20."
+      }
+    ],
+    "branch_index": null,
+    "branch_evidence": "No branch_rules supplied; non-branching pilot.",
+    "passed": false
+  },
+  "judge_limitation": "Model review is fallible; inspect quoted evidence. Audio/ASR and overlap are not assessed.",
+  "case_id": "F-06",
+  "engine": "freya",
+  "official": false,
+  "audio_tested": false,
+  "error": null,
+  "freya_call_id": "d00bd598-b75d-4b2d-bc4a-eaaa692e0079",
+  "reported_model_cost_usd": 0.086308,
+  "model_calls": 7
+}

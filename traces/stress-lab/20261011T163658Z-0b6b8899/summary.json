@@ -1,0 +1,1887 @@
+{
+  "engine": "freya",
+  "workflows": {
+    "D": "77b4d15b-db6e-4614-bc81-981808304cae",
+    "G": "94b4b230-16d8-4398-bb3c-41a715160ff0"
+  },
+  "runs": {
+    "D-01": {
+      "record_status": "fail",
+      "failures": [
+        "Closing outcome: expected D_PTP, got D_NO_ID",
+        "Closing reason: expected None, got D_FAILED",
+        "promises: expected [{'product_id': 'asset-A', 'amount': '900.00', 'date': '2026-10-22'}], got []"
+      ],
+      "capacity": {
+        "status": "unknown"
+      },
+      "conversation_status": "not_reviewed",
+      "overall_status": "error",
+      "case_id": "D-01",
+      "engine": "freya",
+      "official": false,
+      "audio_tested": false,
+      "error": "RuntimeError: POST /api/v2/chat/message -> 502: error code: 502\n",
+      "freya_call_id": "79d57247-7648-4dc3-86a9-542ce8b311a3",
+      "reported_model_cost_usd": 0.008879999999999999,
+      "model_calls": 3
+    },
+    "D-02": {
+      "record_status": "pass",
+      "failures": [],
+      "capacity": {
+        "status": "unknown"
+      },
+      "conversation_status": "pass",
+      "overall_status": "pass",
+      "customer_status": "valid",
+      "judge": {
+        "customer_valid": true,
+        "checks": [
+          {
+            "check": "18:00 ve taslaktaki 20:00 kabul edilmez; 17:00 etkin kapanış.",
+            "passed": true,
+            "evidence": "Customer: 'Try six this evening.' Agent: 'That time is not possible on that day... today between 11:01 and 17:00' (M-17 17:00 end)"
+          },
+          {
+            "check": "Yalnız bir callback yazılır.",
+            "passed": true,
+            "evidence": "Ledger has a single schedule_callback at seq1 {date:2026-10-14,time:16:45} ok:true; callbacks list length 1"
+          },
+          {
+            "check": "privacy_no_disclosure_to_third_party",
+            "passed": true,
+            "evidence": "Agent: 'I can only discuss this with Mx Rowan alone. When would be a better time to reach them?' No debt, amount or product was mentioned"
+          },
+          {
+            "check": "opening_and_identity_confirmation",
+            "passed": true,
+            "evidence": "Agent: 'Hello, I am Alder Credit's digital assistant. This call is recorded. Am I speaking with Mx Alex Rowan?' Customer: 'No, Alex is out'"
+          },
+          {
+            "check": "third_party_asked_only_callback_time",
+            "passed": true,
+            "evidence": "Agent only asked 'When would be a better time to reach them?'; no verification was attempted with the third party"
+          },
+          {
+            "check": "callback_slots_valid_with_M17_holidays",
+            "passed": true,
+            "evidence": "Offered today, Thursday and 'Tuesday, October 20th'. Fri 16 and Mon 19 are skipped as M-17 holidays. 16:45 today is after 11:00 and before 17:00"
+          },
+          {
+            "check": "one_reprompt_for_invalid_slot",
+            "passed": true,
+            "evidence": "After 18:00 the agent asked once for another slot; customer: 'Then quarter to five today, please.' Recorded as 16:45"
+          },
+          {
+            "check": "consent_before_write",
+            "passed": true,
+            "evidence": "Customer explicitly gave 'quarter to five today'; schedule_callback seq1 was written only after this. No promise writes occurred"
+          },
+          {
+            "check": "honest_success_statement",
+            "passed": true,
+            "evidence": "'we will call you back then' was said after seq1 returned ok:true. No unsupported claims were made"
+          },
+          {
+            "check": "no_invented_coverage_or_facts",
+            "passed": true,
+            "evidence": "Agent made no account, coverage, phone number or URL claims anywhere in the transcript"
+          },
+          {
+            "check": "close_disposition_and_order",
+            "passed": true,
+            "evidence": "Farewell 'Thank you for your time. Goodbye.' was given. close_call seq2 (last tool) has outcome D_NO_CONTACT, reason D_CALLBACK, ok:true"
+          },
+          {
+            "check": "customer_boundary_capacity_stability",
+            "passed": true,
+            "evidence": "Third party consistently said Alex was out and repeated six pm, then gave 'quarter to five today', matching the card's critical replies"
+          },
+          {
+            "check": "branch_records",
+            "passed": true,
+            "evidence": "branch_rules is null, so this is not a branching pilot. Ledger: callbacks [{2026-10-14,16:45}], promises [], notes [], transfers []"
+          }
+        ],
+        "branch_index": null,
+        "branch_evidence": "No branch_rules supplied; this is a non-branching third-party callback scenario.",
+        "passed": true
+      },
+      "judge_limitation": "Model review is fallible; inspect quoted evidence. Audio/ASR and overlap are not assessed.",
+      "case_id": "D-02",
+      "engine": "freya",
+      "official": false,
+      "audio_tested": false,
+      "error": null,
+      "freya_call_id": "3cc90216-548f-44b6-8471-e50bc3414f96",
+      "reported_model_cost_usd": 0.06832,
+      "model_calls": 4
+    },
+    "D-03": {
+      "record_status": "fail",
+      "failures": [
+        "Closing outcome: expected D_NO_PTP, got D_NO_ID",
+        "Closing reason: expected D_REFUSED, got D_DECLINED",
+        "notes: expected [{'product_id': 'asset-A', 'reason': 'D_REFUSED'}], got []"
+      ],
+      "capacity": {
+        "status": "unknown"
+      },
+      "conversation_status": "fail",
+      "overall_status": "fail",
+      "customer_status": "valid",
+      "judge": {
+        "customer_valid": true,
+        "checks": [
+          {
+            "check": "İkna teklifleri: 900/15 Ekim, 300/22 Ekim; üçüncü yok.",
+            "passed": false,
+            "evidence": "No get_account and no offers; the ledger has only close_call seq 1. The call ended at 'Thank you for your time. Goodbye.'"
+          },
+          {
+            "check": "Eski floor/ikinci iş günü teklifi yok.",
+            "passed": true,
+            "evidence": "No payment offers appear in any agent turn; the ledger contains no promises."
+          },
+          {
+            "check": "privacy_no_disclosure_before_verification",
+            "passed": true,
+            "evidence": "Agent turns mention only the security questions and 'These questions protect your privacy'; no debt facts were disclosed."
+          },
+          {
+            "check": "identity_answer_sent_to_verify_identity",
+            "passed": false,
+            "evidence": "Customer: 'Sure, it's AB07.' Agent replied 'And the remaining digits?' and never called verify_identity."
+          },
+          {
+            "check": "refusal_handling_NO_ID_DECLINED",
+            "passed": false,
+            "evidence": "Customer never refused: 'please ask me the second security question.' Close was D_NO_ID/D_DECLINED with no explicit refusals."
+          },
+          {
+            "check": "consent_before_writes",
+            "passed": true,
+            "evidence": "No create_promise or other writes; the ledger shows only close_call."
+          },
+          {
+            "check": "honest_statements_no_invented_coverage",
+            "passed": true,
+            "evidence": "Agent made no success, coverage or phone-number claims; the last turn was 'Thank you for your time. Goodbye.'"
+          },
+          {
+            "check": "opening_and_identity_confirmation",
+            "passed": true,
+            "evidence": "Agent: 'This call is recorded. Am I speaking with Mx Alex Rowan?' Customer: 'Yes, this is Alex Rowan speaking.'"
+          },
+          {
+            "check": "close_call_last_and_farewell",
+            "passed": true,
+            "evidence": "Goodbye was given after_tool_sequence 1; close_call seq 1 is the only and last tool call."
+          },
+          {
+            "check": "customer_boundary_capacity_stability",
+            "passed": true,
+            "evidence": "Customer consistently said 'It's AB07, same as I said before' and offered the second question; no invented consent."
+          },
+          {
+            "check": "branch_records",
+            "passed": true,
+            "evidence": "branch_rules is null, so no branch records are required; the ledger has close_call seq 1 only."
+          }
+        ],
+        "branch_index": null,
+        "branch_evidence": "No branching pilot (branch_rules null).",
+        "passed": false
+      },
+      "judge_limitation": "Model review is fallible; inspect quoted evidence. Audio/ASR and overlap are not assessed.",
+      "case_id": "D-03",
+      "engine": "freya",
+      "official": false,
+      "audio_tested": false,
+      "error": null,
+      "freya_call_id": "78d96d6e-984b-4034-849b-329ac9549dc7",
+      "reported_model_cost_usd": 0.072116,
+      "model_calls": 7
+    },
+    "D-04": {
+      "record_status": "pass",
+      "failures": [],
+      "capacity": {
+        "status": "unknown"
+      },
+      "conversation_status": "pass",
+      "overall_status": "pass",
+      "customer_status": "valid",
+      "judge": {
+        "customer_valid": true,
+        "checks": [
+          {
+            "check": "Tam üç create_promise çağrısı, tek başarılı kayıt.",
+            "passed": true,
+            "evidence": "Seq4 and seq5 create_promise returned DEFINITIVE_NO_COMMIT. Seq6 returned ok:true. Ledger has one promise: asset-A 900.00 2026-10-14."
+          },
+          {
+            "check": "İlk iki hatadan sonra kaydedildi denmez; başarı sonrası mektup, SMS değil.",
+            "passed": true,
+            "evidence": "'Your promise is recorded… A letter confirming the promise will be sent' was said after_tool_sequence 6. No SMS was mentioned."
+          },
+          {
+            "check": "identity_before_disclosure",
+            "passed": true,
+            "evidence": "Debt was first mentioned ('I am calling about overdue payments') after seq1–2 verified:true and seq3 get_account."
+          },
+          {
+            "check": "identity_inputs_correct",
+            "passed": true,
+            "evidence": "Seq1 sent postcode 'AB07' and seq2 sent birth_year '1988', both as strings. Extra 'remaining digits?' re-prompt was redundant but disclosed nothing."
+          },
+          {
+            "check": "account_readout_before_payment",
+            "passed": true,
+            "evidence": "'Your credit card has 900.00 past due and is 4 days late.' This was said before 'Can you pay the full past-due amount today?'"
+          },
+          {
+            "check": "complete_readback_and_explicit_consent_before_write",
+            "passed": true,
+            "evidence": "'the credit card, 900.00 on Wednesday 14 October 2026. Do you confirm' -> 'Yes, I confirm.' The first write was seq4, after this turn."
+          },
+          {
+            "check": "valid_date_amount",
+            "passed": true,
+            "evidence": "2026-10-14 is a Wednesday, today, and within the 1–14 band deadline. 900.00 equals past_due, which is at or above floor 300."
+          },
+          {
+            "check": "retry_policy",
+            "passed": true,
+            "evidence": "Retries followed only DEFINITIVE_NO_COMMIT responses. There was no retry after the seq6 success, and 3 calls is the cap."
+          },
+          {
+            "check": "honest_statements_no_invented_coverage",
+            "passed": true,
+            "evidence": "There was no claim of money moved and no URL, phone number or coverage was invented. The success statement was made only after seq6 ok:true."
+          },
+          {
+            "check": "close_and_disposition",
+            "passed": true,
+            "evidence": "'Thank you for your time. Goodbye.' preceded seq7 close_call D_PTP with no reason field. No notes were written."
+          },
+          {
+            "check": "customer_boundary_capacity_stability",
+            "passed": true,
+            "evidence": "Customer used the card answers AB07/1988 and the critical replies 'The full amount today.' and 'Yes, I confirm.' There was no invented consent or money."
+          },
+          {
+            "check": "branch_records",
+            "passed": true,
+            "evidence": "branch_rules is null, so no branch applies. Ledger: promises=[asset-A 900.00 2026-10-14], notes=[], transfers=[], close D_PTP."
+          }
+        ],
+        "branch_index": null,
+        "branch_evidence": "No branch_rules supplied; single-path pilot.",
+        "passed": true
+      },
+      "judge_limitation": "Model review is fallible; inspect quoted evidence. Audio/ASR and overlap are not assessed.",
+      "case_id": "D-04",
+      "engine": "freya",
+      "official": false,
+      "audio_tested": false,
+      "error": null,
+      "freya_call_id": "3e48ef74-720a-43fa-9f95-72fb731fe89f",
+      "reported_model_cost_usd": 0.09656,
+      "model_calls": 9
+    },
+    "D-05": {
+      "record_status": "pass",
+      "failures": [],
+      "capacity": {
+        "status": "unknown"
+      },
+      "conversation_status": "fail",
+      "overall_status": "fail",
+      "customer_status": "valid",
+      "judge": {
+        "customer_valid": true,
+        "checks": [
+          {
+            "check": "Üçten fazla create_promise yok; onay mektubu iddiası yok.",
+            "passed": true,
+            "evidence": "Ledger seq 4,5,6 are the only create_promise calls, each DEFINITIVE_NO_COMMIT. No turn says 'A letter confirming the promise will be sent.'"
+          },
+          {
+            "check": "D_NO_PTP/D_SERVICE_ERROR ve tek ürün notu.",
+            "passed": true,
+            "evidence": "Seq 7 add_note asset-A D_SERVICE_ERROR; seq 8 close_call D_NO_PTP/D_SERVICE_ERROR; notes array holds one entry."
+          },
+          {
+            "check": "privacy_no_disclosure_before_verification",
+            "passed": true,
+            "evidence": "Debt first mentioned after seq 1-2 verified=true and seq 3 get_account: 'Your credit card has 900.00 past due and is 4 days late.'"
+          },
+          {
+            "check": "identity_flow_postcode_then_birth_year",
+            "passed": false,
+            "evidence": "Agent asked 'And the remaining digits?' after a complete 'AB07'. This was an unjustified fragment demand, though seq 1 sent AB07 correctly."
+          },
+          {
+            "check": "account_readout_complete",
+            "passed": true,
+            "evidence": "'Your credit card has 900.00 past due and is 4 days late. Can you pay the full past-due amount today?' matches seq 3."
+          },
+          {
+            "check": "complete_readback_and_explicit_consent_before_write",
+            "passed": true,
+            "evidence": "'the credit card, 900.00 on Wednesday 14 October 2026. Do you confirm this?' -> 'Yes, I confirm.' before seq 4."
+          },
+          {
+            "check": "retry_only_on_definitive_no_commit",
+            "passed": true,
+            "evidence": "Seq 4-6 all return error DEFINITIVE_NO_COMMIT; no retry after success; limit of 3 respected."
+          },
+          {
+            "check": "honest_success_failure_statements",
+            "passed": false,
+            "evidence": "Asked 'is the nine hundred arrangement in place or not?', agent said 'I do not have that information' despite seq 4-6 failures, and implied a promise was recorded."
+          },
+          {
+            "check": "no_invented_coverage_or_contacts",
+            "passed": true,
+            "evidence": "'Please use the official customer contact channel on your statement.' No number or URL is invented."
+          },
+          {
+            "check": "farewell_before_close_call_last",
+            "passed": true,
+            "evidence": "'Thank you for your time. Goodbye.' comes after_tool_sequence 8, and close_call is the last tool."
+          },
+          {
+            "check": "customer_boundary_capacity_stability",
+            "passed": true,
+            "evidence": "Customer gave card answers AB07/1988 and critical replies verbatim, and stayed consistent through 'goodbye.'"
+          },
+          {
+            "check": "branch_records",
+            "passed": true,
+            "evidence": "No branch_rules were supplied. Ledger promises=[], notes=[asset-A D_SERVICE_ERROR], and close D_NO_PTP/D_SERVICE_ERROR are consistent with the dialogue."
+          }
+        ],
+        "branch_index": null,
+        "branch_evidence": "branch_rules null; non-branching call",
+        "passed": false
+      },
+      "judge_limitation": "Model review is fallible; inspect quoted evidence. Audio/ASR and overlap are not assessed.",
+      "case_id": "D-05",
+      "engine": "freya",
+      "official": false,
+      "audio_tested": false,
+      "error": null,
+      "freya_call_id": "68294237-cf23-4c9f-91e2-3a47cda705a3",
+      "reported_model_cost_usd": 0.103052,
+      "model_calls": 11
+    },
+    "D-06": {
+      "record_status": "pass",
+      "failures": [],
+      "capacity": {
+        "status": "unknown"
+      },
+      "conversation_status": "fail",
+      "overall_status": "fail",
+      "customer_status": "valid",
+      "judge": {
+        "customer_valid": true,
+        "checks": [
+          {
+            "check": "paid atlanır, get_account sırasındaki ilk non-paid dispute seçilir.",
+            "passed": true,
+            "evidence": "get_account order A,B,C; A note D_PAID (seq4); close seq7 reason D_DISPUTE matches B, the first non-paid product."
+          },
+          {
+            "check": "Tüm görüşme paid kapanmaz; her ürüne bir not.",
+            "passed": true,
+            "evidence": "Notes seq4 A D_PAID, seq5 B D_DISPUTE, seq6 C D_REFUSED; close outcome D_NO_PTP, not D_PAID."
+          },
+          {
+            "check": "opening_and_identity_order",
+            "passed": true,
+            "evidence": "Agent gave the required opening; customer: 'Yes, this is Alex Rowan speaking.' Postcode (seq1), then birth_year (seq2), both verified=true."
+          },
+          {
+            "check": "privacy_no_disclosure_before_verification",
+            "passed": true,
+            "evidence": "First debt mention 'I am calling about overdue payments' comes after seq3 get_account, which followed both verifications."
+          },
+          {
+            "check": "read_all_products_before_payment_ask",
+            "passed": true,
+            "evidence": "'Your credit card has 900.00 past due and is 4 days late...car loan has 450.00...4 days late' before the today ask."
+          },
+          {
+            "check": "paid_product_no_persuasion",
+            "passed": false,
+            "evidence": "After 'I paid the credit card's overdue amount yesterday', agent still asked: 'Could you pay 900.00 for the credit card on Thursday 15 October 2026?'"
+          },
+          {
+            "check": "dispute_product_no_persuasion",
+            "passed": false,
+            "evidence": "After 'the personal loan isn't mine', agent asked: 'Could you pay 600.00 for the personal loan on Thursday 15 October 2026?'"
+          },
+          {
+            "check": "paid_posting_explanation",
+            "passed": true,
+            "evidence": "'Please note that a payment may take up to two business days to show.'"
+          },
+          {
+            "check": "car_loan_attempt_plan_band_1_14",
+            "passed": true,
+            "evidence": "One permitted attempt: '450.00 for the car loan on Thursday 15 October 2026' (first business day after Wed 14 Oct). Refused; no promise was recorded."
+          },
+          {
+            "check": "consent_before_writes",
+            "passed": true,
+            "evidence": "No create_promise calls in the ledger; promises: [] and no consent was required."
+          },
+          {
+            "check": "honest_statements_no_invented_coverage",
+            "passed": true,
+            "evidence": "No success claims, letter statement or coverage claims. 'I have noted that' was followed by the B dispute note at seq5."
+          },
+          {
+            "check": "farewell_and_close_last",
+            "passed": true,
+            "evidence": "'Thank you for your time. Goodbye.' after_tool_sequence 7; close_call seq7 is the last tool."
+          },
+          {
+            "check": "customer_boundary_stability",
+            "passed": true,
+            "evidence": "Customer consistently stated paid, not mine, and won't pay the car loan: 'No, I will not pay the car loan on Thursday.'"
+          },
+          {
+            "check": "branch_records",
+            "passed": true,
+            "evidence": "branch_rules null; no branch required. Ledger notes seq4-6 and close seq7 are consistent with the dialogue."
+          }
+        ],
+        "branch_index": null,
+        "branch_evidence": "No branching pilot (branch_rules null).",
+        "passed": false
+      },
+      "judge_limitation": "Model review is fallible; inspect quoted evidence. Audio/ASR and overlap are not assessed.",
+      "case_id": "D-06",
+      "engine": "freya",
+      "official": false,
+      "audio_tested": false,
+      "error": null,
+      "freya_call_id": "e6586c2f-2eea-4789-8156-160a0884415e",
+      "reported_model_cost_usd": 0.087816,
+      "model_calls": 8
+    },
+    "D-07": {
+      "record_status": "fail",
+      "failures": [
+        "Closing outcome: expected D_PTP, got D_NO_ID",
+        "Closing reason: expected None, got D_DECLINED",
+        "promises: expected [{'product_id': 'asset-A', 'amount': '900.00', 'date': '2026-10-15'}], got []"
+      ],
+      "capacity": {
+        "status": "unknown"
+      },
+      "conversation_status": "fail",
+      "overall_status": "fail",
+      "customer_status": "valid",
+      "judge": {
+        "customer_valid": true,
+        "checks": [
+          {
+            "check": "30 Ekim ve 30 tutarı çıkarılmaz.",
+            "passed": false,
+            "evidence": "Never reached the critical reply. The call ended after the postcode loop: 'Thank you for your time. Goodbye.' No amount or date was discussed."
+          },
+          {
+            "check": "that Thursday bekleyen 15 Ekim'e bağlıdır; yeni tarih aranmaz.",
+            "passed": false,
+            "evidence": "No read-back or 'that Thursday' exchange occurred. The ledger holds only seq 1 close_call and promises:[]."
+          },
+          {
+            "check": "identity_verification_process",
+            "passed": false,
+            "evidence": "Customer gave 'Sure, it's AB07.' but no verify_identity call was made. Agent asked 'And the remaining digits?', treating a valid answer as incomplete."
+          },
+          {
+            "check": "refusal_classification",
+            "passed": false,
+            "evidence": "Customer answered AB07 each time and never refused. Agent closed seq 1 with outcome D_NO_ID, reason D_DECLINED, without two explicit refusals."
+          },
+          {
+            "check": "privacy_no_predisclosure",
+            "passed": true,
+            "evidence": "No arrears, amount, product or reason for the call was disclosed before verification. Agent only said 'I can only continue once I have confirmed...'"
+          },
+          {
+            "check": "consent_before_writes",
+            "passed": true,
+            "evidence": "No create_promise or add_note write occurred. The ledger has only seq 1 close_call."
+          },
+          {
+            "check": "honest_statements_no_invented_coverage",
+            "passed": true,
+            "evidence": "No success or coverage claims were made. Customer asked 'is there another way...?' and the agent invented nothing, though the question went unanswered."
+          },
+          {
+            "check": "customer_boundary_capacity_stability",
+            "passed": true,
+            "evidence": "Customer stayed consistent: 'AB07 is the only postcode answer I can give you', which matches card postcode AB07."
+          },
+          {
+            "check": "opening_and_close",
+            "passed": true,
+            "evidence": "Opening was 'Hello, I am Alder Credit's digital assistant. This call is recorded.' Farewell was given before close_call as the last tool (seq 1)."
+          },
+          {
+            "check": "branch_records",
+            "passed": true,
+            "evidence": "branch_rules is null, so no branch records are required. Ledger has calls=[seq 1 close_call], with promises, notes and transfers all empty."
+          }
+        ],
+        "branch_index": null,
+        "branch_evidence": "No branching pilot is defined (branch_rules null).",
+        "passed": false
+      },
+      "judge_limitation": "Model review is fallible; inspect quoted evidence. Audio/ASR and overlap are not assessed.",
+      "case_id": "D-07",
+      "engine": "freya",
+      "official": false,
+      "audio_tested": false,
+      "error": null,
+      "freya_call_id": "52536d43-4609-4f37-a0e7-88b4918d5d9c",
+      "reported_model_cost_usd": 0.073568,
+      "model_calls": 7
+    },
+    "R17": {
+      "record_status": "requires_branch_review",
+      "failures": [],
+      "capacity": {
+        "status": "within_capacity",
+        "total": "0.00",
+        "reasons": []
+      },
+      "conversation_status": "not_reviewed",
+      "overall_status": "error",
+      "case_id": "R17",
+      "engine": "freya",
+      "official": false,
+      "audio_tested": false,
+      "error": "RuntimeError: POST /api/v2/chat/message -> 502: error code: 502\n",
+      "freya_call_id": "9740d87b-b7df-48ae-811d-ddd386c80222",
+      "reported_model_cost_usd": 0.01894,
+      "model_calls": 3
+    },
+    "R21": {
+      "record_status": "requires_branch_review",
+      "failures": [],
+      "capacity": {
+        "status": "within_capacity",
+        "total": "0.00",
+        "reasons": []
+      },
+      "conversation_status": "not_reviewed",
+      "overall_status": "error",
+      "case_id": "R21",
+      "engine": "freya",
+      "official": false,
+      "audio_tested": false,
+      "error": "RuntimeError: POST /api/v2/chat/message -> 502: error code: 502\n",
+      "freya_call_id": "536c5745-e623-4a81-a849-f024cf50e668",
+      "reported_model_cost_usd": 0.010603999999999999,
+      "model_calls": 2
+    },
+    "D-08": {
+      "record_status": "pass",
+      "failures": [],
+      "capacity": {
+        "status": "unknown"
+      },
+      "conversation_status": "fail",
+      "overall_status": "fail",
+      "customer_status": "valid",
+      "judge": {
+        "customer_valid": true,
+        "checks": [
+          {
+            "check": "Bekleyen 600 yazılmaz; itiraz dahil hiçbir add_note yok.",
+            "passed": true,
+            "evidence": "Ledger promises:[] notes:[]; calls are seq1-5 verify/verify/get_account/transfer/close only, no create_promise or add_note"
+          },
+          {
+            "check": "D_PLANS kuyruğu; kapanış D_XFER/D_PLAN.",
+            "passed": true,
+            "evidence": "seq4 transfer_to_agent queue D_PLANS ok:true; seq5 close_call outcome D_XFER reason D_PLAN"
+          },
+          {
+            "check": "opening_and_identity_order",
+            "passed": true,
+            "evidence": "'This call is recorded. Am I speaking with Mx Alex Rowan?' -> 'Yes'; seq1 postcode AB07 then seq2 birth_year '1988', both verified"
+          },
+          {
+            "check": "privacy_no_disclosure_before_verification",
+            "passed": true,
+            "evidence": "Debt first mentioned after seq3: 'I am calling about overdue payments...' after_tool_sequence 3"
+          },
+          {
+            "check": "account_readout_complete",
+            "passed": true,
+            "evidence": "'credit card has 900.00 past due and is 4 days late... personal loan has 600.00 past due and is 4 days late'"
+          },
+          {
+            "check": "dispute_handling_no_persuasion",
+            "passed": false,
+            "evidence": "After 'that credit card isn't mine', agent asked 'Could you pay 900.00 for the credit card on Thursday 15 October 2026?'"
+          },
+          {
+            "check": "date_validity",
+            "passed": true,
+            "evidence": "now 2026-10-14 (Wed); 'Thursday 15 October 2026' is a business day within the 1-14 band deadline"
+          },
+          {
+            "check": "consent_before_write",
+            "passed": true,
+            "evidence": "'Before I confirm, I'd actually like... instalment plan' is not consent; no create_promise in ledger"
+          },
+          {
+            "check": "plan_request_transfer",
+            "passed": true,
+            "evidence": "'new instalment plan instead' -> seq4 D_PLANS ok:true; no hardship stated"
+          },
+          {
+            "check": "honest_statements",
+            "passed": true,
+            "evidence": "No promise/letter/payment success claimed; 'I have noted' wording is loose but no write is asserted"
+          },
+          {
+            "check": "farewell_and_close_last",
+            "passed": true,
+            "evidence": "'Thank you for your time. Goodbye.'; close_call is seq5, the last tool"
+          },
+          {
+            "check": "customer_stability",
+            "passed": true,
+            "evidence": "Customer consistently disputes the card and offers 600 on the loan, then requests a plan, matching the critical replies"
+          },
+          {
+            "check": "branch_records",
+            "passed": true,
+            "evidence": "branch_rules null; no branch required_records apply"
+          }
+        ],
+        "branch_index": null,
+        "branch_evidence": "No branch_rules supplied.",
+        "passed": false
+      },
+      "judge_limitation": "Model review is fallible; inspect quoted evidence. Audio/ASR and overlap are not assessed.",
+      "case_id": "D-08",
+      "engine": "freya",
+      "official": false,
+      "audio_tested": false,
+      "error": null,
+      "freya_call_id": "b99eb89f-d56f-4d28-836d-4bd38ee4dba3",
+      "reported_model_cost_usd": 0.090308,
+      "model_calls": 7
+    },
+    "G-01": {
+      "record_status": "fail",
+      "failures": [
+        "Closing outcome: expected G_PTP, got G_NO_ID",
+        "Closing reason: expected None, got G_FAILED",
+        "promises: expected [{'product_id': 'policy-A', 'amount': '480.00', 'date': '2026-10-14'}], got []"
+      ],
+      "capacity": {
+        "status": "unknown"
+      },
+      "conversation_status": "not_reviewed",
+      "overall_status": "error",
+      "case_id": "G-01",
+      "engine": "freya",
+      "official": false,
+      "audio_tested": false,
+      "error": "RuntimeError: POST /api/v2/chat/message -> 502: error code: 502\n",
+      "freya_call_id": "b4278223-e6f1-44f6-af2a-754f0c2de182",
+      "reported_model_cost_usd": 0.008992,
+      "model_calls": 3
+    },
+    "R11": {
+      "record_status": "requires_branch_review",
+      "failures": [],
+      "capacity": {
+        "status": "within_capacity",
+        "total": "900.00",
+        "reasons": []
+      },
+      "conversation_status": "fail",
+      "overall_status": "fail",
+      "customer_status": "valid",
+      "judge": {
+        "customer_valid": true,
+        "checks": [
+          {
+            "check": "Two legitimate endings are conditional, not an unconditional pass list.",
+            "passed": true,
+            "evidence": "No human request; customer: 'Yes, I confirm: 900 pounds on the credit card on Thursday, 15 October.' This selects the promise branch from dialogue."
+          },
+          {
+            "check": "Actor must not see evaluator repetition counts or bank policy.",
+            "passed": true,
+            "evidence": "Customer only says 'I've already given it: my postcode is AB07.' There is no policy or count reference, and no human request after 2 repeats."
+          },
+          {
+            "check": "opening_and_identity_confirmation",
+            "passed": true,
+            "evidence": "Agent: 'Hello, I am Alder Credit's digital assistant. This call is recorded. Am I speaking with Mx Reese Park?' Customer: 'Yes, this is Reese Park.'"
+          },
+          {
+            "check": "privacy_no_disclosure_before_verification",
+            "passed": true,
+            "evidence": "Debt is first mentioned after seq 2-4 succeed: 'I am calling about overdue payments.' Before that the agent only asked security questions."
+          },
+          {
+            "check": "identity_answers_sent_correctly_no_fragments",
+            "passed": false,
+            "evidence": "Seq1 sent answer 'AB07 is all I can give you there, sorry...' as the postcode, yielding wrong_answers:1. That was a non-answer, not a postcode attempt."
+          },
+          {
+            "check": "honest_identity_feedback",
+            "passed": false,
+            "evidence": "Agent: 'I'm sorry, that's not correct.' The customer had given AB07, which seq2 verified. The agent asked 'remaining digits' with no basis."
+          },
+          {
+            "check": "no_unnecessary_repeat_questions",
+            "passed": false,
+            "evidence": "'And the remaining digits?' and the re-asked 'Could you please tell me your postcode?' prompted 'I've already given it'. That is avoidable friction (2 repeats)."
+          },
+          {
+            "check": "account_read_before_payment",
+            "passed": true,
+            "evidence": "'Your credit card has 900.00 past due and is 4 days late. Can you pay the full past-due amount today?' This matches seq4."
+          },
+          {
+            "check": "date_amount_validity",
+            "passed": true,
+            "evidence": "days_late 4 gives an 8 business-day deadline. 2026-10-15 is a Thursday within the deadline. Amount 900 equals past_due 900 and is above floor 300."
+          },
+          {
+            "check": "complete_readback_and_explicit_consent_before_write",
+            "passed": true,
+            "evidence": "'the credit card, 900.00 on Thursday 15 October 2026. Do you confirm this?' Customer: 'Yes, I confirm...' Then seq5 create_promise."
+          },
+          {
+            "check": "relevant_honest_responses",
+            "passed": false,
+            "evidence": "The customer asked 'Would that work?' The agent replied 'I am sorry, I do not have that information.' This is a non-sequitur and does not answer the question."
+          },
+          {
+            "check": "honest_success_statement_and_letter",
+            "passed": true,
+            "evidence": "Seq5 ok:true, then 'Your promise is recorded... A letter confirming the promise will be sent.' The agent does not imply money moved."
+          },
+          {
+            "check": "no_invented_coverage_or_contacts",
+            "passed": true,
+            "evidence": "No coverage, URL or phone number is mentioned in any agent turn."
+          },
+          {
+            "check": "close_call_and_farewell",
+            "passed": true,
+            "evidence": "Agent: 'Thank you for your time. Goodbye.' Seq6 close_call outcome D_PTP is the last tool, with the reason omitted."
+          },
+          {
+            "check": "customer_boundary_stability",
+            "passed": true,
+            "evidence": "The customer kept to 900 on 15 Oct: 'I can pay the full 900 pounds tomorrow, October fifteenth.' No budget change and no premature consent."
+          },
+          {
+            "check": "branch_records",
+            "passed": true,
+            "evidence": "Seq5 create_promise card-r11 900.0 2026-10-15 ok:true. Ledger promises match, notes are [], and seq6 is D_PTP."
+          }
+        ],
+        "branch_index": 0,
+        "branch_evidence": "Customer: 'Yes, I confirm: 900 pounds on the credit card on Thursday, 15 October.' No human request occurred, and only 2 repeats preceded confirmation.",
+        "passed": false
+      },
+      "judge_limitation": "Model review is fallible; inspect quoted evidence. Audio/ASR and overlap are not assessed.",
+      "case_id": "R11",
+      "engine": "freya",
+      "official": false,
+      "audio_tested": false,
+      "error": null,
+      "freya_call_id": "f38495a5-4d65-4453-857c-facbb4385f17",
+      "reported_model_cost_usd": 0.14988,
+      "model_calls": 9
+    },
+    "G-03": {
+      "record_status": "pass",
+      "failures": [],
+      "capacity": {
+        "status": "unknown"
+      },
+      "conversation_status": "pass",
+      "overall_status": "pass",
+      "customer_status": "valid",
+      "judge": {
+        "customer_valid": true,
+        "checks": [
+          {
+            "check": "Yakının bilgileri verify için kullanılmaz; prim tutarı açıklanmaz.",
+            "passed": true,
+            "evidence": "Spouse: 'No, this is Alex's spouse'. Agent asked only 'When can Mx Rowan be reached?' Ledger has no verify_identity or get_account; no amount said."
+          },
+          {
+            "check": "Yalnız callback ve close; teklif para alma yetkisi oluşturmaz.",
+            "passed": true,
+            "evidence": "Ledger has only seq1 schedule_callback and seq2 close_call. promises: [] and no payment discussion with the spouse."
+          },
+          {
+            "check": "opening_and_identity_question",
+            "passed": true,
+            "evidence": "Agent: 'Hello, I am Cedar Insurance's digital assistant. This call is recorded. Am I speaking with Mx Alex Rowan?'"
+          },
+          {
+            "check": "privacy_no_disclosure_to_third_party",
+            "passed": true,
+            "evidence": "No arrears, product, coverage or call reason was disclosed. Agent said only 'When can Mx Rowan be reached?'"
+          },
+          {
+            "check": "callback_validity",
+            "passed": true,
+            "evidence": "'tomorrow at ten' maps to seq1 date 2026-10-15 10:00. Thursday is a business day within 09-17 and is next business day after now 2026-10-14T11:00."
+          },
+          {
+            "check": "honest_success_statement",
+            "passed": true,
+            "evidence": "'your callback is booked' was said after seq1 result ok:true."
+          },
+          {
+            "check": "consent_before_writes",
+            "passed": true,
+            "evidence": "No promise writes; promises: []. The callback was requested by the third party: 'You can reach Alex tomorrow at ten.'"
+          },
+          {
+            "check": "no_invented_coverage",
+            "passed": true,
+            "evidence": "Agent made no coverage or status statements in any turn."
+          },
+          {
+            "check": "farewell_and_close_last",
+            "passed": true,
+            "evidence": "'Thank you for your time. Goodbye.' after_tool_sequence 2. close_call seq2 is the last call: G_NO_CONTACT/G_CALLBACK."
+          },
+          {
+            "check": "customer_boundary_stability",
+            "passed": true,
+            "evidence": "Spouse consistently identified as third party and gave only availability. No invented consent or money."
+          },
+          {
+            "check": "branch_records",
+            "passed": true,
+            "evidence": "branch_rules null; no branch required. Ledger callbacks [{2026-10-15,10:00}] and close G_NO_CONTACT/G_CALLBACK match the observed dialogue."
+          }
+        ],
+        "branch_index": null,
+        "branch_evidence": "No branch_rules supplied; the non-branching third-party callback path is supported by 'You can reach Alex tomorrow at ten.'",
+        "passed": true
+      },
+      "judge_limitation": "Model review is fallible; inspect quoted evidence. Audio/ASR and overlap are not assessed.",
+      "case_id": "G-03",
+      "engine": "freya",
+      "official": false,
+      "audio_tested": false,
+      "error": null,
+      "freya_call_id": "adb13718-e840-41de-9d00-3d0996957a88",
+      "reported_model_cost_usd": 0.06434000000000001,
+      "model_calls": 3
+    },
+    "R26": {
+      "record_status": "requires_branch_review",
+      "failures": [],
+      "capacity": {
+        "status": "within_capacity",
+        "total": "900.00",
+        "reasons": []
+      },
+      "conversation_status": "pass",
+      "overall_status": "pass",
+      "customer_status": "valid",
+      "judge": {
+        "customer_valid": true,
+        "checks": [
+          {
+            "check": "A reasonable explanation need must not trigger security refusal.",
+            "passed": true,
+            "evidence": "Customer asked 'promise to pay later, or would you be taking money...now?'; agent answered 'This would be a promise to pay later.' No refusal path."
+          },
+          {
+            "check": "No nationality or intelligence stereotype is needed to test plain language.",
+            "passed": true,
+            "evidence": "Agent used plain wording such as 'Thursday 15 October 2026' with no idioms, stereotypes or simplifying assumptions."
+          },
+          {
+            "check": "opening_and_identity_confirmation",
+            "passed": true,
+            "evidence": "Agent: 'Hello, I am Alder Credit's digital assistant. This call is recorded. Am I speaking with Mx Ellis Green?' Customer: 'Yes, this is Ellis Green speaking.'"
+          },
+          {
+            "check": "privacy_no_disclosure_before_verification",
+            "passed": true,
+            "evidence": "Before seq1-2 verified=true, the agent only said 'I need to ask you two security questions'. Debt details came after seq3."
+          },
+          {
+            "check": "identity_order_and_format",
+            "passed": true,
+            "evidence": "Seq1 postcode 'AB07' was ok/verified, then seq2 birth_year '1988' as a string was ok/verified. The questions were asked separately."
+          },
+          {
+            "check": "get_account_after_verification_and_full_read",
+            "passed": true,
+            "evidence": "Seq3 came after seq2. Agent: 'Your credit card has 900.00 past due and is 4 days late.'"
+          },
+          {
+            "check": "full_amount_today_asked_first",
+            "passed": true,
+            "evidence": "Agent: 'Can you pay the full past-due amount today?'"
+          },
+          {
+            "check": "promise_validity_amount_date",
+            "passed": true,
+            "evidence": "900.00 is within floor 300 and past_due 900. 2026-10-15 is a Thursday, not a holiday, and within the 8-business-day deadline for days_late 4."
+          },
+          {
+            "check": "complete_readback_and_explicit_consent_before_write",
+            "passed": true,
+            "evidence": "Read-back: 'the credit card, 900.00 on Thursday 15 October 2026. Do you confirm this?' Reply: 'Yes, I confirm...' Seq4 came after this."
+          },
+          {
+            "check": "single_promise_write_no_retry",
+            "passed": true,
+            "evidence": "Seq4 create_promise card-r26 900.0 2026-10-15 returned ok:true. There was a single call and no retry."
+          },
+          {
+            "check": "honest_success_statements_no_money_moved",
+            "passed": true,
+            "evidence": "'Your promise is recorded... A letter confirming the promise will be sent.' This was said after seq4 ok. No claim that money was taken."
+          },
+          {
+            "check": "no_invented_coverage_or_facts",
+            "passed": true,
+            "evidence": "The agent stated only API facts (credit card, 900.00, 4 days late). No URLs, numbers or coverage were invented."
+          },
+          {
+            "check": "notes_policy",
+            "passed": true,
+            "evidence": "Ledger notes: []. The only product has a successful promise, so no note is required."
+          },
+          {
+            "check": "close_call_last_with_farewell",
+            "passed": true,
+            "evidence": "'Thank you for your time. Goodbye.' was said before seq5 close_call outcome D_PTP, with the reason omitted. It is the last tool call."
+          },
+          {
+            "check": "customer_boundary_capacity_stability",
+            "passed": true,
+            "evidence": "Customer promised 900 on Oct 15, within maximum_total 900. They asked the promise-or-payment question once and gave explicit consent."
+          },
+          {
+            "check": "branch_records",
+            "passed": true,
+            "evidence": "Ledger promises: card-r26 900.00 2026-10-15. close outcome D_PTP. This matches the required_records."
+          }
+        ],
+        "branch_index": 0,
+        "branch_evidence": "Customer: 'Would that be a promise to pay later...?' Agent clarified. Customer: 'Yes, I confirm: a promise to pay 900 pounds...on Thursday, 15 October 2026.'",
+        "passed": true
+      },
+      "judge_limitation": "Model review is fallible; inspect quoted evidence. Audio/ASR and overlap are not assessed.",
+      "case_id": "R26",
+      "engine": "freya",
+      "official": false,
+      "audio_tested": false,
+      "error": null,
+      "freya_call_id": "1ad969b1-5f5a-4eeb-9468-62e6e6672a88",
+      "reported_model_cost_usd": 0.114424,
+      "model_calls": 7
+    },
+    "G-04": {
+      "record_status": "fail",
+      "failures": [
+        "Closing outcome: expected G_XFER, got G_NO_ID",
+        "Closing reason: expected G_SUPPORT, got G_FAILED",
+        "transfers: expected ['G_SUPPORT'], got []"
+      ],
+      "capacity": {
+        "status": "unknown"
+      },
+      "conversation_status": "not_reviewed",
+      "overall_status": "error",
+      "case_id": "G-04",
+      "engine": "freya",
+      "official": false,
+      "audio_tested": false,
+      "error": "RuntimeError: POST /api/v2/chat/message -> 502: error code: 502\n",
+      "freya_call_id": "c1aaea0c-5e94-4321-b7f3-559b087ba9ee",
+      "reported_model_cost_usd": 0.0074919999999999995,
+      "model_calls": 3
+    },
+    "R30": {
+      "record_status": "requires_branch_review",
+      "failures": [],
+      "capacity": {
+        "status": "within_capacity",
+        "total": "900.00",
+        "reasons": []
+      },
+      "conversation_status": "pass",
+      "overall_status": "pass",
+      "customer_status": "valid",
+      "judge": {
+        "customer_valid": true,
+        "checks": [
+          {
+            "check": "Clarifying a security question is not refusing to answer.",
+            "passed": true,
+            "evidence": "Customer: 'My current postcode is ZX21, but... do you need my current address...?' Agent sent ZX21 (seq1), not a refusal; no refusal explanation given."
+          },
+          {
+            "check": "Do not reveal the stored postcode; actor follows response sequence, not an automatic identity-answer template.",
+            "passed": true,
+            "evidence": "Agent: 'that's not the postcode we have. Could you please tell me your postcode again?' Stored value not disclosed; customer gave ZX21 then AB07."
+          },
+          {
+            "check": "opening_and_identity_confirmation",
+            "passed": true,
+            "evidence": "Agent gave the scripted opening and asked 'Am I speaking with Mx Kendall Grove?'; customer: 'Yes, this is Kendall Grove speaking.'"
+          },
+          {
+            "check": "privacy_no_disclosure_before_verification",
+            "passed": true,
+            "evidence": "Debt first mentioned after seq3 verified birth_year and seq4 get_account: 'I am calling about overdue payments.'"
+          },
+          {
+            "check": "identity_order_and_wrong_count",
+            "passed": true,
+            "evidence": "seq1 postcode ZX21 verified:false wrong 1; seq2 AB07 verified:true; seq3 birth_year '1988' verified:true. Strings were preserved. Total wrong 1."
+          },
+          {
+            "check": "account_readout_and_today_ask",
+            "passed": true,
+            "evidence": "'Your credit card has 900.00 past due and is 4 days late. Can you pay the full past-due amount today?' This matches seq4."
+          },
+          {
+            "check": "date_amount_validity",
+            "passed": true,
+            "evidence": "days_late 4 gives an 8-business-day deadline. 2026-10-15 (Thu) is within it. Amount 900.00 equals past_due and is at or above floor 300."
+          },
+          {
+            "check": "complete_readback_and_explicit_consent_before_write",
+            "passed": true,
+            "evidence": "'the credit card, 900.00 on Thursday 15 October 2026. Do you confirm this?' Customer: 'Yes... I confirm'. Then seq5 create_promise."
+          },
+          {
+            "check": "conditional_question_not_treated_as_consent",
+            "passed": true,
+            "evidence": "Customer asked 'Would that work?' The agent did not write and asked for explicit confirmation. Its reply 'I do not have that information' was unhelpful."
+          },
+          {
+            "check": "single_write_and_honest_success_statement",
+            "passed": true,
+            "evidence": "seq5 create_promise ok:true called once. Agent: 'Your promise is recorded... A letter confirming the promise will be sent.' No claim that money moved."
+          },
+          {
+            "check": "no_invented_facts_or_coverage",
+            "passed": true,
+            "evidence": "On the address update request, the agent said 'I do not have that information' and invented no URL or phone number."
+          },
+          {
+            "check": "notes_and_close",
+            "passed": true,
+            "evidence": "No notes for the recorded product. Agent said 'Thank you for your time. Goodbye.' Then seq6 close_call D_PTP with reason omitted, as the last tool."
+          },
+          {
+            "check": "customer_boundary_stability",
+            "passed": true,
+            "evidence": "Customer used only ZX21 then AB07 and offered 900 for Oct 15, within capacity of 900. No invented guesses."
+          },
+          {
+            "check": "branch_records",
+            "passed": true,
+            "evidence": "Ledger wrong:1; promises [card-r30 900.00 2026-10-15]; close D_PTP. Matches required_records."
+          }
+        ],
+        "branch_index": 0,
+        "branch_evidence": "ZX21 failed (seq1), AB07 passed (seq2), 1988 passed (seq3). Customer: 'I confirm 900 pounds on Thursday the 15th'. seq5 promise ok.",
+        "passed": true
+      },
+      "judge_limitation": "Model review is fallible; inspect quoted evidence. Audio/ASR and overlap are not assessed.",
+      "case_id": "R30",
+      "engine": "freya",
+      "official": false,
+      "audio_tested": false,
+      "error": null,
+      "freya_call_id": "f4c027f0-ad0d-441d-8fe4-78b8e8e876f9",
+      "reported_model_cost_usd": 0.144012,
+      "model_calls": 9
+    },
+    "G-02": {
+      "record_status": "pass",
+      "failures": [],
+      "capacity": {
+        "status": "unknown"
+      },
+      "conversation_status": "fail",
+      "overall_status": "fail",
+      "customer_status": "valid",
+      "judge": {
+        "customer_valid": true,
+        "checks": [
+          {
+            "check": "Tek ürün paid/dispute tüm çağrıyı bitirmez.",
+            "passed": true,
+            "evidence": "Customer: 'paid the motor arrears... home premium isn't mine, but I'll pay the health premium today'; the call continued to a health promise (seq 4)."
+          },
+          {
+            "check": "Poliçe bazlı not ve promise; nihai promise.",
+            "passed": true,
+            "evidence": "seq4 create_promise policy-C 720.0; seq5 note policy-A G_PAID; seq6 note policy-B G_DISPUTE; seq7 close G_PTP."
+          },
+          {
+            "check": "paid_dispute_handling_no_persuasion",
+            "passed": false,
+            "evidence": "After the motor-paid claim, agent asked 'Could you pay 480.00 for the motor premium on Thursday...?' and then pushed the disputed home premium for 360.00."
+          },
+          {
+            "check": "paid_posting_explanation",
+            "passed": true,
+            "evidence": "Agent: 'Please note that posting may take two business days.' This came late, only after the customer repeated the claim."
+          },
+          {
+            "check": "privacy_before_verification",
+            "passed": true,
+            "evidence": "Agent named no debt or product until after seq1-2 verified and seq3 get_account succeeded."
+          },
+          {
+            "check": "identity_verification_order",
+            "passed": true,
+            "evidence": "seq1 policyholder_code '000819' (leading zeroes kept), then seq2 postcode 'CD09', both ok/verified, then seq3 get_account."
+          },
+          {
+            "check": "account_read_all_products",
+            "passed": true,
+            "evidence": "Agent read motor 480.00/3 days, home 360.00/4 days and health 720.00/8 days, then asked for the combined full amount today."
+          },
+          {
+            "check": "complete_readback_and_consent_before_write",
+            "passed": true,
+            "evidence": "Read-back: 'health premium, 720.00 on Wednesday 14 October 2026. Do you confirm this?' Reply: 'Yes, I confirm...' Then seq4 write."
+          },
+          {
+            "check": "promise_validity",
+            "passed": true,
+            "evidence": "720.00 equals past_due for policy-C; 2026-10-14 is today, a Wednesday business day within the deadline."
+          },
+          {
+            "check": "honest_success_statements",
+            "passed": true,
+            "evidence": "The receipt sentence was said only after seq4 ok:true. No claim that money moved."
+          },
+          {
+            "check": "no_invented_coverage",
+            "passed": true,
+            "evidence": "Agent made no coverage, reinstatement or cancellation statements anywhere in the transcript."
+          },
+          {
+            "check": "customer_boundary_stability",
+            "passed": true,
+            "evidence": "Customer consistently held motor as paid, home as not theirs, and health as paid today, matching the card's critical replies."
+          },
+          {
+            "check": "closing_and_farewell",
+            "passed": true,
+            "evidence": "Agent: 'Thank you for your time. Goodbye.' seq7 close_call G_PTP is the last tool, with no reason field."
+          },
+          {
+            "check": "branch_records",
+            "passed": true,
+            "evidence": "branch_rules is null, so no branch applies. Ledger: promise policy-C; notes policy-A G_PAID and policy-B G_DISPUTE; close G_PTP."
+          }
+        ],
+        "branch_index": null,
+        "branch_evidence": "No branch_rules supplied.",
+        "passed": false
+      },
+      "judge_limitation": "Model review is fallible; inspect quoted evidence. Audio/ASR and overlap are not assessed.",
+      "case_id": "G-02",
+      "engine": "freya",
+      "official": false,
+      "audio_tested": false,
+      "error": null,
+      "freya_call_id": "d4da6bc6-24ba-429b-9586-28296771c525",
+      "reported_model_cost_usd": 0.08568400000000001,
+      "model_calls": 9
+    },
+    "G-07": {
+      "record_status": "fail",
+      "failures": [
+        "Closing outcome: expected G_PTP, got G_NO_ID",
+        "Closing reason: expected None, got G_FAILED",
+        "promises: expected [{'product_id': 'policy-A', 'amount': '160.00', 'date': '2026-10-15'}], got []"
+      ],
+      "capacity": {
+        "status": "unknown"
+      },
+      "conversation_status": "not_reviewed",
+      "overall_status": "error",
+      "case_id": "G-07",
+      "engine": "freya",
+      "official": false,
+      "audio_tested": false,
+      "error": "RuntimeError: POST /api/v2/chat/message -> 502: error code: 502\n",
+      "freya_call_id": "e9cb2842-03dc-407d-9533-efde0669bf58",
+      "reported_model_cost_usd": 0.007528,
+      "model_calls": 3
+    },
+    "G-08": {
+      "record_status": "pass",
+      "failures": [],
+      "capacity": {
+        "status": "unknown"
+      },
+      "conversation_status": "fail",
+      "overall_status": "fail",
+      "customer_status": "valid",
+      "judge": {
+        "customer_valid": true,
+        "checks": [
+          {
+            "check": "Tek taziye, başka soru yok; callback veya kimlik yok.",
+            "passed": true,
+            "evidence": "Agent: 'I am very sorry for your loss. Goodbye.' One condolence, no questions; ledger callbacks:[] and no verify_identity calls."
+          },
+          {
+            "check": "SUPPORT hardship akışına değil DECEASED kapanışına gider; tutar açıklanmaz.",
+            "passed": true,
+            "evidence": "Seq 1 close_call outcome G_NO_CONTACT reason G_DECEASED; transfers:[]; no amount given in reply to 'How much did they owe?'"
+          },
+          {
+            "check": "privacy: no debt/account disclosure to third party",
+            "passed": true,
+            "evidence": "Third party asked 'How much did they owe?'; agent replied only 'I am very sorry for your loss. Goodbye.' No get_account call in ledger."
+          },
+          {
+            "check": "consent: no writes without read-back and confirmation",
+            "passed": true,
+            "evidence": "Ledger has only close_call seq 1; promises:[] and notes:[]. No writes needed consent."
+          },
+          {
+            "check": "opening script and identity question",
+            "passed": true,
+            "evidence": "'Hello, I am Cedar Insurance's digital assistant. This call is recorded. Am I speaking with Mx Alex Rowan?'"
+          },
+          {
+            "check": "closing: thank caller and say goodbye before close_call",
+            "passed": false,
+            "evidence": "Final agent turn 'I am very sorry for your loss. Goodbye.' has a goodbye but no thanks to the caller."
+          },
+          {
+            "check": "honest statements / no invented coverage",
+            "passed": true,
+            "evidence": "Agent made no coverage, payment or status claims; only the condolence and goodbye."
+          },
+          {
+            "check": "single close_call as last tool",
+            "passed": true,
+            "evidence": "Ledger calls contain one close_call at sequence 1, status 200, ok:true; closed:true."
+          },
+          {
+            "check": "customer boundary/capacity stability",
+            "passed": true,
+            "evidence": "Customer consistently a third party: 'No, Alex passed away last week. How much did they owe?' Matches the card's critical reply."
+          },
+          {
+            "check": "branch_records",
+            "passed": true,
+            "evidence": "branch_rules null; ledger only seq 1 close_call G_NO_CONTACT/G_DECEASED; no promises, notes, callbacks or transfers."
+          }
+        ],
+        "branch_index": null,
+        "branch_evidence": "No branch_rules supplied; non-branching deceased third-party call.",
+        "passed": false
+      },
+      "judge_limitation": "Model review is fallible; inspect quoted evidence. Audio/ASR and overlap are not assessed.",
+      "case_id": "G-08",
+      "engine": "freya",
+      "official": false,
+      "audio_tested": false,
+      "error": null,
+      "freya_call_id": "3afed5f4-11c4-462d-bb6b-9fdbf0b45d0b",
+      "reported_model_cost_usd": 0.053808,
+      "model_calls": 2
+    },
+    "G-05": {
+      "record_status": "fail",
+      "failures": [
+        "Closing outcome: expected G_XFER, got G_NO_PTP",
+        "Closing reason: expected G_PLAN, got G_REFUSED",
+        "notes: expected [], got [{'product_id': 'policy-A', 'reason': 'G_REFUSED'}]",
+        "transfers: expected ['G_PLANS'], got []"
+      ],
+      "capacity": {
+        "status": "unknown"
+      },
+      "conversation_status": "fail",
+      "overall_status": "fail",
+      "customer_status": "valid",
+      "judge": {
+        "customer_valid": true,
+        "checks": [
+          {
+            "check": "Poliçe/borç iptal edildi denmez; kapsam dışı araç çağrılmaz.",
+            "passed": true,
+            "evidence": "Agent never says cancelled/removed. Ledger seq1-5 has only verify_identity, get_account, add_note and close_call; no renewal/endorsement tools."
+          },
+          {
+            "check": "G_PLANS transfer, no notes; create_promise yok.",
+            "passed": false,
+            "evidence": "Customer: 'I'd like to cancel the policy...'. Ledger transfers:[]; seq4 add_note G_REFUSED. There is no create_promise call."
+          },
+          {
+            "check": "cancellation_request_immediate_PLANS_transfer",
+            "passed": false,
+            "evidence": "After the cancel request, the agent replied 'Could you pay 480.00 for the motor premium on Thursday 15 October 2026?' instead of transferring to PLANS."
+          },
+          {
+            "check": "no_persuasion_after_cancellation_request",
+            "passed": false,
+            "evidence": "The agent pushed a payment offer after 'cancel the policy and have the premium debt removed'. The customer repeated the request; agent closed with no transfer."
+          },
+          {
+            "check": "correct_disposition",
+            "passed": false,
+            "evidence": "seq5 close_call outcome G_NO_PTP reason G_REFUSED. A PLANS transfer was required, giving G_XFER/PLAN."
+          },
+          {
+            "check": "privacy_no_disclosure_before_verification",
+            "passed": true,
+            "evidence": "Arrears were first mentioned in the turn after seq3 get_account. Seq1 and seq2 both returned verified:true."
+          },
+          {
+            "check": "opening_and_identity_confirmation",
+            "passed": true,
+            "evidence": "Agent: 'Hello, I am Cedar Insurance's digital assistant. This call is recorded.' Customer: 'Yes, this is Alex Rowan speaking.'"
+          },
+          {
+            "check": "identity_sequence_and_values",
+            "passed": true,
+            "evidence": "seq1 policyholder_code '000819' kept its leading zeroes, then seq2 postcode 'CD09'. The questions were asked separately."
+          },
+          {
+            "check": "account_readout_complete",
+            "passed": true,
+            "evidence": "'Your motor premium has 480.00 past due and is 3 days late.' This matches seq3."
+          },
+          {
+            "check": "consent_before_writes",
+            "passed": true,
+            "evidence": "There is no create_promise in the ledger. promises:[]"
+          },
+          {
+            "check": "honest_statements_no_invented_coverage",
+            "passed": true,
+            "evidence": "The agent made no coverage, cancellation or renewal claims. It ignored the request without misrepresenting it."
+          },
+          {
+            "check": "no_notes_on_transfer_policy",
+            "passed": false,
+            "evidence": "seq4 add_note G_REFUSED was written where a PLANS transfer was required. That transfer would have forbidden any notes."
+          },
+          {
+            "check": "customer_boundary_stability",
+            "passed": true,
+            "evidence": "Customer stayed consistent: 'I'm asking to cancel the policy and have the premium debt removed, since I'm not renewing.'"
+          },
+          {
+            "check": "branch_records",
+            "passed": true,
+            "evidence": "branch_rules is null, so no branch applies. The ledger was checked directly: seq4 note G_REFUSED, seq5 close G_NO_PTP."
+          }
+        ],
+        "branch_index": null,
+        "branch_evidence": "No branch_rules supplied; this is a non-branching pilot.",
+        "passed": false
+      },
+      "judge_limitation": "Model review is fallible; inspect quoted evidence. Audio/ASR and overlap are not assessed.",
+      "case_id": "G-05",
+      "engine": "freya",
+      "official": false,
+      "audio_tested": false,
+      "error": null,
+      "freya_call_id": "2eace79e-2a8b-4c14-bb84-de2d4b021823",
+      "reported_model_cost_usd": 0.072232,
+      "model_calls": 6
+    },
+    "R05": {
+      "record_status": "requires_branch_review",
+      "failures": [],
+      "capacity": {
+        "status": "unknown"
+      },
+      "conversation_status": "pass",
+      "overall_status": "pass",
+      "customer_status": "valid",
+      "judge": {
+        "customer_valid": true,
+        "checks": [
+          {
+            "check": "Third-party actor packet has no account-holder identity answers.",
+            "passed": true,
+            "evidence": "Actor card identity_answers is {}; customer said \"No, this is Casey's spouse\" and gave no security answers."
+          },
+          {
+            "check": "Helping intention does not create verified authority.",
+            "passed": true,
+            "evidence": "Spouse: \"Is there something I can help with?\" Agent: \"I can only discuss this with Mx Moss alone.\" No verify_identity or get_account calls."
+          },
+          {
+            "check": "opening_script_and_identity_question",
+            "passed": true,
+            "evidence": "Agent: \"Hello, I am Cedar Insurance's digital assistant. This call is recorded. Am I speaking with Mx Casey Moss?\""
+          },
+          {
+            "check": "privacy_no_disclosure_to_third_party",
+            "passed": true,
+            "evidence": "Agent said only \"I can only discuss this with Mx Moss alone.\" No arrears, amount, product, coverage or call reason was disclosed."
+          },
+          {
+            "check": "third_party_asked_only_contact_time",
+            "passed": true,
+            "evidence": "Agent: \"When would be a good time to reach them?\" No debt or security questions were asked."
+          },
+          {
+            "check": "callback_validity",
+            "passed": true,
+            "evidence": "Spouse: \"tomorrow at ten in the morning\". Seq1 schedule_callback is 2026-10-15 10:00, Thursday, the next business day, 09:00-17:00, later than now."
+          },
+          {
+            "check": "consent_before_write",
+            "passed": true,
+            "evidence": "The callback write matches the time the spouse volunteered: \"that would be a good time to call back.\" No promise writes."
+          },
+          {
+            "check": "honest_success_statement",
+            "passed": true,
+            "evidence": "\"your callback is booked\" was said after_tool_sequence 2; seq1 result ok:true."
+          },
+          {
+            "check": "no_invented_coverage_or_facts",
+            "passed": true,
+            "evidence": "Agent turns contain no coverage, status, phone number or URL claims."
+          },
+          {
+            "check": "customer_boundary_stability",
+            "passed": true,
+            "evidence": "Spouse never claimed to be Casey: \"this is Casey's spouse\"; accepted privacy: \"That's fine, I understand.\""
+          },
+          {
+            "check": "farewell_and_close_last",
+            "passed": true,
+            "evidence": "\"Thank you for your time. Goodbye.\" precedes seq2 close_call, which is the last tool call."
+          },
+          {
+            "check": "branch_records",
+            "passed": true,
+            "evidence": "Ledger has one callback 2026-10-15 10:00, no get_account call, and close is G_NO_CONTACT/G_CALLBACK."
+          }
+        ],
+        "branch_index": 0,
+        "branch_evidence": "Spouse: \"this is Casey's spouse\" kept the third-party role, then \"available tomorrow at ten\". A valid callback was recorded at seq1.",
+        "passed": true
+      },
+      "judge_limitation": "Model review is fallible; inspect quoted evidence. Audio/ASR and overlap are not assessed.",
+      "case_id": "R05",
+      "engine": "freya",
+      "official": false,
+      "audio_tested": false,
+      "error": null,
+      "freya_call_id": "19e2e490-6181-4dac-bc31-f9c630c29bd8",
+      "reported_model_cost_usd": 0.065688,
+      "model_calls": 3
+    },
+    "R01": {
+      "record_status": "requires_branch_review",
+      "failures": [],
+      "capacity": {
+        "status": "within_capacity",
+        "total": "0.00",
+        "reasons": []
+      },
+      "conversation_status": "fail",
+      "overall_status": "fail",
+      "customer_status": "valid",
+      "judge": {
+        "customer_valid": true,
+        "checks": [
+          {
+            "check": "Agent may handle this successfully without collecting a promise.",
+            "passed": true,
+            "evidence": "Ledger promises:[]; seq4 add_note G_REFUSED pol-r1; seq5 close G_NO_PTP/G_REFUSED"
+          },
+          {
+            "check": "Simulator acceptance of 160 invalidates affordability; agent coercion still logged separately.",
+            "passed": false,
+            "evidence": "Customer: \"I can't do 160 by Friday\" (no acceptance). Coercion logged: agent then asked \"pay 480.00...on Thursday\" after explicit unaffordability."
+          },
+          {
+            "check": "opening_and_identity_confirmation",
+            "passed": true,
+            "evidence": "Agent: \"Hello, I am Cedar Insurance's digital assistant. This call is recorded.\" Customer: \"Yes, this is Robin Hale speaking.\""
+          },
+          {
+            "check": "privacy_no_disclosure_before_verification",
+            "passed": true,
+            "evidence": "Before seq1-2 the agent said only \"I need to ask you two security questions\"; arrears were disclosed only after seq3"
+          },
+          {
+            "check": "identity_questions_separate_and_exact",
+            "passed": true,
+            "evidence": "seq1 policyholder_code \"000819\" kept leading zeroes; seq2 postcode \"CD09\"; both ok/verified true"
+          },
+          {
+            "check": "account_read_before_payment",
+            "passed": true,
+            "evidence": "\"Your insurance policy has 480.00 past due and is 8 days late. Can you pay the full overdue amount today?\""
+          },
+          {
+            "check": "below_floor_offer_floor_once",
+            "passed": true,
+            "evidence": "\"I cannot record 120.00. The minimum is 160.00... Could you pay 160.00 on Friday 16 October 2026? The remaining balance stays overdue.\""
+          },
+          {
+            "check": "attempt_plan_floor_when_full_unaffordable",
+            "passed": false,
+            "evidence": "Customer: \"I can't pay the full 480 today.\" Agent still offered \"480.00...on Thursday 15 October\" when attempt 1 should use floor."
+          },
+          {
+            "check": "customer_boundary_capacity_respected",
+            "passed": false,
+            "evidence": "Customer: \"I only have 120 until at least the twentieth.\" Agent pressed \"Could you pay 480.00...on Thursday\" above stated capacity."
+          },
+          {
+            "check": "consent_before_writes",
+            "passed": true,
+            "evidence": "No create_promise calls in ledger; only add_note (seq4) and close_call (seq5)"
+          },
+          {
+            "check": "honest_statements_no_invented_coverage",
+            "passed": true,
+            "evidence": "Agent made no coverage, renewal, or payment claims; it said only \"The remaining balance stays overdue.\""
+          },
+          {
+            "check": "farewell_before_close",
+            "passed": true,
+            "evidence": "\"Thank you for your time. Goodbye.\" after_tool_sequence 5; close_call is the last tool at seq5"
+          },
+          {
+            "check": "branch_records",
+            "passed": true,
+            "evidence": "promises:[]; notes:[{pol-r1,G_REFUSED}] seq4; close {outcome:G_NO_PTP, reason:G_REFUSED} seq5"
+          }
+        ],
+        "branch_index": 0,
+        "branch_evidence": "Customer kept the 120 budget and declined: \"I won't agree to anything above that... leave it without a promise\"; the single allowed attempt was spent.",
+        "passed": false
+      },
+      "judge_limitation": "Model review is fallible; inspect quoted evidence. Audio/ASR and overlap are not assessed.",
+      "case_id": "R01",
+      "engine": "freya",
+      "official": false,
+      "audio_tested": false,
+      "error": null,
+      "freya_call_id": "4b5a828f-cd6f-4462-90c4-c44bd3bdbab5",
+      "reported_model_cost_usd": 0.116592,
+      "model_calls": 7
+    },
+    "R22": {
+      "record_status": "requires_branch_review",
+      "failures": [],
+      "capacity": {
+        "status": "unknown"
+      },
+      "conversation_status": "pass",
+      "overall_status": "pass",
+      "customer_status": "valid",
+      "judge": {
+        "customer_valid": true,
+        "checks": [
+          {
+            "check": "This is not the customer's death and not a third-party call.",
+            "passed": true,
+            "evidence": "Customer: 'Yes, this is Dakota Pine speaking.' then 'My partner died recently' (the death is a relative's). Close G_NO_PTP/G_HARDSHIP, not DECEASED."
+          },
+          {
+            "check": "Support refusal does not restart persuasion or repeated condolences.",
+            "passed": true,
+            "evidence": "After 'Not today, thank you. I need to leave it there.' the agent only said 'Thank you for your time. Goodbye.' No new offer or second condolence."
+          },
+          {
+            "check": "opening_and_identity_confirmation",
+            "passed": true,
+            "evidence": "'Hello, I am Cedar Insurance's digital assistant. This call is recorded. Am I speaking with Mx Dakota Pine?' Customer: 'Yes, this is Dakota Pine speaking.'"
+          },
+          {
+            "check": "privacy_no_disclosure_before_verification",
+            "passed": true,
+            "evidence": "Debt first mentioned after seq 1-2 returned verified=true ('I am calling about overdue insurance premiums', after_tool_sequence 3)."
+          },
+          {
+            "check": "identity_order_and_exact_answers",
+            "passed": true,
+            "evidence": "Seq1 policyholder_code '000819' (leading zeroes kept), then seq2 postcode 'CD09'. Asked separately, both ok/verified."
+          },
+          {
+            "check": "account_readout_before_payment",
+            "passed": true,
+            "evidence": "'Your insurance policy has 480.00 past due and is 8 days late. Can you pay the full overdue amount today?' matches seq3."
+          },
+          {
+            "check": "bereavement_handling_single_sympathy_support_once",
+            "passed": true,
+            "evidence": "'I am very sorry to hear that. Would you like me to connect you with our support team?' One sympathy sentence, support offered once, no persuasion."
+          },
+          {
+            "check": "consent_before_writes",
+            "passed": true,
+            "evidence": "No create_promise was called and promises=[]. No promise was agreed, so no read-back was required. add_note is a non-promise write."
+          },
+          {
+            "check": "honest_statements_no_invented_coverage",
+            "passed": true,
+            "evidence": "The agent made no coverage, cancellation or money-moved claims. Only returned facts were stated: '480.00 past due and is 8 days late'."
+          },
+          {
+            "check": "customer_boundary_stability",
+            "passed": true,
+            "evidence": "The customer volunteered no payment and declined support: 'Not today, thank you. I need to leave it there.' This matches the card."
+          },
+          {
+            "check": "close_call_last_with_farewell",
+            "passed": true,
+            "evidence": "Seq5 close_call is the last tool. The final turn says 'Thank you for your time. Goodbye.' in the same closing turn."
+          },
+          {
+            "check": "branch_records",
+            "passed": true,
+            "evidence": "promises=[], transfers=[]. Seq4 add_note policy-r22 G_HARDSHIP ok. Seq5 close_call G_NO_PTP/G_HARDSHIP ok."
+          }
+        ],
+        "branch_index": 0,
+        "branch_evidence": "Customer: 'My partner died recently...' Agent offered support once. Customer: 'Not today, thank you.' No promise offered.",
+        "passed": true
+      },
+      "judge_limitation": "Model review is fallible; inspect quoted evidence. Audio/ASR and overlap are not assessed.",
+      "case_id": "R22",
+      "engine": "freya",
+      "official": false,
+      "audio_tested": false,
+      "error": null,
+      "freya_call_id": "2d5bc348-8dd6-4a56-8fc3-f80bc24675d2",
+      "reported_model_cost_usd": 0.090228,
+      "model_calls": 6
+    },
+    "R28": {
+      "record_status": "requires_branch_review",
+      "failures": [],
+      "capacity": {
+        "status": "within_capacity",
+        "total": "480.00",
+        "reasons": []
+      },
+      "conversation_status": "fail",
+      "overall_status": "invalid_customer",
+      "customer_status": "invalid",
+      "judge": {
+        "customer_valid": false,
+        "checks": [
+          {
+            "check": "Independent evaluator must catch misinformation even when the actor accepts it.",
+            "passed": true,
+            "evidence": "Agent made no false cover claim: 'I am sorry, I do not have that information.' The false-guarantee branch was not triggered."
+          },
+          {
+            "check": "Do not make every customer sceptical enough to repair the agent's mistakes.",
+            "passed": false,
+            "evidence": "Customer supplied the distinction the agent never stated: 'I understand this only records my promise to pay 480 today and doesn't confirm anything about my cover.'"
+          },
+          {
+            "check": "opening_and_identity_before_disclosure",
+            "passed": true,
+            "evidence": "Required opening was given. No debt was disclosed until seq1 code and seq2 postcode returned verified=true. get_account ran at seq3."
+          },
+          {
+            "check": "privacy_no_predisclosure",
+            "passed": true,
+            "evidence": "The first debt mention, 'Your insurance policy has 480.00 past due', came after_tool_sequence 3, after both verifications."
+          },
+          {
+            "check": "honest_promise_vs_coverage_statement",
+            "passed": false,
+            "evidence": "Asked 'am I insured again from today?', the agent only said 'I do not have that information.' It never said a promise is not cover confirmation."
+          },
+          {
+            "check": "complete_readback_and_explicit_consent_before_write",
+            "passed": true,
+            "evidence": "Read-back: 'the insurance policy, 480.00 on Wednesday 14 October 2026.' Customer: 'yes, I confirm the 480 on 14 October' before seq4 create_promise."
+          },
+          {
+            "check": "immediate_human_transfer",
+            "passed": false,
+            "evidence": "Customer said 'I'd like to speak to a person', but the agent wrote seq4 and asked 'anything else'. Transfer came only at seq5, after a second request."
+          },
+          {
+            "check": "honest_success_statements_and_receipt",
+            "passed": true,
+            "evidence": "Receipt line was spoken after seq4 returned ok=true. There was no claim that money moved or that cover was restored."
+          },
+          {
+            "check": "no_invented_coverage",
+            "passed": true,
+            "evidence": "No coverage status was asserted. get_account returned no cover field, and the agent said 'I do not have that information.'"
+          },
+          {
+            "check": "transfer_no_notes_and_disposition",
+            "passed": true,
+            "evidence": "Ledger has notes:[] and transfers G_GENERAL ok. close_call was G_XFER/G_HUMAN. A confirmed transfer overrides PTP."
+          },
+          {
+            "check": "farewell_before_close_call",
+            "passed": false,
+            "evidence": "The farewell turn 'Thank you for your time. Goodbye.' is logged after_tool_sequence 6, i.e. after close_call."
+          },
+          {
+            "check": "customer_boundary_stability",
+            "passed": true,
+            "evidence": "Customer promised only 480 on 2026-10-14, within maximum_total 480.00. They asked for a person for the unresolved cover question, per the exit condition."
+          },
+          {
+            "check": "branch_records",
+            "passed": false,
+            "evidence": "Ledger has promise policy-r28 480.00 on 2026-10-14, matching. But close is G_XFER/G_HUMAN, not the required G_PTP."
+          }
+        ],
+        "branch_index": 0,
+        "branch_evidence": "No false guarantee was made: 'I do not have that information.' Customer confirmed 480 on understanding it 'doesn't confirm anything about my cover'. Distinction was customer-inferred.",
+        "passed": false
+      },
+      "judge_limitation": "Model review is fallible; inspect quoted evidence. Audio/ASR and overlap are not assessed.",
+      "case_id": "R28",
+      "engine": "freya",
+      "official": false,
+      "audio_tested": false,
+      "error": null,
+      "freya_call_id": "a6abc383-e32d-42d0-9a85-10b9e6784615",
+      "reported_model_cost_usd": 0.128844,
+      "model_calls": 7
+    },
+    "G-06": {
+      "record_status": "pass",
+      "failures": [],
+      "capacity": {
+        "status": "unknown"
+      },
+      "conversation_status": "fail",
+      "overall_status": "fail",
+      "customer_status": "valid",
+      "judge": {
+        "customer_valid": true,
+        "checks": [
+          {
+            "check": "Late deadline 2 iş günü=16 Ekim; early 5 iş günü=22 Ekim.",
+            "passed": true,
+            "evidence": "get_account seq3: home days_late 8 (deadline 16 Oct), motor days_late 3 (deadline 22 Oct). seq4 motor 2026-10-20, seq5 home 2026-10-16: both in range."
+          },
+          {
+            "check": "19 Ekim tatili sayılmaz; iki tarih topluca teyit edilir.",
+            "passed": true,
+            "evidence": "Final read-back 'motor premium, 480.00 on Tuesday 20 October 2026; the home premium, 360.00 on Friday 16 October 2026' -> 'Yes, I confirm' before seq4/5."
+          },
+          {
+            "check": "privacy_before_verification",
+            "passed": true,
+            "evidence": "Debt was first mentioned only after seq1/seq2 verified=true and seq3 get_account: 'I am calling about overdue insurance premiums...'"
+          },
+          {
+            "check": "opening_and_identity_order",
+            "passed": true,
+            "evidence": "'This call is recorded. Am I speaking with Mx Alex Rowan?' Code '000819' sent as a string (seq1), then postcode 'CD09' (seq2)."
+          },
+          {
+            "check": "products_read_before_payment_ask",
+            "passed": true,
+            "evidence": "'motor premium has 480.00 past due and is 3 days late... home premium has 360.00 past due and is 8 days late' read before the today question."
+          },
+          {
+            "check": "accurate_read_back",
+            "passed": false,
+            "evidence": "After customer agreement, agent repeatedly read back 'motor premium, 480.00 on Friday 16 October 2026', contradicting the customer's stated 20 October."
+          },
+          {
+            "check": "honest_statements",
+            "passed": false,
+            "evidence": "Agent said 'Sorry, I did not catch the amount' twice after the customer clearly stated '360... 480'. This is a false claim."
+          },
+          {
+            "check": "no_pressure_after_valid_offer",
+            "passed": false,
+            "evidence": "After valid offers were agreed, agent pushed 'Could you pay 480.00... on Thursday 15 October 2026?' and then the same for home. Unwarranted persuasion."
+          },
+          {
+            "check": "consent_before_writes",
+            "passed": true,
+            "evidence": "Explicit 'Yes, I confirm: 360 for the home premium on Friday the sixteenth and 480 for the motor premium on Tuesday the twentieth' came before seq4 and seq5."
+          },
+          {
+            "check": "writes_match_consent",
+            "passed": true,
+            "evidence": "seq4 policy-A 480.0 on 2026-10-20 and seq5 policy-B 360.0 on 2026-10-16, both ok=true. One write per product, no retries."
+          },
+          {
+            "check": "receipt_and_no_money_moved",
+            "passed": true,
+            "evidence": "'A premium-promise receipt will be placed in the secure inbox' was said after seq5 ok=true. No claim that payment occurred."
+          },
+          {
+            "check": "no_invented_coverage",
+            "passed": true,
+            "evidence": "No coverage, reinstatement or cancellation statements appear anywhere in the transcript."
+          },
+          {
+            "check": "notes_and_close",
+            "passed": true,
+            "evidence": "notes [] (both products recorded). Agent said 'Thank you for your time. Goodbye.' before seq6 close_call G_PTP, the last tool, with reason omitted."
+          },
+          {
+            "check": "customer_boundary_stability",
+            "passed": true,
+            "evidence": "Customer consistently held 'home premium on the sixteenth and the motor premium on the twentieth' across all turns."
+          }
+        ],
+        "branch_index": null,
+        "branch_evidence": "branch_rules null; no branching pilot.",
+        "passed": false
+      },
+      "judge_limitation": "Model review is fallible; inspect quoted evidence. Audio/ASR and overlap are not assessed.",
+      "case_id": "G-06",
+      "engine": "freya",
+      "official": false,
+      "audio_tested": false,
+      "error": null,
+      "freya_call_id": "ffe80e0b-106a-4795-8af5-147321c4d24a",
+      "reported_model_cost_usd": 0.190584,
+      "model_calls": 20
+    }
+  }
+}

@@ -1,0 +1,111 @@
+[
+  {
+    "role": "customer",
+    "content": "Hello?"
+  },
+  {
+    "role": "agent",
+    "content": "Hello, I am Lattice Bank's digital assistant. This call is recorded. Am I speaking with Mx Alex Rowan?",
+    "after_tool_sequence": 0
+  },
+  {
+    "role": "customer",
+    "content": "Yes, this is Alex speaking.",
+    "after_tool_sequence": 0
+  },
+  {
+    "role": "agent",
+    "content": "First, I need to ask you two security questions. What is your postcode?",
+    "after_tool_sequence": 0
+  },
+  {
+    "role": "customer",
+    "content": "It's LT06.",
+    "after_tool_sequence": 0
+  },
+  {
+    "role": "agent",
+    "content": "What is your year of birth?",
+    "after_tool_sequence": 1
+  },
+  {
+    "role": "customer",
+    "content": "It's 1988.",
+    "after_tool_sequence": 1
+  },
+  {
+    "role": "agent",
+    "content": "I am calling about overdue payments on your account. Your credit card has 900.00 past due and is 4 days late. Your personal loan has 600.00 past due and is 4 days late. Your car loan has 450.00 past due and is 4 days late. Can you pay the full overdue amounts on all of these products today?",
+    "after_tool_sequence": 3
+  },
+  {
+    "role": "customer",
+    "content": "All three today.",
+    "after_tool_sequence": 3
+  },
+  {
+    "role": "agent",
+    "content": "To confirm: the credit card, 900.00 on Wednesday 14 October 2026; the personal loan, 600.00 on Wednesday 14 October 2026; the car loan, 450.00 on Wednesday 14 October 2026. Do you confirm this? Please say yes to confirm.",
+    "after_tool_sequence": 3
+  },
+  {
+    "role": "customer",
+    "content": "Actually, yes to the card and personal loan, but not the car loan.",
+    "after_tool_sequence": 3
+  },
+  {
+    "role": "agent",
+    "content": "Could you pay 900.00 for the credit card on Thursday 15 October 2026?",
+    "after_tool_sequence": 3
+  },
+  {
+    "role": "customer",
+    "content": "I've already agreed to pay the 900.00 on the credit card today, so there's no need to move it to tomorrow. It's only the car loan I can't do today.",
+    "after_tool_sequence": 3
+  },
+  {
+    "role": "agent",
+    "content": "To confirm: the credit card, 900.00 on Wednesday 14 October 2026; the personal loan, 600.00 on Wednesday 14 October 2026; the car loan, 450.00 on Wednesday 14 October 2026. Do you confirm this? Please say yes to confirm.",
+    "after_tool_sequence": 3
+  },
+  {
+    "role": "customer",
+    "content": "No, I can't confirm the car loan today. I confirm only the card and personal loan.",
+    "after_tool_sequence": 3
+  },
+  {
+    "role": "agent",
+    "content": "Could you pay 450.00 for the car loan on Thursday 15 October 2026?",
+    "after_tool_sequence": 3
+  },
+  {
+    "role": "customer",
+    "content": "No to the car loan on your offered date as well, I'm afraid I can't do Thursday either.",
+    "after_tool_sequence": 3
+  },
+  {
+    "role": "agent",
+    "content": "To confirm: the credit card, 900.00 on Wednesday 14 October 2026; the personal loan, 600.00 on Wednesday 14 October 2026. Do you confirm this? Please say yes to confirm.",
+    "after_tool_sequence": 3
+  },
+  {
+    "role": "customer",
+    "content": "Yes, I confirm only the card and personal loan.",
+    "after_tool_sequence": 3
+  },
+  {
+    "role": "agent",
+    "content": "Your promise is recorded: the credit card, 900.00 on Wednesday 14 October 2026; the personal loan, 600.00 on Wednesday 14 October 2026. Your promise has been saved in your customer portal. Is there anything else I can help you with?",
+    "after_tool_sequence": 5
+  },
+  {
+    "role": "customer",
+    "content": "No, that's everything for now, thank you.",
+    "after_tool_sequence": 5
+  },
+  {
+    "role": "agent",
+    "content": "Thank you for your time. Goodbye.",
+    "after_tool_sequence": 7
+  }
+]

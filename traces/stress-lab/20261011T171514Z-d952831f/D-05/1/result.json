@@ -1,0 +1,21 @@
+{
+  "record_status": "fail",
+  "failures": [
+    "Closing reason: expected D_SERVICE_ERROR, got D_REFUSED",
+    "notes: expected [{'product_id': 'asset-A', 'reason': 'D_SERVICE_ERROR'}], got []",
+    "Fault scenario did not exercise the specified attempt count"
+  ],
+  "capacity": {
+    "status": "unknown"
+  },
+  "conversation_status": "not_reviewed",
+  "overall_status": "error",
+  "case_id": "D-05",
+  "engine": "freya",
+  "official": false,
+  "audio_tested": false,
+  "error": "RuntimeError: POST /api/v2/chat/message -> 502: error code: 502\n",
+  "freya_call_id": "be548887-aec1-4c41-9fa0-4e6c91b90a8d",
+  "reported_model_cost_usd": 0.076908,
+  "model_calls": 15
+}

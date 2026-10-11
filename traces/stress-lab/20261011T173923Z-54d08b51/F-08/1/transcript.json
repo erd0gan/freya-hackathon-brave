@@ -1,0 +1,21 @@
+[
+  {
+    "role": "customer",
+    "content": "Hello?"
+  },
+  {
+    "role": "agent",
+    "content": "Hello, I am Lattice Bank's digital assistant. This call is recorded. Am I speaking with Mx Alex Rowan?",
+    "after_tool_sequence": 0
+  },
+  {
+    "role": "customer",
+    "content": "Yes, this is Alex. I want to speak to a human.",
+    "after_tool_sequence": 0
+  },
+  {
+    "role": "agent",
+    "content": "I am connecting you to a colleague now. Thank you for your time. Goodbye.",
+    "after_tool_sequence": 1
+  }
+]

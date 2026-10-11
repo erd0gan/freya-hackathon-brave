@@ -1,0 +1,43 @@
+17:15:14  RUN    start 2026-10-11T17:15:14Z case=C-06 engine=freya agent_model=Freya configured workflow customer_model=anthropic/claude-opus-5.5
+17:15:19  MODEL  anthropic:claude-opus-5-5  purpose: stress-customer (2s)  tokens=308 cost=$0.0019
+17:15:23  MODEL  anthropic:claude-opus-5-5  purpose: stress-customer (attempt 1)  FAILED after 1.4s: error body: empty reply: {"model": "claude-opus-5-5", "id": "msg_011Cfvpvd7RQJ1DfQ8TRcWdy", "type": "message", "role": "assistant", "content": [], "container": null, "stop_reason": "refusal", "stop_sequence": null, "stop_deta
+17:15:28  MODEL  anthropic/claude-opus-5.5  purpose: stress-customer (4s)  tokens=372 cost=$0.0024
+17:15:33  MODEL  anthropic:claude-opus-5-5  purpose: stress-customer (2s)  tokens=386 cost=$0.0021
+17:15:40  MODEL  anthropic:claude-opus-5-5  purpose: stress-customer (2s)  tokens=514 cost=$0.0035
+17:15:45  MODEL  anthropic:claude-opus-5-5  purpose: stress-customer (2s)  tokens=613 cost=$0.0040
+17:15:51  MODEL  anthropic:claude-opus-5-5  purpose: stress-customer (2s)  tokens=716 cost=$0.0044
+17:15:57  MODEL  anthropic:claude-opus-5-5  purpose: stress-customer (3s)  tokens=857 cost=$0.0054
+17:16:07  MODEL  anthropic:claude-opus-5-5  purpose: stress-customer (6s)  tokens=1008 cost=$0.0063
+17:16:15  MODEL  anthropic:claude-opus-5-5  purpose: stress-customer (4s)  tokens=1097 cost=$0.0062
+17:16:23  MODEL  anthropic:claude-opus-5-5  purpose: stress-customer (4s)  tokens=1209 cost=$0.0066
+17:16:31  MODEL  anthropic:claude-opus-5-5  purpose: stress-customer (4s)  tokens=1341 cost=$0.0073
+17:16:38  MODEL  anthropic:claude-opus-5-5  purpose: stress-customer (3s)  tokens=1481 cost=$0.0081
+17:16:45  MODEL  anthropic:claude-opus-5-5  purpose: stress-customer (3s)  tokens=1579 cost=$0.0081
+17:16:53  MODEL  anthropic:claude-opus-5-5  purpose: stress-customer (3s)  tokens=1672 cost=$0.0081
+17:17:01  MODEL  anthropic:claude-opus-5-5  purpose: stress-customer (3s)  tokens=1807 cost=$0.0090
+17:17:08  MODEL  anthropic:claude-opus-5-5  purpose: stress-customer (3s)  tokens=1919 cost=$0.0093
+17:17:18  MODEL  anthropic:claude-opus-5-5  purpose: stress-customer (3s)  tokens=2037 cost=$0.0097
+17:17:28  MODEL  anthropic:claude-opus-5-5  purpose: stress-customer (3s)  tokens=2153 cost=$0.0102
+17:17:36  MODEL  anthropic:claude-opus-5-5  purpose: stress-customer (3s)  tokens=2288 cost=$0.0109
+17:17:45  MODEL  anthropic:claude-opus-5-5  purpose: stress-customer (3s)  tokens=2497 cost=$0.0131
+17:17:52  MODEL  anthropic:claude-opus-5-5  purpose: stress-customer (2s)  tokens=2487 cost=$0.0114
+17:18:01  MODEL  anthropic:claude-opus-5-5  purpose: stress-customer (3s)  tokens=2577 cost=$0.0116
+17:18:09  MODEL  anthropic:claude-opus-5-5  purpose: stress-customer (3s)  tokens=2732 cost=$0.0132
+17:18:17  MODEL  anthropic:claude-opus-5-5  purpose: stress-customer (2s)  tokens=2772 cost=$0.0124
+17:18:28  MODEL  anthropic:claude-opus-5-5  purpose: stress-customer (2s)  tokens=2826 cost=$0.0120
+17:18:37  MODEL  anthropic:claude-opus-5-5  purpose: stress-customer (4s)  tokens=2998 cost=$0.0138
+17:18:45  MODEL  anthropic:claude-opus-5-5  purpose: stress-customer (2s)  tokens=3051 cost=$0.0134
+17:18:58  MODEL  anthropic:claude-opus-5-5  purpose: stress-customer (2s)  tokens=3117 cost=$0.0131
+17:19:13  MODEL  anthropic:claude-opus-5-5  purpose: stress-customer (2s)  tokens=3247 cost=$0.0142
+17:19:22  MODEL  anthropic:claude-opus-5-5  purpose: stress-customer (2s)  tokens=3311 cost=$0.0139
+17:19:33  MODEL  anthropic:claude-opus-5-5  purpose: stress-customer (2s)  tokens=3408 cost=$0.0143
+17:19:53  MODEL  anthropic:claude-opus-5-5  purpose: stress-customer (5s)  tokens=3652 cost=$0.0176
+17:20:05  MODEL  anthropic:claude-opus-5-5  purpose: stress-customer (2s)  tokens=3627 cost=$0.0156
+17:20:22  MODEL  anthropic:claude-opus-5-5  purpose: stress-customer (3s)  tokens=3795 cost=$0.0174
+17:20:37  MODEL  anthropic:claude-opus-5-5  purpose: stress-customer (2s)  tokens=3860 cost=$0.0171
+17:20:59  MODEL  anthropic:claude-opus-5-5  purpose: stress-customer (2s)  tokens=3893 cost=$0.0162
+17:21:10  MODEL  anthropic:claude-opus-5-5  purpose: stress-customer (3s)  tokens=3990 cost=$0.0166
+17:21:24  MODEL  anthropic:claude-opus-5-5  purpose: stress-customer (2s)  tokens=4087 cost=$0.0170
+17:21:34  MODEL  anthropic:claude-opus-5-5  purpose: stress-customer (3s)  tokens=4246 cost=$0.0186
+17:21:56  MODEL  anthropic:claude-opus-5-5  purpose: stress-customer (2s)  tokens=4317 cost=$0.0185
+17:22:11  END    end 2026-10-11T17:22:11Z duration=6m57s model_calls=40 model_cost=$0.43 model_failures=1 status=error

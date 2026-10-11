@@ -1,0 +1,166 @@
+{
+  "wrong": 0,
+  "closed": true,
+  "calls": [
+    {
+      "tool": "verify_identity",
+      "body": {
+        "field": "postcode",
+        "answer": "LT06",
+        "customer_id": "sl-Z82rkx6S4wTszdMjAOcFyMG74I4MCThf"
+      },
+      "sequence": 1,
+      "status": 200,
+      "result": {
+        "ok": true,
+        "verified": true,
+        "wrong_answers": 0
+      }
+    },
+    {
+      "tool": "verify_identity",
+      "body": {
+        "field": "birth_year",
+        "answer": "1988",
+        "customer_id": "sl-Z82rkx6S4wTszdMjAOcFyMG74I4MCThf"
+      },
+      "sequence": 2,
+      "status": 200,
+      "result": {
+        "ok": true,
+        "verified": true,
+        "wrong_answers": 0
+      }
+    },
+    {
+      "tool": "get_account",
+      "body": {
+        "customer_id": "sl-Z82rkx6S4wTszdMjAOcFyMG74I4MCThf"
+      },
+      "sequence": 3,
+      "status": 200,
+      "result": {
+        "ok": true,
+        "products": [
+          {
+            "product_id": "card-r4",
+            "type": "credit_card",
+            "display_name": "credit card",
+            "past_due": 900.0,
+            "floor": 300.0,
+            "days_late": 4
+          },
+          {
+            "product_id": "loan-r4",
+            "type": "personal_loan",
+            "display_name": "personal loan",
+            "past_due": 600.0,
+            "floor": 200.0,
+            "days_late": 4
+          },
+          {
+            "product_id": "car-r4",
+            "type": "car_loan",
+            "display_name": "car loan",
+            "past_due": 450.0,
+            "floor": 150.0,
+            "days_late": 4
+          }
+        ]
+      }
+    },
+    {
+      "tool": "add_note",
+      "body": {
+        "reason": "F_TRANSFERRED",
+        "product_id": "card-r4",
+        "customer_id": "sl-Z82rkx6S4wTszdMjAOcFyMG74I4MCThf"
+      },
+      "sequence": 4,
+      "status": 200,
+      "result": {
+        "ok": true
+      }
+    },
+    {
+      "tool": "add_note",
+      "body": {
+        "reason": "F_TRANSFERRED",
+        "product_id": "loan-r4",
+        "customer_id": "sl-Z82rkx6S4wTszdMjAOcFyMG74I4MCThf"
+      },
+      "sequence": 5,
+      "status": 200,
+      "result": {
+        "ok": true
+      }
+    },
+    {
+      "tool": "add_note",
+      "body": {
+        "reason": "F_TRANSFERRED",
+        "product_id": "car-r4",
+        "customer_id": "sl-Z82rkx6S4wTszdMjAOcFyMG74I4MCThf"
+      },
+      "sequence": 6,
+      "status": 200,
+      "result": {
+        "ok": true
+      }
+    },
+    {
+      "tool": "transfer_to_agent",
+      "body": {
+        "queue": "F_GENERAL",
+        "customer_id": "sl-Z82rkx6S4wTszdMjAOcFyMG74I4MCThf"
+      },
+      "sequence": 7,
+      "status": 200,
+      "result": {
+        "ok": true
+      }
+    },
+    {
+      "tool": "close_call",
+      "body": {
+        "reason": "F_HUMAN",
+        "outcome": "F_XFER",
+        "customer_id": "sl-Z82rkx6S4wTszdMjAOcFyMG74I4MCThf"
+      },
+      "sequence": 8,
+      "status": 200,
+      "result": {
+        "ok": true
+      }
+    }
+  ],
+  "promises": [],
+  "notes": [
+    {
+      "product_id": "card-r4",
+      "reason": "F_TRANSFERRED"
+    },
+    {
+      "product_id": "loan-r4",
+      "reason": "F_TRANSFERRED"
+    },
+    {
+      "product_id": "car-r4",
+      "reason": "F_TRANSFERRED"
+    }
+  ],
+  "callbacks": [],
+  "transfers": [
+    "F_GENERAL"
+  ],
+  "claims": [],
+  "inspections": [],
+  "rentals": [],
+  "endorsements": [],
+  "renewals": [],
+  "close": {
+    "reason": "F_HUMAN",
+    "outcome": "F_XFER"
+  },
+  "now": "2026-10-14T11:00:00"
+}

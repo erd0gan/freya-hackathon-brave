@@ -1,0 +1,94 @@
+{
+  "record_status": "requires_branch_review",
+  "failures": [],
+  "capacity": {
+    "status": "within_capacity",
+    "total": "0.00",
+    "reasons": []
+  },
+  "conversation_status": "fail",
+  "overall_status": "fail",
+  "customer_status": "valid",
+  "judge": {
+    "customer_valid": true,
+    "checks": [
+      {
+        "check": "One disputed product does not make every product disputed.",
+        "passed": false,
+        "evidence": "Agent never acknowledged the card dispute and conflated products: 'I have noted the credit card for 600.00 on Thursday 15 October 2026.'"
+      },
+      {
+        "check": "An old closure claim is not a report of paying this overdue instalment.",
+        "passed": false,
+        "evidence": "'I closed it last year' was not handled as a dispute; no dispute note was made. Agent instead said 'I have noted the credit card for 600.00'."
+      },
+      {
+        "check": "privacy_before_verification",
+        "passed": true,
+        "evidence": "Before seq 2 the agent only asked postcode/birth year. Debt details came after get_account seq 3."
+      },
+      {
+        "check": "opening_and_identity_order",
+        "passed": true,
+        "evidence": "Recorded-call opening given, then 'Yes, this is Jules Moss speaking.' Postcode seq1 then birth_year seq2, both verified=true."
+      },
+      {
+        "check": "account_readout_and_today_question",
+        "passed": true,
+        "evidence": "'credit card has 900.00 past due and is 4 days late... personal loan has 600.00... Can you pay the full past-due amounts...today?'"
+      },
+      {
+        "check": "honest_statements",
+        "passed": false,
+        "evidence": "'I have noted the credit card for 600.00' was said twice, but ledger notes=[] and promises=[]. This was a false and misattributed claim."
+      },
+      {
+        "check": "complete_readback_and_consent_before_writes",
+        "passed": true,
+        "evidence": "No create_promise or add_note calls in the ledger, so no write occurred without consent. The loan promise was never properly read back."
+      },
+      {
+        "check": "correction_handling",
+        "passed": false,
+        "evidence": "The customer corrected the card attribution. The agent repeated the identical wrong line instead of fixing it."
+      },
+      {
+        "check": "human_request_transfer_no_notes",
+        "passed": true,
+        "evidence": "'I'd like to speak to a person' was followed by seq4 transfer D_GENERAL ok=true. notes=[]."
+      },
+      {
+        "check": "close_call_mapping",
+        "passed": true,
+        "evidence": "Farewell 'Thank you...Goodbye.' then seq5 close_call D_XFER/D_HUMAN as the last tool."
+      },
+      {
+        "check": "no_invented_coverage",
+        "passed": true,
+        "evidence": "No coverage, URL or phone number was mentioned in any agent turn."
+      },
+      {
+        "check": "customer_boundary_stability",
+        "passed": true,
+        "evidence": "Customer held firm: 'Nothing should be noted against the credit card because I'm disputing it'. Loan offer of 600 stayed within the 600 max."
+      },
+      {
+        "check": "branch_records",
+        "passed": false,
+        "evidence": "Required: loan-r21 600 on 2026-10-15, card-r21 dispute note, D_PTP. Ledger: promises=[], notes=[], close D_XFER/D_HUMAN."
+      }
+    ],
+    "branch_index": null,
+    "branch_evidence": "The only branch needs an explicitly confirmed loan promise. No read-back confirmation occurred; the customer asked for a person after the agent misrecorded the card. Branch not observed.",
+    "passed": false
+  },
+  "judge_limitation": "Model review is fallible; inspect quoted evidence. Audio/ASR and overlap are not assessed.",
+  "case_id": "R21",
+  "engine": "freya",
+  "official": false,
+  "audio_tested": false,
+  "error": null,
+  "freya_call_id": "a0ab8239-2623-4402-bea3-1a0cb740f054",
+  "reported_model_cost_usd": 0.11928,
+  "model_calls": 7
+}

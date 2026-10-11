@@ -1,0 +1,152 @@
+{
+  "wrong": 0,
+  "closed": true,
+  "calls": [
+    {
+      "tool": "verify_identity",
+      "body": {
+        "field": "postcode",
+        "answer": "AB07",
+        "customer_id": "sl-QhnA4RtHrXlZixcwmD6VMqH5P27RI7Mz"
+      },
+      "sequence": 1,
+      "status": 200,
+      "result": {
+        "ok": true,
+        "verified": true,
+        "wrong_answers": 0
+      }
+    },
+    {
+      "tool": "verify_identity",
+      "body": {
+        "field": "birth_year",
+        "answer": "1988",
+        "customer_id": "sl-QhnA4RtHrXlZixcwmD6VMqH5P27RI7Mz"
+      },
+      "sequence": 2,
+      "status": 200,
+      "result": {
+        "ok": true,
+        "verified": true,
+        "wrong_answers": 0
+      }
+    },
+    {
+      "tool": "get_account",
+      "body": {
+        "customer_id": "sl-QhnA4RtHrXlZixcwmD6VMqH5P27RI7Mz"
+      },
+      "sequence": 3,
+      "status": 200,
+      "result": {
+        "ok": true,
+        "products": [
+          {
+            "product_id": "asset-A",
+            "type": "credit_card",
+            "display_name": "credit card",
+            "past_due": 900.0,
+            "floor": 300.0,
+            "days_late": 4
+          },
+          {
+            "product_id": "asset-B",
+            "type": "personal_loan",
+            "display_name": "personal loan",
+            "past_due": 600.0,
+            "floor": 200.0,
+            "days_late": 4
+          },
+          {
+            "product_id": "asset-C",
+            "type": "car_loan",
+            "display_name": "car loan",
+            "past_due": 450.0,
+            "floor": 150.0,
+            "days_late": 4
+          }
+        ]
+      }
+    },
+    {
+      "tool": "add_note",
+      "body": {
+        "reason": "D_PAID",
+        "product_id": "asset-A",
+        "customer_id": "sl-QhnA4RtHrXlZixcwmD6VMqH5P27RI7Mz"
+      },
+      "sequence": 4,
+      "status": 200,
+      "result": {
+        "ok": true
+      }
+    },
+    {
+      "tool": "add_note",
+      "body": {
+        "reason": "D_DISPUTE",
+        "product_id": "asset-B",
+        "customer_id": "sl-QhnA4RtHrXlZixcwmD6VMqH5P27RI7Mz"
+      },
+      "sequence": 5,
+      "status": 200,
+      "result": {
+        "ok": true
+      }
+    },
+    {
+      "tool": "add_note",
+      "body": {
+        "reason": "D_REFUSED",
+        "product_id": "asset-C",
+        "customer_id": "sl-QhnA4RtHrXlZixcwmD6VMqH5P27RI7Mz"
+      },
+      "sequence": 6,
+      "status": 200,
+      "result": {
+        "ok": true
+      }
+    },
+    {
+      "tool": "close_call",
+      "body": {
+        "reason": "D_DISPUTE",
+        "outcome": "D_NO_PTP",
+        "customer_id": "sl-QhnA4RtHrXlZixcwmD6VMqH5P27RI7Mz"
+      },
+      "sequence": 7,
+      "status": 200,
+      "result": {
+        "ok": true
+      }
+    }
+  ],
+  "promises": [],
+  "notes": [
+    {
+      "product_id": "asset-A",
+      "reason": "D_PAID"
+    },
+    {
+      "product_id": "asset-B",
+      "reason": "D_DISPUTE"
+    },
+    {
+      "product_id": "asset-C",
+      "reason": "D_REFUSED"
+    }
+  ],
+  "callbacks": [],
+  "transfers": [],
+  "claims": [],
+  "inspections": [],
+  "rentals": [],
+  "endorsements": [],
+  "renewals": [],
+  "close": {
+    "reason": "D_DISPUTE",
+    "outcome": "D_NO_PTP"
+  },
+  "now": "2026-10-14T11:00:00"
+}

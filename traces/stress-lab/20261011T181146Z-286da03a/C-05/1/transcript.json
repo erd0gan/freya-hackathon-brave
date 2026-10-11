@@ -1,0 +1,41 @@
+[
+  {
+    "role": "customer",
+    "content": "Hello?"
+  },
+  {
+    "role": "agent",
+    "content": "Hello, I am Meridian Bank's digital assistant. This call is recorded. Am I speaking with Mx Alex Rowan?",
+    "after_tool_sequence": 0
+  },
+  {
+    "role": "customer",
+    "content": "Alex is away at the moment. Could you call back today at half past four?",
+    "after_tool_sequence": 0
+  },
+  {
+    "role": "agent",
+    "content": "Could you please confirm if you would like me to call back today at 16:30?",
+    "after_tool_sequence": 0
+  },
+  {
+    "role": "customer",
+    "content": "Actually, it's already half past four now, so please make it five o'clock today instead.",
+    "after_tool_sequence": 0
+  },
+  {
+    "role": "agent",
+    "content": "I'm sorry, that time is not possible. Could Mx Rowan be reached next business day, Thursday 15 October 2026, or Monday 19 October 2026, between 08:30 and 16:30?",
+    "after_tool_sequence": 0
+  },
+  {
+    "role": "customer",
+    "content": "I can't commit Alex to a time, but I'll pass on that you called and those options. Alex can get back to you directly.",
+    "after_tool_sequence": 0
+  },
+  {
+    "role": "agent",
+    "content": "Thank you for your time. Goodbye.",
+    "after_tool_sequence": 0
+  }
+]

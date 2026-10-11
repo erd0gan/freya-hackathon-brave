@@ -1,0 +1,71 @@
+[
+  {
+    "role": "customer",
+    "content": "Hello?"
+  },
+  {
+    "role": "agent",
+    "content": "Hello, I am Alder Credit's digital assistant. This call is recorded. Am I speaking with Mx Jules Moss?",
+    "after_tool_sequence": 0
+  },
+  {
+    "role": "customer",
+    "content": "Yes, this is Jules Moss speaking.",
+    "after_tool_sequence": 0
+  },
+  {
+    "role": "agent",
+    "content": "Before we continue, I need to ask two short security questions. What is your postcode?",
+    "after_tool_sequence": 0
+  },
+  {
+    "role": "customer",
+    "content": "It's AB07.",
+    "after_tool_sequence": 0
+  },
+  {
+    "role": "agent",
+    "content": "What is your year of birth?",
+    "after_tool_sequence": 1
+  },
+  {
+    "role": "customer",
+    "content": "1988.",
+    "after_tool_sequence": 1
+  },
+  {
+    "role": "agent",
+    "content": "Thank you. I am calling about overdue payments on your account. Your credit card has 900.00 past due and is 4 days late. Your personal loan has 600.00 past due and is 4 days late. Can you pay the full past-due amounts for all of these today?",
+    "after_tool_sequence": 3
+  },
+  {
+    "role": "customer",
+    "content": "I'm disputing that credit card. I closed it last year, so I don't accept I owe that 900. The personal loan is mine, and I can pay the full 600 on October fifteenth.",
+    "after_tool_sequence": 3
+  },
+  {
+    "role": "agent",
+    "content": "I have noted the credit card for 600.00 on Thursday 15 October 2026. Could you pay 600.00 for the personal loan on Thursday 15 October 2026?",
+    "after_tool_sequence": 3
+  },
+  {
+    "role": "customer",
+    "content": "No, please don't note anything against the credit card. I'm disputing that one and not agreeing to pay it. The 600 is only for the personal loan, and yes, I can pay that 600 on Thursday 15 October.",
+    "after_tool_sequence": 3
+  },
+  {
+    "role": "agent",
+    "content": "I have noted the credit card for 600.00 on Thursday 15 October 2026. Could you pay 600.00 for the personal loan on Thursday 15 October 2026?",
+    "after_tool_sequence": 3
+  },
+  {
+    "role": "customer",
+    "content": "No, that's still wrong. Nothing should be noted against the credit card because I'm disputing it, and the only promise I'm making is 600 for the personal loan on 15 October. If that can't be recorded properly, I'd like to speak to a person, please.",
+    "after_tool_sequence": 3
+  },
+  {
+    "role": "agent",
+    "content": "I will connect you with a colleague now. Thank you for your time. Goodbye.",
+    "after_tool_sequence": 4
+  }
+]

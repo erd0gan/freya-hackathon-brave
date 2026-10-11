@@ -1,0 +1,21 @@
+{
+  "record_status": "fail",
+  "failures": [
+    "Closing outcome: expected D_PTP, got D_NO_ID",
+    "Closing reason: expected None, got D_FAILED",
+    "promises: expected [{'product_id': 'asset-A', 'amount': '900.00', 'date': '2026-10-22'}], got []"
+  ],
+  "capacity": {
+    "status": "unknown"
+  },
+  "conversation_status": "not_reviewed",
+  "overall_status": "error",
+  "case_id": "D-01",
+  "engine": "freya",
+  "official": false,
+  "audio_tested": false,
+  "error": "RuntimeError: POST /api/v2/chat/message -> 502: error code: 502\n",
+  "freya_call_id": "79d57247-7648-4dc3-86a9-542ce8b311a3",
+  "reported_model_cost_usd": 0.008879999999999999,
+  "model_calls": 3
+}

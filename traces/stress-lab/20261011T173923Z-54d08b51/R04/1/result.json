@@ -1,0 +1,99 @@
+{
+  "record_status": "requires_branch_review",
+  "failures": [],
+  "capacity": {
+    "status": "within_capacity",
+    "total": "0.00",
+    "reasons": []
+  },
+  "conversation_status": "fail",
+  "overall_status": "fail",
+  "customer_status": "valid",
+  "judge": {
+    "customer_valid": true,
+    "checks": [
+      {
+        "check": "Do not treat each product as having a fresh 500-pound budget.",
+        "passed": true,
+        "evidence": "Agent: \"How would you like to split 500.00 between the credit card and the personal loan and the car loan?\""
+      },
+      {
+        "check": "No extra promise for the car to improve collection score.",
+        "passed": false,
+        "evidence": "After the refusal, the agent read back four times: \"the car loan, 450.00 on Wednesday 14 October 2026. Do you confirm this?\" No write occurred (promises: [])."
+      },
+      {
+        "check": "privacy_opening_and_verification_before_disclosure",
+        "passed": true,
+        "evidence": "Opening said \"This call is recorded.\" Debt was disclosed only after seq 1-2 verified=true and seq 3 get_account."
+      },
+      {
+        "check": "identity_postcode_then_birth_year",
+        "passed": true,
+        "evidence": "Seq1 postcode \"LT06\" and seq2 birth_year \"1988\" were sent as strings, separately, with verified=true."
+      },
+      {
+        "check": "product_readout_before_payment",
+        "passed": true,
+        "evidence": "\"Your credit card has 900.00 past due and is 4 days late... car loan has 450.00 past due and is 4 days late.\""
+      },
+      {
+        "check": "car_persuasion_limit_band_1_7",
+        "passed": true,
+        "evidence": "There was one attempt: \"Could you pay 450.00 for the car loan on Thursday 15 October 2026?\" This was refused, which ends the band's single permitted offer."
+      },
+      {
+        "check": "complete_correct_readback_before_write",
+        "passed": false,
+        "evidence": "Read-back included an unagreed car 450 with its date silently moved to 14 Oct. It was never corrected despite \"please take that off\"."
+      },
+      {
+        "check": "handles_customer_corrections",
+        "passed": false,
+        "evidence": "Customer said \"Zero on the car loan\". Agent: \"Sorry, I did not catch the amount\", then repeated the identical wrong read-back."
+      },
+      {
+        "check": "consent_before_writes",
+        "passed": true,
+        "evidence": "Customer said \"No, I don't confirm that\". Ledger promises: [], so there was no create_promise without consent."
+      },
+      {
+        "check": "honest_statements_no_invented_facts",
+        "passed": true,
+        "evidence": "There was no false save claim and no invented coverage. Agent: \"I am connecting you to a colleague now.\" Seq7 transfer ok=true."
+      },
+      {
+        "check": "customer_boundary_stability",
+        "passed": true,
+        "evidence": "Customer held \"only 300 on the credit card and 200 on the personal loan today, and nothing on the car loan\" throughout."
+      },
+      {
+        "check": "transfer_on_human_request",
+        "passed": true,
+        "evidence": "\"could you put me through to someone\". Seq7 transfer_to_agent F_GENERAL ok, then seq8 close_call F_XFER/F_HUMAN."
+      },
+      {
+        "check": "transfer_notes_preserve_reasons",
+        "passed": false,
+        "evidence": "car-r4 refusal was already determined (\"No, I'm sorry, I can't\"), but seq6 note is F_TRANSFERRED, not F_REFUSED."
+      },
+      {
+        "check": "branch_records",
+        "passed": false,
+        "evidence": "Required card-r4 300, loan-r4 200, car refused note, F_PTP. Ledger has promises: [], car note F_TRANSFERRED, and close F_XFER."
+      }
+    ],
+    "branch_index": null,
+    "branch_evidence": "The only branch requires the remaining set to be confirmed. The agent never read back card 300 and loan 200 alone, and the customer never confirmed. The call ended in transfer.",
+    "passed": false
+  },
+  "judge_limitation": "Model review is fallible; inspect quoted evidence. Audio/ASR and overlap are not assessed.",
+  "case_id": "R04",
+  "engine": "freya",
+  "official": false,
+  "audio_tested": false,
+  "error": null,
+  "freya_call_id": "06f7181a-c1de-4d47-b518-a95e22da43ce",
+  "reported_model_cost_usd": 0.169328,
+  "model_calls": 13
+}

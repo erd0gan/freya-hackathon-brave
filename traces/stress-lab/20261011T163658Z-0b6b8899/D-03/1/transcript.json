@@ -1,0 +1,71 @@
+[
+  {
+    "role": "customer",
+    "content": "Hello?"
+  },
+  {
+    "role": "agent",
+    "content": "Hello, I am Alder Credit's digital assistant. This call is recorded. Am I speaking with Mx Alex Rowan?",
+    "after_tool_sequence": 0
+  },
+  {
+    "role": "customer",
+    "content": "Yes, this is Alex Rowan speaking.",
+    "after_tool_sequence": 0
+  },
+  {
+    "role": "agent",
+    "content": "Before we continue, I need to ask you two security questions. Could you please tell me your postcode?",
+    "after_tool_sequence": 0
+  },
+  {
+    "role": "customer",
+    "content": "Sure, it's AB07.",
+    "after_tool_sequence": 0
+  },
+  {
+    "role": "agent",
+    "content": "And the remaining digits?",
+    "after_tool_sequence": 0
+  },
+  {
+    "role": "customer",
+    "content": "AB07 is all I'll be giving for that, I'm afraid. Can you verify me with that and the other question?",
+    "after_tool_sequence": 0
+  },
+  {
+    "role": "agent",
+    "content": "These questions protect your privacy; I can only continue once I have confirmed I am speaking with the right person. Could you please tell me your postcode?",
+    "after_tool_sequence": 0
+  },
+  {
+    "role": "customer",
+    "content": "My postcode is AB07, that's what I've got on file with you. I'm happy to answer your second security question if that helps.",
+    "after_tool_sequence": 0
+  },
+  {
+    "role": "agent",
+    "content": "And the remaining digits?",
+    "after_tool_sequence": 0
+  },
+  {
+    "role": "customer",
+    "content": "I've already told you, AB07 is what I'm giving you for the postcode. Why don't you ask me the second question instead?",
+    "after_tool_sequence": 0
+  },
+  {
+    "role": "agent",
+    "content": "These questions protect your privacy; I can only continue once I have confirmed I am speaking with the right person. Could you please tell me your postcode?",
+    "after_tool_sequence": 0
+  },
+  {
+    "role": "customer",
+    "content": "It's AB07, same as I said before, and that's all I can give you for it. If that's not enough, please ask me the second security question.",
+    "after_tool_sequence": 0
+  },
+  {
+    "role": "agent",
+    "content": "Thank you for your time. Goodbye.",
+    "after_tool_sequence": 1
+  }
+]

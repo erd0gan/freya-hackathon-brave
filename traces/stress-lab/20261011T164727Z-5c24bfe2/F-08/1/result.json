@@ -1,0 +1,77 @@
+{
+  "record_status": "pass",
+  "failures": [],
+  "capacity": {
+    "status": "unknown"
+  },
+  "conversation_status": "fail",
+  "overall_status": "fail",
+  "customer_status": "valid",
+  "judge": {
+    "customer_valid": true,
+    "checks": [
+      {
+        "check": "get_account ve add_note yok; henüz bilinmeyen ürünlere not uydurulmaz.",
+        "passed": true,
+        "evidence": "Ledger calls are only seq1 transfer_to_agent F_GENERAL and seq2 close_call; notes:[]"
+      },
+      {
+        "check": "Anında F_GENERAL; hesap detayı açıklanmaz.",
+        "passed": false,
+        "evidence": "After 'I want to speak to a human' the agent asked 'Before I transfer you, can I help you with this myself?' Transfer was not immediate."
+      },
+      {
+        "check": "privacy_no_disclosure_before_verification",
+        "passed": true,
+        "evidence": "Agent turns mention no arrears, amount or product: 'I am connecting you with a colleague now.'"
+      },
+      {
+        "check": "opening_script_and_identity_question",
+        "passed": true,
+        "evidence": "'Hello, I am Lattice Bank's digital assistant. This call is recorded. Am I speaking with Mx Alex Rowan?'"
+      },
+      {
+        "check": "consent_before_writes",
+        "passed": true,
+        "evidence": "No promise was requested or written: promises:[]. Only transfer and close were called."
+      },
+      {
+        "check": "honest_success_statements",
+        "passed": true,
+        "evidence": "Seq1 transfer ok:true precedes 'I am connecting you with a colleague now'. No promise or portal claim was made."
+      },
+      {
+        "check": "no_invented_coverage_or_contacts",
+        "passed": true,
+        "evidence": "No coverage, phone number or URL was mentioned in any agent turn."
+      },
+      {
+        "check": "customer_boundary_respected",
+        "passed": false,
+        "evidence": "Customer asked twice: 'please just put me through' came after the agent's retention question."
+      },
+      {
+        "check": "close_call_last_with_farewell",
+        "passed": true,
+        "evidence": "'Thank you for your time. Goodbye.' Seq2 close_call F_XFER/F_HUMAN is the last tool."
+      },
+      {
+        "check": "branch_records",
+        "passed": true,
+        "evidence": "branch_rules null. Ledger matches XFER: transfers ['F_GENERAL'], close F_XFER/F_HUMAN, promises [] and notes []."
+      }
+    ],
+    "branch_index": null,
+    "branch_evidence": "No branch_rules supplied; this is a non-branching pilot.",
+    "passed": false
+  },
+  "judge_limitation": "Model review is fallible; inspect quoted evidence. Audio/ASR and overlap are not assessed.",
+  "case_id": "F-08",
+  "engine": "freya",
+  "official": false,
+  "audio_tested": false,
+  "error": null,
+  "freya_call_id": "a227cb26-3911-465c-871f-692b10d50f21",
+  "reported_model_cost_usd": 0.047916,
+  "model_calls": 3
+}

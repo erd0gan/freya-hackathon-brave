@@ -1,0 +1,22 @@
+{
+  "record_status": "fail",
+  "failures": [
+    "Closing outcome: expected D_PTP, got D_NO_PTP",
+    "Closing reason: expected None, got D_REFUSED",
+    "promises: expected [{'product_id': 'asset-A', 'amount': '900.00', 'date': '2026-10-14'}], got []",
+    "Fault scenario did not exercise the specified attempt count"
+  ],
+  "capacity": {
+    "status": "unknown"
+  },
+  "conversation_status": "not_reviewed",
+  "overall_status": "error",
+  "case_id": "D-04",
+  "engine": "freya",
+  "official": false,
+  "audio_tested": false,
+  "error": "Step budget exhausted; unfinished call retained",
+  "freya_call_id": "362b3e97-ccd7-44d4-a12e-571616fc3d02",
+  "reported_model_cost_usd": 0.39428399999999997,
+  "model_calls": 40
+}

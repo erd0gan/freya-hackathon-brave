@@ -1,0 +1,91 @@
+[
+  {
+    "role": "customer",
+    "content": "Hello?"
+  },
+  {
+    "role": "agent",
+    "content": "Hello, I am Vector Bank's digital assistant. This call is recorded. Am I speaking with Mx Remy Oak?",
+    "after_tool_sequence": 0
+  },
+  {
+    "role": "customer",
+    "content": "Yes, this is Remy Oak speaking.",
+    "after_tool_sequence": 0
+  },
+  {
+    "role": "agent",
+    "content": "First, I need to ask you two security questions. Please tell me your member code.",
+    "after_tool_sequence": 0
+  },
+  {
+    "role": "customer",
+    "content": "My member code is 004271.",
+    "after_tool_sequence": 0
+  },
+  {
+    "role": "agent",
+    "content": "Correct. What is your year of birth?",
+    "after_tool_sequence": 1
+  },
+  {
+    "role": "customer",
+    "content": "1988.",
+    "after_tool_sequence": 1
+  },
+  {
+    "role": "agent",
+    "content": "Thank you. I'm calling about overdue payments on your account. Your credit card has 1210.05 past due and is 4 days late. Can you pay the full overdue amount today?",
+    "after_tool_sequence": 3
+  },
+  {
+    "role": "customer",
+    "content": "I can't pay the full amount today, I'm afraid. I could pay 420.50 on October fifteenth.",
+    "after_tool_sequence": 3
+  },
+  {
+    "role": "agent",
+    "content": "On which day can you pay 1210.05?",
+    "after_tool_sequence": 3
+  },
+  {
+    "role": "customer",
+    "content": "I'm not able to commit to a date for the full 1210.05 right now. What I can do is 420.50 on October fifteenth.",
+    "after_tool_sequence": 3
+  },
+  {
+    "role": "agent",
+    "content": "To confirm: the credit card, 420.50 on Thursday 15 October 2026. Do you confirm this? Please say yes to confirm.",
+    "after_tool_sequence": 3
+  },
+  {
+    "role": "customer",
+    "content": "Could you repeat just the amount, including the pence?",
+    "after_tool_sequence": 3
+  },
+  {
+    "role": "agent",
+    "content": "The amount is 420.50. To confirm: the credit card, 420.50 on Thursday 15 October 2026. Do you confirm this? Please say yes to confirm.",
+    "after_tool_sequence": 3
+  },
+  {
+    "role": "customer",
+    "content": "Thank you, I heard it that time: 420 pounds and 50 pence. Yes, I confirm 420.50 on the credit card on Thursday 15 October 2026.",
+    "after_tool_sequence": 3
+  },
+  {
+    "role": "agent",
+    "content": "Your promise is recorded: the credit card, 420.50 on Thursday 15 October 2026. The record is available in the secure portal. Is there anything else I can help you with?",
+    "after_tool_sequence": 4
+  },
+  {
+    "role": "customer",
+    "content": "No, that's everything, thank you. Goodbye.",
+    "after_tool_sequence": 4
+  },
+  {
+    "role": "agent",
+    "content": "Thank you for your time. Goodbye.",
+    "after_tool_sequence": 4
+  }
+]

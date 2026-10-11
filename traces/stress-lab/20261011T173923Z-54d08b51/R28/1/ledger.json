@@ -1,0 +1,118 @@
+{
+  "wrong": 0,
+  "closed": true,
+  "calls": [
+    {
+      "tool": "verify_identity",
+      "body": {
+        "field": "policyholder_code",
+        "answer": "000819",
+        "customer_id": "sl-5MfH56Z-SGdJXP3kuftT2oGXUmly59vo"
+      },
+      "sequence": 1,
+      "status": 200,
+      "result": {
+        "ok": true,
+        "verified": true,
+        "wrong_answers": 0
+      }
+    },
+    {
+      "tool": "verify_identity",
+      "body": {
+        "field": "postcode",
+        "answer": "CD09",
+        "customer_id": "sl-5MfH56Z-SGdJXP3kuftT2oGXUmly59vo"
+      },
+      "sequence": 2,
+      "status": 200,
+      "result": {
+        "ok": true,
+        "verified": true,
+        "wrong_answers": 0
+      }
+    },
+    {
+      "tool": "get_account",
+      "body": {
+        "customer_id": "sl-5MfH56Z-SGdJXP3kuftT2oGXUmly59vo"
+      },
+      "sequence": 3,
+      "status": 200,
+      "result": {
+        "ok": true,
+        "products": [
+          {
+            "product_id": "policy-r28",
+            "type": "insurance_policy",
+            "display_name": "insurance policy",
+            "past_due": 480.0,
+            "floor": 160.0,
+            "days_late": 3
+          }
+        ]
+      }
+    },
+    {
+      "tool": "create_promise",
+      "body": {
+        "date": "2026-10-14",
+        "amount": 480.0,
+        "product_id": "policy-r28",
+        "customer_id": "sl-5MfH56Z-SGdJXP3kuftT2oGXUmly59vo"
+      },
+      "sequence": 4,
+      "status": 200,
+      "result": {
+        "ok": true
+      }
+    },
+    {
+      "tool": "transfer_to_agent",
+      "body": {
+        "queue": "G_GENERAL",
+        "customer_id": "sl-5MfH56Z-SGdJXP3kuftT2oGXUmly59vo"
+      },
+      "sequence": 5,
+      "status": 200,
+      "result": {
+        "ok": true
+      }
+    },
+    {
+      "tool": "close_call",
+      "body": {
+        "reason": "G_HUMAN",
+        "outcome": "G_XFER",
+        "customer_id": "sl-5MfH56Z-SGdJXP3kuftT2oGXUmly59vo"
+      },
+      "sequence": 6,
+      "status": 200,
+      "result": {
+        "ok": true
+      }
+    }
+  ],
+  "promises": [
+    {
+      "product_id": "policy-r28",
+      "amount": "480.00",
+      "date": "2026-10-14"
+    }
+  ],
+  "notes": [],
+  "callbacks": [],
+  "transfers": [
+    "G_GENERAL"
+  ],
+  "claims": [],
+  "inspections": [],
+  "rentals": [],
+  "endorsements": [],
+  "renewals": [],
+  "close": {
+    "reason": "G_HUMAN",
+    "outcome": "G_XFER"
+  },
+  "now": "2026-10-14T11:00:00"
+}

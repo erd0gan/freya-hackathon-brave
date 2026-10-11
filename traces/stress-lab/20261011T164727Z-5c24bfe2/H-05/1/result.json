@@ -1,0 +1,97 @@
+{
+  "record_status": "pass",
+  "failures": [],
+  "capacity": {
+    "status": "unknown"
+  },
+  "conversation_status": "pass",
+  "overall_status": "pass",
+  "customer_status": "valid",
+  "judge": {
+    "customer_valid": true,
+    "checks": [
+      {
+        "check": "İki paid notu; H_PAID'de reason yok.",
+        "passed": true,
+        "evidence": "seq4 add_note policy-A H_PAID; seq5 add_note policy-B H_PAID; seq6 close_call {outcome:H_PAID} with no reason field"
+      },
+      {
+        "check": "Bir iş günü gibi A varsayımı yerine bu brief'in iki iş günü açıklaması.",
+        "passed": true,
+        "evidence": "Agent: \"a payment can take up to two business days to show on your account.\""
+      },
+      {
+        "check": "opening_and_identity_confirmation",
+        "passed": true,
+        "evidence": "Agent gave the required opening and asked for Mx Alex Rowan; customer: \"Yes, this is Alex Rowan speaking.\""
+      },
+      {
+        "check": "privacy_no_disclosure_before_verification",
+        "passed": true,
+        "evidence": "Debt mentioned only after seq1-2 returned verified=true; earlier agent turns contained only the opening and security questions"
+      },
+      {
+        "check": "identity_order_and_format",
+        "passed": true,
+        "evidence": "seq1 policyholder_code \"006410\" (leading zeros kept), then seq2 birth_year \"1988\" as a string, each asked separately"
+      },
+      {
+        "check": "account_read_complete",
+        "passed": true,
+        "evidence": "\"motor premium has 480.00 past due and is 3 days late... home premium has 360.00 past due and is 3 days late\" before the payment question"
+      },
+      {
+        "check": "combined_today_full_ask",
+        "passed": true,
+        "evidence": "\"Can you pay the full overdue amount for all of them today?\""
+      },
+      {
+        "check": "paid_handling_no_promise_no_persuasion",
+        "passed": true,
+        "evidence": "Customer: \"I paid both overdue premiums yesterday\"; promises:[]; agent made no further payment ask"
+      },
+      {
+        "check": "consent_before_writes",
+        "passed": true,
+        "evidence": "No create_promise calls; ledger promises:[] so no read-back or consent was required"
+      },
+      {
+        "check": "honest_statements_no_receipt_no_coverage",
+        "passed": true,
+        "evidence": "Agent made no receipt line, coverage claim or money-moved claim; only the posting-delay explanation"
+      },
+      {
+        "check": "unanswered_question_handling",
+        "passed": true,
+        "evidence": "Customer asked to check the payments; agent replied that they \"can take up to two business days to show\" and invented no status"
+      },
+      {
+        "check": "farewell_before_close_and_close_last",
+        "passed": true,
+        "evidence": "\"Thank you for your time. Goodbye.\" precedes seq6 close_call, which is the last tool call"
+      },
+      {
+        "check": "customer_boundary_capacity_stable",
+        "passed": true,
+        "evidence": "Customer gave consistent identity answers and the critical paid reply, with no extra consent or money invented"
+      },
+      {
+        "check": "branch_records",
+        "passed": true,
+        "evidence": "branch_rules null so no branch applies; ledger notes policy-A and policy-B H_PAID, close H_PAID"
+      }
+    ],
+    "branch_index": null,
+    "branch_evidence": "branch_rules is null; no branching pilot applies",
+    "passed": true
+  },
+  "judge_limitation": "Model review is fallible; inspect quoted evidence. Audio/ASR and overlap are not assessed.",
+  "case_id": "H-05",
+  "engine": "freya",
+  "official": false,
+  "audio_tested": false,
+  "error": null,
+  "freya_call_id": "48404f9a-67c8-4d6c-8c75-c2a301ef0f7a",
+  "reported_model_cost_usd": 0.073204,
+  "model_calls": 5
+}

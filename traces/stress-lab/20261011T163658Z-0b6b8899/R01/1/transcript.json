@@ -1,0 +1,71 @@
+[
+  {
+    "role": "customer",
+    "content": "Hello?"
+  },
+  {
+    "role": "agent",
+    "content": "Hello, I am Cedar Insurance's digital assistant. This call is recorded. Am I speaking with Mx Robin Hale?",
+    "after_tool_sequence": 0
+  },
+  {
+    "role": "customer",
+    "content": "Yes, this is Robin Hale speaking.",
+    "after_tool_sequence": 0
+  },
+  {
+    "role": "agent",
+    "content": "Before we continue, I need to ask you two security questions. Could you please tell me your policyholder code?",
+    "after_tool_sequence": 0
+  },
+  {
+    "role": "customer",
+    "content": "Sure, it's 000819.",
+    "after_tool_sequence": 0
+  },
+  {
+    "role": "agent",
+    "content": "Thank you. Could you please tell me your postcode?",
+    "after_tool_sequence": 1
+  },
+  {
+    "role": "customer",
+    "content": "It's CD09.",
+    "after_tool_sequence": 1
+  },
+  {
+    "role": "agent",
+    "content": "Thank you. I am calling about overdue insurance premiums. Your insurance policy has 480.00 past due and is 8 days late. Can you pay the full overdue amount today?",
+    "after_tool_sequence": 3
+  },
+  {
+    "role": "customer",
+    "content": "No, I can't pay the full 480 today. I have 120 available right now, and a client might pay me around the twentieth, but that isn't guaranteed.",
+    "after_tool_sequence": 3
+  },
+  {
+    "role": "agent",
+    "content": "I cannot record 120.00. The minimum is 160.00. The latest date I can record is Friday 16 October 2026. Could you pay 160.00 on Friday 16 October 2026? The remaining balance stays overdue.",
+    "after_tool_sequence": 3
+  },
+  {
+    "role": "customer",
+    "content": "I'm sorry, but I can't do 160 by Friday. I only have 120 until at least the twentieth, and I don't want to promise money I haven't got. If 120 isn't something you can record, then I'll have to leave it there for now rather than make a promise I can't keep.",
+    "after_tool_sequence": 3
+  },
+  {
+    "role": "agent",
+    "content": "Could you pay 480.00 for the insurance policy on Thursday 15 October 2026?",
+    "after_tool_sequence": 3
+  },
+  {
+    "role": "customer",
+    "content": "No, I can't pay 480 on Thursday either. I've only got 120 before the twentieth, so I won't agree to anything above that. If there's nothing that fits, I'll have to leave it without a promise for now.",
+    "after_tool_sequence": 3
+  },
+  {
+    "role": "agent",
+    "content": "Thank you for your time. Goodbye.",
+    "after_tool_sequence": 5
+  }
+]

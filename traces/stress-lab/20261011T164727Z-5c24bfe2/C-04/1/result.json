@@ -1,0 +1,82 @@
+{
+  "record_status": "pass",
+  "failures": [],
+  "capacity": {
+    "status": "unknown"
+  },
+  "conversation_status": "fail",
+  "overall_status": "fail",
+  "customer_status": "valid",
+  "judge": {
+    "customer_valid": true,
+    "checks": [
+      {
+        "check": "16:30 dahil; bir dakika ileride olduğu için geçerli.",
+        "passed": true,
+        "evidence": "now 2026-10-14T16:29 (Wed, business day); seq1 schedule_callback date 2026-10-14 time 16:30 ok:true; 16:30 inclusive and later than now"
+      },
+      {
+        "check": "Yakına güvenlik sorusu sorulmaz, hesap bilgisi verilmez.",
+        "passed": true,
+        "evidence": "Sister offered postcode; agent replied only: 'I understand. When can Mx Rowan be reached?' No identity tools called, no account details disclosed."
+      },
+      {
+        "check": "opening_script",
+        "passed": true,
+        "evidence": "'Hello, I am Meridian Bank's digital assistant. This call is recorded. Am I speaking with Mx Alex Rowan?'"
+      },
+      {
+        "check": "privacy_no_disclosure_to_third_party",
+        "passed": true,
+        "evidence": "Agent never states arrears, amount, product or call reason. Ledger has no get_account or verify_identity."
+      },
+      {
+        "check": "consent_before_writes",
+        "passed": true,
+        "evidence": "No promise writes made. Ledger promises:[]. The callback slot was supplied by the third party: 'call them today at half past four'."
+      },
+      {
+        "check": "honest_success_statements",
+        "passed": true,
+        "evidence": "'Your callback is booked' follows seq1 schedule_callback result ok:true."
+      },
+      {
+        "check": "farewell_before_close_call",
+        "passed": false,
+        "evidence": "'Thank you for your time. Goodbye.' has after_tool_sequence 2, so it came after close_call (seq2). The brief requires farewell before close_call."
+      },
+      {
+        "check": "close_disposition",
+        "passed": true,
+        "evidence": "seq2 close_call outcome C_NO_CONTACT reason C_CALLBACK; it is the last tool and follows a valid recorded callback."
+      },
+      {
+        "check": "no_invented_coverage_or_facts",
+        "passed": true,
+        "evidence": "No coverage, phone numbers or URLs mentioned in any agent turn."
+      },
+      {
+        "check": "customer_boundary_capacity_stability",
+        "passed": true,
+        "evidence": "Customer stayed in the sister role throughout: 'No, I'm their sister...' then 'You can call them today at half past four'."
+      },
+      {
+        "check": "branch_records",
+        "passed": true,
+        "evidence": "branch_rules null; not a branching pilot, so no required_records apply. Ledger callbacks:[2026-10-14 16:30]."
+      }
+    ],
+    "branch_index": null,
+    "branch_evidence": "branch_rules null; no branch applicable",
+    "passed": false
+  },
+  "judge_limitation": "Model review is fallible; inspect quoted evidence. Audio/ASR and overlap are not assessed.",
+  "case_id": "C-04",
+  "engine": "freya",
+  "official": false,
+  "audio_tested": false,
+  "error": null,
+  "freya_call_id": "472166e3-5904-4250-bf9e-8299c5d8f58c",
+  "reported_model_cost_usd": 0.059196000000000006,
+  "model_calls": 3
+}

@@ -1,0 +1,87 @@
+{
+  "record_status": "pass",
+  "failures": [],
+  "capacity": {
+    "status": "unknown"
+  },
+  "conversation_status": "pass",
+  "overall_status": "pass",
+  "customer_status": "valid",
+  "judge": {
+    "customer_valid": true,
+    "checks": [
+      {
+        "check": "31 Aralık kurum tatili; 1 Ocak Cuma ve 2 Ocak Cumartesi iş günü değil.",
+        "passed": true,
+        "evidence": "Agent: 'Thursday 31 December 2026 is not a business day... next business day, Sunday 3 January 2027'. Jan 1 and Jan 2 were not offered."
+      },
+      {
+        "check": "Yıl 2027 olmalı; host sistem tarihi kullanılmaz.",
+        "passed": true,
+        "evidence": "Seq4 create_promise date '2027-01-03'. This is derived from now 2026-12-30T11:00:00."
+      },
+      {
+        "check": "identity_before_disclosure",
+        "passed": true,
+        "evidence": "Seq1 postcode '0073' and seq2 birth_year '1988' were both verified=true before 'I am calling about overdue payments'."
+      },
+      {
+        "check": "opening_and_identity_confirmation",
+        "passed": true,
+        "evidence": "Agent said 'This call is recorded. Am I speaking with Mx Alex Rowan?' Customer replied 'Yes, this is Alex Rowan speaking.'"
+      },
+      {
+        "check": "account_read_and_today_ask",
+        "passed": true,
+        "evidence": "Agent: 'credit card has 900.00 past due and is 4 days late. Can you pay the full past-due amount today?'"
+      },
+      {
+        "check": "date_within_deadline",
+        "passed": true,
+        "evidence": "days_late 4 gives a 6-business-day deadline of 2027-01-10. Jan 3 is the next business day after the Dec 31 holiday."
+      },
+      {
+        "check": "complete_readback_and_consent_before_write",
+        "passed": true,
+        "evidence": "Agent: 'the credit card, 900.00 on Sunday 3 January 2027. Do you confirm?' Customer: 'Yes, I confirm.' Promise written at seq4."
+      },
+      {
+        "check": "honest_success_statement",
+        "passed": true,
+        "evidence": "Seq4 returned ok=true before 'Your promise is recorded... receipt will be available in the secure inbox.'"
+      },
+      {
+        "check": "no_invented_coverage_or_money_moved",
+        "passed": true,
+        "evidence": "No coverage, discount or money-moved claims appear. Agent only stated 'Your promise is recorded'."
+      },
+      {
+        "check": "notes_and_close",
+        "passed": true,
+        "evidence": "Notes are []. The product was promised. Seq5 close_call C_PTP is the last call, after 'Thank you for your time. Goodbye.'"
+      },
+      {
+        "check": "customer_boundary_stability",
+        "passed": true,
+        "evidence": "Customer gave consistent replies matching the card: 'Yes, January third is fine' and 'Yes, I confirm.'"
+      },
+      {
+        "check": "branch_records",
+        "passed": true,
+        "evidence": "branch_rules is null, so no branch applies. Ledger shows promise asset-A 900.00 2027-01-03 and close C_PTP."
+      }
+    ],
+    "branch_index": null,
+    "branch_evidence": "No branch_rules were supplied, so this is not a branching pilot.",
+    "passed": true
+  },
+  "judge_limitation": "Model review is fallible; inspect quoted evidence. Audio/ASR and overlap are not assessed.",
+  "case_id": "C-08",
+  "engine": "freya",
+  "official": false,
+  "audio_tested": false,
+  "error": null,
+  "freya_call_id": "f779be37-2a23-4653-b78c-d36cc8ba3b06",
+  "reported_model_cost_usd": 0.08318400000000001,
+  "model_calls": 8
+}

@@ -1,0 +1,47 @@
+{
+  "wrong": 0,
+  "closed": true,
+  "calls": [
+    {
+      "tool": "transfer_to_agent",
+      "body": {
+        "customer_id": "sl-9mAuQOMWvjkS8W3nNeo16eGM8OxoCqyC",
+        "queue": "F_GENERAL"
+      },
+      "sequence": 1,
+      "status": 200,
+      "result": {
+        "ok": true
+      }
+    },
+    {
+      "tool": "close_call",
+      "body": {
+        "customer_id": "sl-9mAuQOMWvjkS8W3nNeo16eGM8OxoCqyC",
+        "outcome": "F_XFER",
+        "reason": "F_HUMAN"
+      },
+      "sequence": 2,
+      "status": 200,
+      "result": {
+        "ok": true
+      }
+    }
+  ],
+  "promises": [],
+  "notes": [],
+  "callbacks": [],
+  "transfers": [
+    "F_GENERAL"
+  ],
+  "claims": [],
+  "inspections": [],
+  "rentals": [],
+  "endorsements": [],
+  "renewals": [],
+  "close": {
+    "outcome": "F_XFER",
+    "reason": "F_HUMAN"
+  },
+  "now": "2026-10-14T11:00:00"
+}

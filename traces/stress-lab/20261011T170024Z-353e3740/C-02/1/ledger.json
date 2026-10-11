@@ -1,0 +1,33 @@
+{
+  "wrong": 0,
+  "closed": true,
+  "calls": [
+    {
+      "tool": "close_call",
+      "body": {
+        "reason": "C_UNCLEAR",
+        "outcome": "C_NO_CONTACT",
+        "customer_id": "sl-_O4pCafNWYMltguL-U1VJvwp5HivoX15"
+      },
+      "sequence": 1,
+      "status": 200,
+      "result": {
+        "ok": true
+      }
+    }
+  ],
+  "promises": [],
+  "notes": [],
+  "callbacks": [],
+  "transfers": [],
+  "claims": [],
+  "inspections": [],
+  "rentals": [],
+  "endorsements": [],
+  "renewals": [],
+  "close": {
+    "reason": "C_UNCLEAR",
+    "outcome": "C_NO_CONTACT"
+  },
+  "now": "2026-10-14T11:00:00"
+}

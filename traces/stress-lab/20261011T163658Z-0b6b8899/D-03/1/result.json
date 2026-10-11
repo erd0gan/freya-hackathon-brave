@@ -1,0 +1,86 @@
+{
+  "record_status": "fail",
+  "failures": [
+    "Closing outcome: expected D_NO_PTP, got D_NO_ID",
+    "Closing reason: expected D_REFUSED, got D_DECLINED",
+    "notes: expected [{'product_id': 'asset-A', 'reason': 'D_REFUSED'}], got []"
+  ],
+  "capacity": {
+    "status": "unknown"
+  },
+  "conversation_status": "fail",
+  "overall_status": "fail",
+  "customer_status": "valid",
+  "judge": {
+    "customer_valid": true,
+    "checks": [
+      {
+        "check": "İkna teklifleri: 900/15 Ekim, 300/22 Ekim; üçüncü yok.",
+        "passed": false,
+        "evidence": "No get_account and no offers; the ledger has only close_call seq 1. The call ended at 'Thank you for your time. Goodbye.'"
+      },
+      {
+        "check": "Eski floor/ikinci iş günü teklifi yok.",
+        "passed": true,
+        "evidence": "No payment offers appear in any agent turn; the ledger contains no promises."
+      },
+      {
+        "check": "privacy_no_disclosure_before_verification",
+        "passed": true,
+        "evidence": "Agent turns mention only the security questions and 'These questions protect your privacy'; no debt facts were disclosed."
+      },
+      {
+        "check": "identity_answer_sent_to_verify_identity",
+        "passed": false,
+        "evidence": "Customer: 'Sure, it's AB07.' Agent replied 'And the remaining digits?' and never called verify_identity."
+      },
+      {
+        "check": "refusal_handling_NO_ID_DECLINED",
+        "passed": false,
+        "evidence": "Customer never refused: 'please ask me the second security question.' Close was D_NO_ID/D_DECLINED with no explicit refusals."
+      },
+      {
+        "check": "consent_before_writes",
+        "passed": true,
+        "evidence": "No create_promise or other writes; the ledger shows only close_call."
+      },
+      {
+        "check": "honest_statements_no_invented_coverage",
+        "passed": true,
+        "evidence": "Agent made no success, coverage or phone-number claims; the last turn was 'Thank you for your time. Goodbye.'"
+      },
+      {
+        "check": "opening_and_identity_confirmation",
+        "passed": true,
+        "evidence": "Agent: 'This call is recorded. Am I speaking with Mx Alex Rowan?' Customer: 'Yes, this is Alex Rowan speaking.'"
+      },
+      {
+        "check": "close_call_last_and_farewell",
+        "passed": true,
+        "evidence": "Goodbye was given after_tool_sequence 1; close_call seq 1 is the only and last tool call."
+      },
+      {
+        "check": "customer_boundary_capacity_stability",
+        "passed": true,
+        "evidence": "Customer consistently said 'It's AB07, same as I said before' and offered the second question; no invented consent."
+      },
+      {
+        "check": "branch_records",
+        "passed": true,
+        "evidence": "branch_rules is null, so no branch records are required; the ledger has close_call seq 1 only."
+      }
+    ],
+    "branch_index": null,
+    "branch_evidence": "No branching pilot (branch_rules null).",
+    "passed": false
+  },
+  "judge_limitation": "Model review is fallible; inspect quoted evidence. Audio/ASR and overlap are not assessed.",
+  "case_id": "D-03",
+  "engine": "freya",
+  "official": false,
+  "audio_tested": false,
+  "error": null,
+  "freya_call_id": "78d96d6e-984b-4034-849b-329ac9549dc7",
+  "reported_model_cost_usd": 0.072116,
+  "model_calls": 7
+}

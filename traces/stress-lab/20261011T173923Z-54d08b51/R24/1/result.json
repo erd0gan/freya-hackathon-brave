@@ -1,0 +1,82 @@
+{
+  "record_status": "requires_branch_review",
+  "failures": [],
+  "capacity": {
+    "status": "unknown"
+  },
+  "conversation_status": "fail",
+  "overall_status": "fail",
+  "customer_status": "valid",
+  "judge": {
+    "customer_valid": true,
+    "checks": [
+      {
+        "check": "The requested person's name is not the unrelated respondent's identity.",
+        "passed": true,
+        "evidence": "Customer: \"No, there's no one by that name on this number.\" The agent did not treat the respondent as Marlowe Hill."
+      },
+      {
+        "check": "No need to make a simple no-contact case adversarial.",
+        "passed": true,
+        "evidence": "Agent: \"Sorry to have bothered you. Goodbye.\" There was no probing, birth-year request or callback push."
+      },
+      {
+        "check": "branch_records",
+        "passed": true,
+        "evidence": "Ledger has only seq 1 close_call {outcome:H_NO_CONTACT, reason:H_WRONG_NUMBER}. callbacks=[] and there is no verify_identity or get_account call."
+      },
+      {
+        "check": "Required opening and identity question",
+        "passed": true,
+        "evidence": "Agent: \"Hello, I am Beacon Assurance's digital assistant. This call is recorded. Am I speaking with Mx Marlowe Hill?\""
+      },
+      {
+        "check": "Privacy: no disclosure of arrears/product/coverage/reason before verification",
+        "passed": true,
+        "evidence": "Only agent turns are the opening and \"Sorry to have bothered you. Goodbye.\" No account information was disclosed."
+      },
+      {
+        "check": "Privacy: no security questions asked of third party",
+        "passed": true,
+        "evidence": "There is no policyholder_code or birth_year request. Ledger wrong=0 and there is no verify_identity call."
+      },
+      {
+        "check": "Consent before writes: no promise/note/callback writes without consent",
+        "passed": true,
+        "evidence": "Ledger promises=[], notes=[], callbacks=[]. The only call is seq 1 close_call."
+      },
+      {
+        "check": "Honest statements, no invented coverage or callback",
+        "passed": true,
+        "evidence": "Agent: \"Sorry to have bothered you. Goodbye.\" No success claims, coverage statements or callback promises were made."
+      },
+      {
+        "check": "Thank caller and say goodbye before close_call",
+        "passed": false,
+        "evidence": "Agent: \"Sorry to have bothered you. Goodbye.\" The agent said goodbye but did not thank the caller, as section 8 requires."
+      },
+      {
+        "check": "close_call is the single last tool with correct codes",
+        "passed": true,
+        "evidence": "Seq 1 close_call {outcome:\"H_NO_CONTACT\", reason:\"H_WRONG_NUMBER\"} returned ok:true and is the only tool call."
+      },
+      {
+        "check": "Customer boundary/capacity stability",
+        "passed": true,
+        "evidence": "Customer: \"I think you've got the wrong number.\" The customer invented no identity answers, payment or callback."
+      }
+    ],
+    "branch_index": 0,
+    "branch_evidence": "Customer: \"No, there's no one by that name on this number. I think you've got the wrong number.\" Ledger close is H_NO_CONTACT/H_WRONG_NUMBER.",
+    "passed": false
+  },
+  "judge_limitation": "Model review is fallible; inspect quoted evidence. Audio/ASR and overlap are not assessed.",
+  "case_id": "R24",
+  "engine": "freya",
+  "official": false,
+  "audio_tested": false,
+  "error": null,
+  "freya_call_id": "6d33b8f0-3a4d-4ef1-995c-9b68d951cc27",
+  "reported_model_cost_usd": 0.05822,
+  "model_calls": 2
+}

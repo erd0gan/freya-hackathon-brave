@@ -1,0 +1,97 @@
+{
+  "record_status": "pass",
+  "failures": [],
+  "capacity": {
+    "status": "unknown"
+  },
+  "conversation_status": "fail",
+  "overall_status": "fail",
+  "customer_status": "valid",
+  "judge": {
+    "customer_valid": true,
+    "checks": [
+      {
+        "check": "İlk all artık geçersiz; car loan yazılmaz.",
+        "passed": true,
+        "evidence": "Customer: 'yes to the card and personal loan, but not the car loan.' Ledger has create_promise only for asset-A (seq4) and asset-B (seq5); none for asset-C."
+      },
+      {
+        "check": "Yeni iki ürünlük read-back ve açık onay gerekir.",
+        "passed": true,
+        "evidence": "Agent: 'To confirm: the credit card, 900.00 ...; the personal loan, 600.00 on Wednesday 14 October 2026.' Customer: 'Yes, I confirm only the card and personal loan.'"
+      },
+      {
+        "check": "opening_and_identity_before_disclosure",
+        "passed": true,
+        "evidence": "Agent gives the required opening and gets 'Yes, this is Alex speaking.' Postcode (seq1) and birth_year (seq2) are verified before arrears are disclosed (after seq3)."
+      },
+      {
+        "check": "privacy_no_third_party_disclosure",
+        "passed": true,
+        "evidence": "Customer confirmed identity with 'Yes, this is Alex speaking.' No account facts were given before get_account seq3."
+      },
+      {
+        "check": "account_read_before_payment_ask",
+        "passed": true,
+        "evidence": "Agent: 'Your credit card has 900.00 past due and is 4 days late...car loan has 450.00...4 days late.' This matches seq3 before the today question."
+      },
+      {
+        "check": "read_back_reflects_correction",
+        "passed": false,
+        "evidence": "After 'not the car loan', the agent re-read 'the car loan, 450.00 on Wednesday 14 October 2026' again, a stale three-product set including the refused product."
+      },
+      {
+        "check": "negotiation_correct_product",
+        "passed": false,
+        "evidence": "After the car loan exclusion, the agent offered 'Could you pay 900.00 for the credit card on Thursday 15 October 2026?', moving an agreed product instead of addressing the car loan."
+      },
+      {
+        "check": "car_loan_attempt_plan",
+        "passed": true,
+        "evidence": "Agent: 'Could you pay 450.00 for the car loan on Thursday 15 October 2026?' This is the full amount on the next business day, the single attempt for 4 days late. Refused; no promise."
+      },
+      {
+        "check": "consent_before_writes",
+        "passed": true,
+        "evidence": "'Yes, I confirm only the card and personal loan.' precedes create_promise seq4 and seq5. The earlier 'No, I can't confirm the car loan today' turn triggered no write."
+      },
+      {
+        "check": "honest_success_statement",
+        "passed": true,
+        "evidence": "Seq4 and seq5 returned ok=true before 'Your promise has been saved in your customer portal.' No claim that money moved."
+      },
+      {
+        "check": "notes_and_close",
+        "passed": true,
+        "evidence": "Seq6 add_note asset-C F_REFUSED. Seq7 close_call F_PTP is the last tool, after 'Thank you for your time. Goodbye.'"
+      },
+      {
+        "check": "no_invented_coverage",
+        "passed": true,
+        "evidence": "No coverage, URL or phone number appears in any agent turn."
+      },
+      {
+        "check": "customer_boundary_stability",
+        "passed": true,
+        "evidence": "Customer consistently excluded the car loan: 'not the car loan' ... 'No to the car loan on your offered date as well'. Replies match the actor card."
+      },
+      {
+        "check": "branch_records",
+        "passed": true,
+        "evidence": "branch_rules is null, so no branch applies. Ledger: promises asset-A 900.00 and asset-B 600.00 on 2026-10-14, note asset-C F_REFUSED, close F_PTP."
+      }
+    ],
+    "branch_index": null,
+    "branch_evidence": "No branch_rules supplied.",
+    "passed": false
+  },
+  "judge_limitation": "Model review is fallible; inspect quoted evidence. Audio/ASR and overlap are not assessed.",
+  "case_id": "F-07",
+  "engine": "freya",
+  "official": false,
+  "audio_tested": false,
+  "error": null,
+  "freya_call_id": "e6266331-1924-459d-95c1-492801f886d2",
+  "reported_model_cost_usd": 0.111092,
+  "model_calls": 11
+}

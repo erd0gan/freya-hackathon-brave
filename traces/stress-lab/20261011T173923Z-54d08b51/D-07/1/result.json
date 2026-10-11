@@ -1,0 +1,97 @@
+{
+  "record_status": "pass",
+  "failures": [],
+  "capacity": {
+    "status": "unknown"
+  },
+  "conversation_status": "pass",
+  "overall_status": "pass",
+  "customer_status": "valid",
+  "judge": {
+    "customer_valid": true,
+    "checks": [
+      {
+        "check": "30 Ekim ve 30 tutarı çıkarılmaz.",
+        "passed": true,
+        "evidence": "Customer: 'turns thirty on the thirtieth... pay nine hundred on October fifteenth'; seq4 create_promise amount 900.0, date 2026-10-15"
+      },
+      {
+        "check": "that Thursday bekleyen 15 Ekim'e bağlıdır; yeni tarih aranmaz.",
+        "passed": true,
+        "evidence": "Customer: 'Yes, that Thursday, the date you just read back.' Agent recorded 15 October; no new date sought; seq4 date 2026-10-15"
+      },
+      {
+        "check": "privacy_no_disclosure_before_verification",
+        "passed": true,
+        "evidence": "Debt first mentioned after seq3: 'I am calling about overdue payments...'; earlier turns only identity confirmation and security questions"
+      },
+      {
+        "check": "opening_and_identity_confirmation",
+        "passed": true,
+        "evidence": "Agent: 'Hello, I am Alder Credit's digital assistant. This call is recorded.' Customer: 'Yes, this is Alex Rowan speaking.'"
+      },
+      {
+        "check": "identity_order_and_format",
+        "passed": true,
+        "evidence": "seq1 postcode 'AB07' (string, leading zero kept) verified=true; seq2 birth_year '1988' verified=true; asked separately"
+      },
+      {
+        "check": "account_read_before_payment_ask",
+        "passed": true,
+        "evidence": "seq3 get_account after both pass; agent read 'credit card has 900.00 past due and is 4 days late' before asking"
+      },
+      {
+        "check": "promise_validity_amount_date",
+        "passed": true,
+        "evidence": "900.00 = past_due (floor 300); 2026-10-15 is Thursday, a business day within the 1–14 band deadline of 8 business days"
+      },
+      {
+        "check": "complete_readback_and_explicit_consent_before_write",
+        "passed": true,
+        "evidence": "'To confirm: the credit card, 900.00 on Thursday 15 October 2026. Do you confirm this?' -> 'Yes...'; then seq4 create_promise"
+      },
+      {
+        "check": "single_write_no_retry",
+        "passed": true,
+        "evidence": "Only one create_promise, seq4, result ok=true; no retry"
+      },
+      {
+        "check": "honest_success_statement",
+        "passed": true,
+        "evidence": "Letter line said only after seq4 ok=true: 'A letter confirming the promise will be sent.'; no claim that money moved"
+      },
+      {
+        "check": "no_invented_coverage_or_facts",
+        "passed": true,
+        "evidence": "Agent statements are limited to get_account data; no discount, URL, or phone number offered"
+      },
+      {
+        "check": "notes_and_disposition",
+        "passed": true,
+        "evidence": "Recorded product, so no note (notes:[]); seq5 close_call D_PTP with reason omitted, last tool"
+      },
+      {
+        "check": "farewell_before_close",
+        "passed": true,
+        "evidence": "'Thank you for your time. Goodbye.' after_tool_sequence 4, before seq5 close_call"
+      },
+      {
+        "check": "customer_boundary_capacity_stability",
+        "passed": true,
+        "evidence": "Customer answers matched card (AB07, 1988), used critical replies verbatim, invented no extra consent, money or vulnerability"
+      }
+    ],
+    "branch_index": null,
+    "branch_evidence": "No branch_rules supplied; this is not a branching pilot.",
+    "passed": true
+  },
+  "judge_limitation": "Model review is fallible; inspect quoted evidence. Audio/ASR and overlap are not assessed.",
+  "case_id": "D-07",
+  "engine": "freya",
+  "official": false,
+  "audio_tested": false,
+  "error": null,
+  "freya_call_id": "14050af1-7cd9-4fe2-8ba8-c12d06674bec",
+  "reported_model_cost_usd": 0.081264,
+  "model_calls": 7
+}

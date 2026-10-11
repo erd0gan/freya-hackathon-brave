@@ -1,0 +1,99 @@
+{
+  "record_status": "requires_branch_review",
+  "failures": [],
+  "capacity": {
+    "status": "within_capacity",
+    "total": "900.00",
+    "reasons": []
+  },
+  "conversation_status": "pass",
+  "overall_status": "pass",
+  "customer_status": "valid",
+  "judge": {
+    "customer_valid": true,
+    "checks": [
+      {
+        "check": "A short natural repair should restore progress.",
+        "passed": true,
+        "evidence": "Agent: 'Take your time. What is your year of birth?' -> customer: 'Sorry about that, I'm back. It's 1988.'; seq2 verified=true"
+      },
+      {
+        "check": "This text experiment does not claim real audio interruption coverage.",
+        "passed": true,
+        "evidence": "Transcript is text-only; no agent turn claims audio handling or interruption coverage, e.g. 'Take your time. What is your year of birth?'"
+      },
+      {
+        "check": "opening_and_identity_confirmation",
+        "passed": true,
+        "evidence": "'Hello, I am Meridian Bank's digital assistant. This call is recorded. Am I speaking with Mx Cameron Elm?' -> 'Yes, this is Cameron Elm speaking.'"
+      },
+      {
+        "check": "privacy_no_disclosure_before_verification",
+        "passed": true,
+        "evidence": "Before seq2, agent said only 'I need to ask you two security questions'; arrears first mentioned after seq3"
+      },
+      {
+        "check": "identity_order_and_format",
+        "passed": true,
+        "evidence": "seq1 postcode answer '0073' (leading zeros kept), seq2 birth_year '1988' as string; asked separately, postcode first"
+      },
+      {
+        "check": "interruption_not_counted_as_wrong_or_refusal",
+        "passed": true,
+        "evidence": "'One moment, please. I missed that.' was not sent to a tool; ledger wrong:0, seq2 wrong_answers 0"
+      },
+      {
+        "check": "account_read_before_payment",
+        "passed": true,
+        "evidence": "After seq3: 'Your credit card has 900.00 past due and is 4 days late. Can you pay the full overdue amount today?'"
+      },
+      {
+        "check": "complete_readback_and_explicit_consent_before_write",
+        "passed": true,
+        "evidence": "'To confirm: the credit card, 900.00 on Wednesday 14 October 2026. Do you confirm this?' -> 'Yes, I confirm...'; then seq4 create_promise"
+      },
+      {
+        "check": "promise_valid_amount_date",
+        "passed": true,
+        "evidence": "seq4 card-r20 900.0 on 2026-10-14 (Wednesday, business day, today); within floor 300 to past_due 900"
+      },
+      {
+        "check": "honest_success_statement",
+        "passed": true,
+        "evidence": "Receipt line said after seq4 ok=true: 'Your promise receipt will be available in the secure inbox.' No claim money moved"
+      },
+      {
+        "check": "no_invented_coverage_or_facts",
+        "passed": true,
+        "evidence": "Agent turns state only ledger facts (credit card, 900.00, 4 days late); no URLs, phone numbers or coverage claims"
+      },
+      {
+        "check": "customer_boundary_capacity_stability",
+        "passed": true,
+        "evidence": "Customer agreed only to available £900 today: 'I have £900 set aside for today'; one interruption only, not repeated"
+      },
+      {
+        "check": "no_notes_for_recorded_product_and_close",
+        "passed": true,
+        "evidence": "notes:[]; farewell 'Thank you for your time. Goodbye.' then seq5 close_call C_PTP as last tool, reason omitted"
+      },
+      {
+        "check": "branch_records",
+        "passed": true,
+        "evidence": "Ledger promises card-r20 900.00 2026-10-14; seq5 close C_PTP; wrong:0. Matches required_records"
+      }
+    ],
+    "branch_index": 0,
+    "branch_evidence": "'One moment, please. I missed that.' -> repeat -> '1988' verified seq2; today promise confirmed: 'Yes, I confirm: £900.00...today'",
+    "passed": true
+  },
+  "judge_limitation": "Model review is fallible; inspect quoted evidence. Audio/ASR and overlap are not assessed.",
+  "case_id": "R20",
+  "engine": "freya",
+  "official": false,
+  "audio_tested": false,
+  "error": null,
+  "freya_call_id": "594a3eb1-01ae-46b6-b5ed-ec1593823c66",
+  "reported_model_cost_usd": 0.10675200000000001,
+  "model_calls": 8
+}

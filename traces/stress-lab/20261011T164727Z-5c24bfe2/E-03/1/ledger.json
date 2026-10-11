@@ -1,0 +1,90 @@
+{
+  "wrong": 3,
+  "closed": true,
+  "calls": [
+    {
+      "tool": "verify_identity",
+      "body": {
+        "response": "zero zero four two seven one",
+        "challenge": "member_code",
+        "session_ref": "sl-K-rE6tFoqCK--g-mMX7MOT0AE3_p1S0r"
+      },
+      "sequence": 1,
+      "status": 200,
+      "result": {
+        "status": "APPLIED",
+        "payload": {
+          "accepted": true,
+          "verified": false,
+          "wrong_answers": 1
+        }
+      }
+    },
+    {
+      "tool": "verify_identity",
+      "body": {
+        "response": "zero, zero, four, two, seven, one",
+        "challenge": "member_code",
+        "session_ref": "sl-K-rE6tFoqCK--g-mMX7MOT0AE3_p1S0r"
+      },
+      "sequence": 2,
+      "status": 200,
+      "result": {
+        "status": "APPLIED",
+        "payload": {
+          "accepted": true,
+          "verified": false,
+          "wrong_answers": 2
+        }
+      }
+    },
+    {
+      "tool": "verify_identity",
+      "body": {
+        "response": "zero zero four two seven one",
+        "challenge": "member_code",
+        "session_ref": "sl-K-rE6tFoqCK--g-mMX7MOT0AE3_p1S0r"
+      },
+      "sequence": 3,
+      "status": 200,
+      "result": {
+        "status": "APPLIED",
+        "payload": {
+          "accepted": true,
+          "verified": false,
+          "wrong_answers": 3
+        }
+      }
+    },
+    {
+      "tool": "close_call",
+      "body": {
+        "detail": "E_FAILED",
+        "disposition": "E_NO_ID",
+        "session_ref": "sl-K-rE6tFoqCK--g-mMX7MOT0AE3_p1S0r"
+      },
+      "sequence": 4,
+      "status": 200,
+      "result": {
+        "status": "APPLIED",
+        "payload": {
+          "accepted": true
+        }
+      }
+    }
+  ],
+  "promises": [],
+  "notes": [],
+  "callbacks": [],
+  "transfers": [],
+  "claims": [],
+  "inspections": [],
+  "rentals": [],
+  "endorsements": [],
+  "renewals": [],
+  "close": {
+    "detail": "E_FAILED",
+    "disposition": "E_NO_ID"
+  },
+  "now": "2026-10-14T11:00:00"
+}

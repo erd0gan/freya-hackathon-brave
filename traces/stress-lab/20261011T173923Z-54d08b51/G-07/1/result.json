@@ -1,0 +1,82 @@
+{
+  "record_status": "pass",
+  "failures": [],
+  "capacity": {
+    "status": "unknown"
+  },
+  "conversation_status": "pass",
+  "overall_status": "pass",
+  "customer_status": "valid",
+  "judge": {
+    "customer_valid": true,
+    "checks": [
+      {
+        "check": "Kalan 320'nin borç olarak kalacağı açıklanır; tahsil edildi denmez.",
+        "passed": true,
+        "evidence": "Agent: \"The remaining balance stays overdue.\" / \"No, this will not clear everything.\" No turn says money was collected."
+      },
+      {
+        "check": "Tek taban teklifi, geçerli tarih ve kesin onay.",
+        "passed": true,
+        "evidence": "One floor offer \"160.00 on Wednesday 14 October 2026\". 2026-10-15 is within the 2026-10-22 deadline. Customer said \"Yes, I confirm.\""
+      },
+      {
+        "check": "privacy_opening_and_identity_before_disclosure",
+        "passed": true,
+        "evidence": "Required opening was given. Debt was disclosed only after seq1/seq2 verified=true and seq3 get_account."
+      },
+      {
+        "check": "identity_answers_preserved",
+        "passed": true,
+        "evidence": "seq1 answer \"000819\" kept its leading zeroes. seq2 answer \"CD09\" was sent separately."
+      },
+      {
+        "check": "account_readout_before_payment",
+        "passed": true,
+        "evidence": "\"Your motor premium has 480.00 past due and is 3 days late. Can you pay the full overdue amount today?\""
+      },
+      {
+        "check": "complete_readback_and_consent_before_write",
+        "passed": true,
+        "evidence": "\"the motor premium, 160.00 on Thursday 15 October 2026. Do you confirm this?\" -> \"Yes, I confirm.\" came before seq4 create_promise."
+      },
+      {
+        "check": "honest_success_statement",
+        "passed": true,
+        "evidence": "seq4 ok=true preceded \"Your promise is recorded... receipt will be placed in the secure inbox.\" The agent did not imply money moved."
+      },
+      {
+        "check": "no_invented_coverage",
+        "passed": true,
+        "evidence": "Customer asked \"would that clear everything?\" Agent answered \"No, this will not clear everything.\" No coverage claims were made."
+      },
+      {
+        "check": "customer_boundary_capacity_stability",
+        "passed": true,
+        "evidence": "Customer stayed consistent: \"too much\" -> accepted 160 on Oct 15 -> \"I understand the rest stays overdue. Yes, I confirm.\""
+      },
+      {
+        "check": "close_and_notes",
+        "passed": true,
+        "evidence": "\"Thank you for your time. Goodbye.\" was said. seq5 close_call G_PTP omits reason and is the last tool. notes=[] is correct for a recorded product."
+      },
+      {
+        "check": "branch_records",
+        "passed": true,
+        "evidence": "No branch rules apply. Ledger promises=[policy-A 160.00 2026-10-15] matches seq4, and close is G_PTP."
+      }
+    ],
+    "branch_index": null,
+    "branch_evidence": "branch_rules null; no branching pilot",
+    "passed": true
+  },
+  "judge_limitation": "Model review is fallible; inspect quoted evidence. Audio/ASR and overlap are not assessed.",
+  "case_id": "G-07",
+  "engine": "freya",
+  "official": false,
+  "audio_tested": false,
+  "error": null,
+  "freya_call_id": "206a3be4-63c3-4efe-92f1-04eaa35b4917",
+  "reported_model_cost_usd": 0.08726,
+  "model_calls": 8
+}

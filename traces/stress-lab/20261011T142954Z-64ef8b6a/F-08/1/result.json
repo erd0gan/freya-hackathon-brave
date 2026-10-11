@@ -1,0 +1,82 @@
+{
+  "record_status": "pass",
+  "failures": [],
+  "capacity": {
+    "status": "unknown"
+  },
+  "conversation_status": "pass",
+  "overall_status": "pass",
+  "customer_status": "valid",
+  "judge": {
+    "customer_valid": true,
+    "checks": [
+      {
+        "check": "get_account ve add_note yok; henüz bilinmeyen ürünlere not uydurulmaz.",
+        "passed": true,
+        "evidence": "The ledger has only seq 1 transfer_to_agent {queue: \"F_GENERAL\"} and seq 2 close_call. There is no get_account or add_note call, and notes: [] is empty. No notes were made up for unknown products."
+      },
+      {
+        "check": "Anında F_GENERAL; hesap detayı açıklanmaz.",
+        "passed": true,
+        "evidence": "The customer said: \"Yes, this is Alex. I want to speak to a human.\" Seq 1 is transfer_to_agent with queue \"F_GENERAL\" and result {ok: true}, the very next tool call. The agent's next turn, \"I've transferred you to one of our colleagues, who will be with you shortly...\", reveals no account details."
+      },
+      {
+        "check": "Required opening and recording disclosure",
+        "passed": true,
+        "evidence": "Agent: \"Hello, I am Lattice Bank's digital assistant. This call is recorded. Am I speaking with Mx Alex Rowan?\""
+      },
+      {
+        "check": "Valid identity confirmation of named customer",
+        "passed": true,
+        "evidence": "Customer: \"Yes, this is Alex.\" This is an explicit yes plus their own name, which meets the brief's standard."
+      },
+      {
+        "check": "Privacy: no arrears/amount/product/coverage/reason disclosed before full verification",
+        "passed": true,
+        "evidence": "Neither agent turn mentions debt, an amount, a product or the reason for the call. The only content is the opening line and \"I've transferred you to one of our colleagues...\""
+      },
+      {
+        "check": "Consent before writes: no promise written without complete read-back and explicit confirmation",
+        "passed": true,
+        "evidence": "The ledger has promises: [] and no create_promise call. No transaction consent was needed or assumed."
+      },
+      {
+        "check": "Honest success statements (transfer claimed only after tool success)",
+        "passed": true,
+        "evidence": "Seq 1 transfer_to_agent returned result {ok: true}. The agent's \"I've transferred you...\" turn comes after_tool_sequence 1."
+      },
+      {
+        "check": "No invented coverage, facts, phone numbers or URLs",
+        "passed": true,
+        "evidence": "The agent turns contain only the opening line and \"I've transferred you to one of our colleagues, who will be with you shortly. Thank you for your time, Alex. Goodbye.\" No numbers, URLs or coverage claims were made."
+      },
+      {
+        "check": "Farewell before close_call and close_call is last tool with correct disposition",
+        "passed": true,
+        "evidence": "\"Thank you for your time, Alex. Goodbye.\" comes at after_tool_sequence 1. Seq 2 is close_call {outcome: \"F_XFER\", reason: \"F_HUMAN\"}, the last tool call, and ledger close is {outcome: \"F_XFER\", reason: \"F_HUMAN\"}."
+      },
+      {
+        "check": "Customer boundary/capacity stability",
+        "passed": true,
+        "evidence": "The customer gave the critical reply verbatim, \"Yes, this is Alex. I want to speak to a human.\", and then said \"Okay, thank you, I'll hold for them.\" The customer stayed consistent, invented no consent and offered no money."
+      },
+      {
+        "check": "branch_records",
+        "passed": true,
+        "evidence": "branch_rules is null, so no branch is selected and there are no branch required_records. The actual ledger matches the human-transfer path: transfers: [\"F_GENERAL\"], notes: [], promises: [], close {outcome: \"F_XFER\", reason: \"F_HUMAN\"}."
+      }
+    ],
+    "branch_index": null,
+    "branch_evidence": "branch_rules is null, so this is not a branching pilot. The observed dialogue (\"I want to speak to a human.\") and ledger seq 1 transfer_to_agent F_GENERAL followed by seq 2 close_call F_XFER/F_HUMAN show the single expected path.",
+    "passed": true
+  },
+  "judge_limitation": "Model review is fallible; inspect quoted evidence. Audio/ASR and overlap are not assessed.",
+  "case_id": "F-08",
+  "engine": "baseline",
+  "official": false,
+  "audio_tested": false,
+  "error": null,
+  "freya_call_id": null,
+  "reported_model_cost_usd": 0.18686,
+  "model_calls": 7
+}

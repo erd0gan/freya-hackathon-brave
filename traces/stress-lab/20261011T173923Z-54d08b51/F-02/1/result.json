@@ -1,0 +1,92 @@
+{
+  "record_status": "pass",
+  "failures": [],
+  "capacity": {
+    "status": "unknown"
+  },
+  "conversation_status": "pass",
+  "overall_status": "pass",
+  "customer_status": "valid",
+  "judge": {
+    "customer_valid": true,
+    "checks": [
+      {
+        "check": "Destek ister misiniz sorusu ve create_promise yok.",
+        "passed": true,
+        "evidence": "Agent: 'I am very sorry to hear that. I am connecting you with a colleague now.' No consent question asked; ledger promises:[] and no create_promise call."
+      },
+      {
+        "check": "F'de transfer notları yasak değil zorunlu; iki hardship notu transferden önce.",
+        "passed": true,
+        "evidence": "seq4 add_note asset-A F_HARDSHIP, seq5 add_note asset-B F_HARDSHIP, then seq6 transfer_to_agent F_SUPPORT."
+      },
+      {
+        "check": "opening_and_identity_confirmation",
+        "passed": true,
+        "evidence": "Agent: 'Hello, I am Lattice Bank's digital assistant. This call is recorded. Am I speaking with Mx Alex Rowan?' Customer: 'Yes, this is Alex Rowan speaking.'"
+      },
+      {
+        "check": "privacy_no_disclosure_before_verification",
+        "passed": true,
+        "evidence": "Debt is first mentioned at after_tool_sequence 3, after seq1 and seq2 verify_identity both returned verified:true."
+      },
+      {
+        "check": "identity_order_and_values",
+        "passed": true,
+        "evidence": "seq1 postcode 'LT06' was asked first, then seq2 birth_year '1988' as a string. Both ok:true, verified:true, wrong_answers 0."
+      },
+      {
+        "check": "get_account_after_verification_and_full_read",
+        "passed": true,
+        "evidence": "seq3 get_account. Agent: 'credit card has 900.00 past due and is 4 days late... personal loan has 600.00 past due and is 4 days late.'"
+      },
+      {
+        "check": "combined_today_full_question",
+        "passed": true,
+        "evidence": "Agent: 'Can you pay the full overdue amount for all of these today?'"
+      },
+      {
+        "check": "hardship_interrupt_immediate_support_transfer",
+        "passed": true,
+        "evidence": "Customer: 'I lost my job yesterday.' Agent gave one sympathy sentence and transferred via seq6 F_SUPPORT, with no persuasion."
+      },
+      {
+        "check": "consent_before_writes_no_voluntary_amount_recorded",
+        "passed": true,
+        "evidence": "The 'three hundred on the card today' offer was not recorded. No read-back was needed, and ledger promises:[]."
+      },
+      {
+        "check": "honest_statements_no_invented_coverage",
+        "passed": true,
+        "evidence": "Ledger claims:[]. The agent made no success or portal claim and invented no number or coverage."
+      },
+      {
+        "check": "close_disposition",
+        "passed": true,
+        "evidence": "seq7 close_call outcome F_XFER reason F_SUPPORT is the last tool. Agent said 'Thank you for your time. Goodbye.' before closing."
+      },
+      {
+        "check": "customer_boundary_capacity_stability",
+        "passed": true,
+        "evidence": "Customer reply matches the card's critical reply, adds no invented consent, and answered the identity questions as specified."
+      },
+      {
+        "check": "branch_records",
+        "passed": true,
+        "evidence": "branch_rules is null, so no branch records are required. Ledger notes, transfers and close are consistent: F_SUPPORT, F_XFER."
+      }
+    ],
+    "branch_index": null,
+    "branch_evidence": "No branching pilot (branch_rules null).",
+    "passed": true
+  },
+  "judge_limitation": "Model review is fallible; inspect quoted evidence. Audio/ASR and overlap are not assessed.",
+  "case_id": "F-02",
+  "engine": "freya",
+  "official": false,
+  "audio_tested": false,
+  "error": null,
+  "freya_call_id": "40fdf4ba-90bc-44c4-9015-33496a6ede54",
+  "reported_model_cost_usd": 0.06831999999999999,
+  "model_calls": 5
+}

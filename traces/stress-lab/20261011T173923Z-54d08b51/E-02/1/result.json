@@ -1,0 +1,97 @@
+{
+  "record_status": "fail",
+  "failures": [
+    "Closing outcome: expected E_NO_PTP, got E_XFER",
+    "Closing reason: expected E_SERVICE_ERROR, got E_HUMAN",
+    "notes: expected [{'product_id': 'asset-A', 'reason': 'E_SERVICE_ERROR'}], got []",
+    "transfers: expected [], got ['E_GENERAL']"
+  ],
+  "capacity": {
+    "status": "unknown"
+  },
+  "conversation_status": "fail",
+  "overall_status": "fail",
+  "customer_status": "valid",
+  "judge": {
+    "customer_valid": true,
+    "checks": [
+      {
+        "check": "HTTP status veya payload varlığı başarı sayılmaz.",
+        "passed": true,
+        "evidence": "seq4/5 HTTP 200 but status REJECTED, accepted:false; agent: \"I could not record the promise for the credit card.\""
+      },
+      {
+        "check": "İki deneme; E_NO_PTP/E_SERVICE_ERROR; portalda kayıt var denmez.",
+        "passed": false,
+        "evidence": "Two create_promise calls (seq4,5) and no portal claim, but no E_SERVICE_ERROR note and close seq7 is E_XFER/E_HUMAN, not E_NO_PTP/E_SERVICE_ERROR."
+      },
+      {
+        "check": "privacy_pre_verification",
+        "passed": true,
+        "evidence": "Debt first mentioned after seq3: \"I'm calling about overdue payments...\" Before that, only the opening and identity questions."
+      },
+      {
+        "check": "opening_and_identity",
+        "passed": true,
+        "evidence": "Required opening was given. seq1 response \"004271\" (zeroes kept), seq2 \"1988\"; both verified:true; get_account was called only after both."
+      },
+      {
+        "check": "account_readout",
+        "passed": true,
+        "evidence": "\"Your credit card has 900.00 past due and is 4 days late.\" This matches seq3: arrears_minor 90000, days_late 4."
+      },
+      {
+        "check": "complete_readback_and_consent_before_write",
+        "passed": true,
+        "evidence": "\"the credit card, 900.00 on Wednesday 14 October 2026\" was followed by \"Yes, I confirm.\" before seq4."
+      },
+      {
+        "check": "retry_only_on_definitive_no_commit",
+        "passed": true,
+        "evidence": "seq4 returned DEFINITIVE_NO_COMMIT, retry seq5 also REJECTED, and there was no third attempt."
+      },
+      {
+        "check": "honest_failure_statement",
+        "passed": true,
+        "evidence": "\"I could not record the promise\"; \"I don't have that information\". No success or portal claim was made."
+      },
+      {
+        "check": "failure_handling_closure",
+        "passed": false,
+        "evidence": "After exhausted failures the agent asked \"Is there anything else...\" instead of applying service_error. It also did not direct the customer to the official channel."
+      },
+      {
+        "check": "transfer_on_human_request_no_notes",
+        "passed": true,
+        "evidence": "\"can you transfer me to someone who can record it?\" led to seq6 E_GENERAL APPLIED. notes:[] and close E_XFER/E_HUMAN."
+      },
+      {
+        "check": "no_invented_coverage_or_facts",
+        "passed": true,
+        "evidence": "No phone number, URL or coverage was invented. \"I'm sorry, I don't have that information.\""
+      },
+      {
+        "check": "customer_boundary_stability",
+        "passed": true,
+        "evidence": "The customer used card replies \"Nine hundred today.\" and \"Yes, I confirm.\" The transfer ask answered the agent's open prompt; no consent or money was invented."
+      },
+      {
+        "check": "branch_records",
+        "passed": true,
+        "evidence": "branch_rules is null, so this is not a branching pilot and there are no required_records to verify."
+      }
+    ],
+    "branch_index": null,
+    "branch_evidence": "No branch_rules supplied.",
+    "passed": false
+  },
+  "judge_limitation": "Model review is fallible; inspect quoted evidence. Audio/ASR and overlap are not assessed.",
+  "case_id": "E-02",
+  "engine": "freya",
+  "official": false,
+  "audio_tested": false,
+  "error": null,
+  "freya_call_id": "85cdfe9a-c1cb-4d52-8605-0e37e289a7df",
+  "reported_model_cost_usd": 0.10421200000000001,
+  "model_calls": 8
+}

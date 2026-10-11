@@ -1,0 +1,91 @@
+{
+  "record_status": "fail",
+  "failures": [
+    "Closing outcome: expected H_NO_CONTACT, got H_NO_ID",
+    "Closing reason: expected H_CALLBACK, got H_FAILED",
+    "callbacks: expected [{'date': '2026-10-14', 'time': '15:30'}], got []"
+  ],
+  "capacity": {
+    "status": "unknown"
+  },
+  "conversation_status": "fail",
+  "overall_status": "fail",
+  "customer_status": "valid",
+  "judge": {
+    "customer_valid": true,
+    "checks": [
+      {
+        "check": "19:00 gelecek kuralı kullanılmaz; etkin sınır 16:00.",
+        "passed": false,
+        "evidence": "No callback was discussed. The call ended at seq 3 close_call H_NO_ID; ledger callbacks:[]. There is no evidence the 16:00 limit was applied."
+      },
+      {
+        "check": "Yayımlanma tarihi yürürlük tarihi yerine geçmez.",
+        "passed": false,
+        "evidence": "The memo R-2 effective date was never exercised. There is no callback or receipt turn and ledger callbacks:[], so no evidence exists."
+      },
+      {
+        "check": "opening_disclosure_and_identity_confirmation",
+        "passed": true,
+        "evidence": "Agent: 'Hello, I am Beacon Assurance's digital assistant. This call is recorded. Am I speaking with Mx Alex Rowan?' Customer: 'Yes, this is Alex Rowan speaking.'"
+      },
+      {
+        "check": "policyholder_code_normalized_preserving_leading_zeroes",
+        "passed": false,
+        "evidence": "Customer said 'zero zero six four one zero' (006410). Seq 1 sent answer 'zero zero six four one zero'; seq 2 sent 'zero, zero, six, four, one, zero', not '006410'."
+      },
+      {
+        "check": "wrong_answer_limit_applied_correctly",
+        "passed": false,
+        "evidence": "The ledger shows wrong:2, but both failures were caused by agent formatting of a correct code. The customer was wrongly locked out to NO_ID/FAILED."
+      },
+      {
+        "check": "privacy_no_disclosure_before_verification",
+        "passed": true,
+        "evidence": "The agent disclosed no arrears, product, amount or coverage before closing: 'I could not confirm your identity...'"
+      },
+      {
+        "check": "consent_before_writes",
+        "passed": true,
+        "evidence": "Ledger promises:[] and notes:[]. No write tools were called besides verify_identity and close_call."
+      },
+      {
+        "check": "honest_failure_statement_and_official_channel",
+        "passed": true,
+        "evidence": "Agent: 'Please contact us through the official contact channel shown on your statement.' No phone number or URL was invented."
+      },
+      {
+        "check": "no_invented_coverage",
+        "passed": true,
+        "evidence": "No coverage or status statements appear in any agent turn."
+      },
+      {
+        "check": "close_call_last_with_farewell",
+        "passed": true,
+        "evidence": "Agent: 'Thank you for your time. Goodbye.' Seq 3 close_call outcome H_NO_ID reason H_FAILED is the last tool."
+      },
+      {
+        "check": "customer_boundary_capacity_stability",
+        "passed": true,
+        "evidence": "The customer consistently gave the card code 006410: 'zero, zero, six, four, one, zero'. No capacity issues appear."
+      },
+      {
+        "check": "branch_records",
+        "passed": true,
+        "evidence": "branch_rules is null, so no branch is required. Ledger promises/notes/callbacks/transfers are all empty."
+      }
+    ],
+    "branch_index": null,
+    "branch_evidence": "Not a branching pilot (branch_rules null).",
+    "passed": false
+  },
+  "judge_limitation": "Model review is fallible; inspect quoted evidence. Audio/ASR and overlap are not assessed.",
+  "case_id": "H-01",
+  "engine": "freya",
+  "official": false,
+  "audio_tested": false,
+  "error": null,
+  "freya_call_id": "064ae6f9-08e6-467e-94ba-8bb494a6cbff",
+  "reported_model_cost_usd": 0.06206400000000001,
+  "model_calls": 4
+}

@@ -1,0 +1,21 @@
+{
+  "record_status": "fail",
+  "failures": [
+    "Closing outcome: expected G_PTP, got G_NO_ID",
+    "Closing reason: expected None, got G_FAILED",
+    "promises: expected [{'product_id': 'policy-A', 'amount': '480.00', 'date': '2026-10-14'}], got []"
+  ],
+  "capacity": {
+    "status": "unknown"
+  },
+  "conversation_status": "not_reviewed",
+  "overall_status": "error",
+  "case_id": "G-01",
+  "engine": "freya",
+  "official": false,
+  "audio_tested": false,
+  "error": "RuntimeError: POST /api/v2/chat/message -> 502: error code: 502\n",
+  "freya_call_id": "b4278223-e6f1-44f6-af2a-754f0c2de182",
+  "reported_model_cost_usd": 0.008992,
+  "model_calls": 3
+}

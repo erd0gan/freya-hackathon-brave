@@ -1,0 +1,117 @@
+{
+  "wrong": 0,
+  "closed": true,
+  "calls": [
+    {
+      "tool": "verify_identity",
+      "body": {
+        "response": "004271",
+        "challenge": "member_code",
+        "session_ref": "sl-wch-BKRtKKvMZ8QFbefnSQjuW5cpSmoC"
+      },
+      "sequence": 1,
+      "status": 200,
+      "result": {
+        "status": "APPLIED",
+        "payload": {
+          "accepted": true,
+          "verified": true,
+          "wrong_answers": 0
+        }
+      }
+    },
+    {
+      "tool": "verify_identity",
+      "body": {
+        "response": "1988",
+        "challenge": "birth_year",
+        "session_ref": "sl-wch-BKRtKKvMZ8QFbefnSQjuW5cpSmoC"
+      },
+      "sequence": 2,
+      "status": 200,
+      "result": {
+        "status": "APPLIED",
+        "payload": {
+          "accepted": true,
+          "verified": true,
+          "wrong_answers": 0
+        }
+      }
+    },
+    {
+      "tool": "get_account",
+      "body": {
+        "session_ref": "sl-wch-BKRtKKvMZ8QFbefnSQjuW5cpSmoC"
+      },
+      "sequence": 3,
+      "status": 200,
+      "result": {
+        "status": "APPLIED",
+        "payload": {
+          "accepted": true,
+          "assets": [
+            {
+              "asset_ref": "card-r25",
+              "arrears_minor": 121005,
+              "floor_minor": 42050,
+              "type": "credit_card",
+              "display_name": "credit card",
+              "days_late": 4
+            }
+          ]
+        }
+      }
+    },
+    {
+      "tool": "create_promise",
+      "body": {
+        "due_on": "2026-10-15",
+        "asset_ref": "card-r25",
+        "session_ref": "sl-wch-BKRtKKvMZ8QFbefnSQjuW5cpSmoC",
+        "amount_minor": 42050
+      },
+      "sequence": 4,
+      "status": 200,
+      "result": {
+        "status": "APPLIED",
+        "payload": {
+          "accepted": true
+        }
+      }
+    },
+    {
+      "tool": "close_call",
+      "body": {
+        "disposition": "E_PTP",
+        "session_ref": "sl-wch-BKRtKKvMZ8QFbefnSQjuW5cpSmoC"
+      },
+      "sequence": 5,
+      "status": 200,
+      "result": {
+        "status": "APPLIED",
+        "payload": {
+          "accepted": true
+        }
+      }
+    }
+  ],
+  "promises": [
+    {
+      "product_id": "card-r25",
+      "amount": "420.50",
+      "date": "2026-10-15"
+    }
+  ],
+  "notes": [],
+  "callbacks": [],
+  "transfers": [],
+  "claims": [],
+  "inspections": [],
+  "rentals": [],
+  "endorsements": [],
+  "renewals": [],
+  "close": {
+    "disposition": "E_PTP"
+  },
+  "now": "2026-10-14T11:00:00"
+}

@@ -1,0 +1,104 @@
+{
+  "record_status": "requires_branch_review",
+  "failures": [],
+  "capacity": {
+    "status": "within_capacity",
+    "total": "420.50",
+    "reasons": []
+  },
+  "conversation_status": "fail",
+  "overall_status": "fail",
+  "customer_status": "valid",
+  "judge": {
+    "customer_valid": true,
+    "checks": [
+      {
+        "check": "A negative emotion is not payment refusal.",
+        "passed": true,
+        "evidence": "Customer: 'I'm tired of repeating myself. What I can do is £420.50 on October fifteenth'; the agent still recorded the promise at seq4."
+      },
+      {
+        "check": "Do not evaluate a changed budget as a mere style variant.",
+        "passed": true,
+        "evidence": "Budget is unchanged throughout: '£420.50 on October fifteenth' repeated; seq4 amount_minor=42050, due_on 2026-10-15."
+      },
+      {
+        "check": "branch_records",
+        "passed": true,
+        "evidence": "seq4 create_promise asset_ref card-r14 amount_minor 42050 due_on 2026-10-15 APPLIED/accepted; seq5 close_call disposition E_PTP."
+      },
+      {
+        "check": "privacy_no_disclosure_before_verification",
+        "passed": true,
+        "evidence": "Debt is first mentioned after seq2 verified=true and seq3 get_account: 'Your credit card has 1210.05 past due and is 4 days late.'"
+      },
+      {
+        "check": "identity_sequence",
+        "passed": true,
+        "evidence": "Member code was asked first ('004271', seq1), then birth year ('1988', seq2), each separately. Leading zeroes preserved."
+      },
+      {
+        "check": "account_readout_before_payment",
+        "passed": true,
+        "evidence": "'Your credit card has 1210.05 past due and is 4 days late. Can you pay the full overdue amount today?'"
+      },
+      {
+        "check": "no_repeat_answered_question",
+        "passed": false,
+        "evidence": "After 'No, I can't pay £1,210.05', the agent asked 'On which day can you pay 1210.05?' Customer: 'I've just told you that.'"
+      },
+      {
+        "check": "floor_offer_explains_balance_remains_overdue",
+        "passed": false,
+        "evidence": "Full was unaffordable and 420.50 equals the floor (42050), but no turn explains that the remaining balance stays overdue."
+      },
+      {
+        "check": "honest_relevant_statements",
+        "passed": false,
+        "evidence": "To 'can you record that or not?' the agent replied 'I'm sorry, I don't have that information.' This is a non-sequitur and misleading."
+      },
+      {
+        "check": "complete_readback_and_explicit_consent_before_write",
+        "passed": true,
+        "evidence": "'the credit card, 420.50 on Thursday 15 October 2026. Do you confirm this?' Customer: 'Yes, I confirm…'. Write occurs at seq4 afterwards."
+      },
+      {
+        "check": "date_and_amount_valid",
+        "passed": true,
+        "evidence": "2026-10-15 is a Thursday, within 7 business days (days_late 4). 42050 lies within floor 42050 to arrears 121005."
+      },
+      {
+        "check": "honest_success_statement",
+        "passed": true,
+        "evidence": "'Your promise is recorded… The record is available in the secure portal.' This is stated only after seq4 APPLIED/accepted=true."
+      },
+      {
+        "check": "no_invented_coverage",
+        "passed": true,
+        "evidence": "No coverage, discount or prior-call record was claimed. The agent made no assertion about the earlier call."
+      },
+      {
+        "check": "customer_boundary_capacity_stable",
+        "passed": true,
+        "evidence": "Customer stayed at 420.50 (max_total 420.50), corrected nothing falsely, and confirmed only the correct read-back."
+      },
+      {
+        "check": "close_call_last_with_farewell",
+        "passed": true,
+        "evidence": "'Thank you for your time. Goodbye.' precedes seq5 close_call E_PTP with no reason field. No notes added, per policy."
+      }
+    ],
+    "branch_index": 0,
+    "branch_evidence": "Agent: 'the credit card, 420.50 on Thursday 15 October 2026. Do you confirm this?' Customer: 'Yes, I confirm £420.50…'",
+    "passed": false
+  },
+  "judge_limitation": "Model review is fallible; inspect quoted evidence. Audio/ASR and overlap are not assessed.",
+  "case_id": "R14",
+  "engine": "freya",
+  "official": false,
+  "audio_tested": false,
+  "error": null,
+  "freya_call_id": "72631e38-ce0a-4544-aec2-4075d5ae20c0",
+  "reported_model_cost_usd": 0.129928,
+  "model_calls": 8
+}

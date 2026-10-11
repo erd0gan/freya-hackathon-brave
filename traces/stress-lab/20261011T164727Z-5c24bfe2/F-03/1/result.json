@@ -1,0 +1,94 @@
+{
+  "record_status": "fail",
+  "failures": [
+    "notes: expected [{'product_id': 'asset-A', 'reason': 'F_DISPUTE'}, {'product_id': 'asset-B', 'reason': 'F_TRANSFERRED'}], got [{'product_id': 'asset-A', 'reason': 'F_REFUSED'}, {'product_id': 'asset-B', 'reason': 'F_REFUSED'}]"
+  ],
+  "capacity": {
+    "status": "unknown"
+  },
+  "conversation_status": "fail",
+  "overall_status": "fail",
+  "customer_status": "valid",
+  "judge": {
+    "customer_valid": true,
+    "checks": [
+      {
+        "check": "Tek insan isteği yeterli; ikinci ısrar aranmaz.",
+        "passed": true,
+        "evidence": "After one request, 'Please put me through to a person now.', seq4 transfer_to_agent F_GENERAL ok=true; no second request was sought."
+      },
+      {
+        "check": "İlk ürün dispute, ikinci transferred; Brief B'nin not yasağı aktarılmaz.",
+        "passed": false,
+        "evidence": "Seq5 asset-A reason F_REFUSED (should be F_DISPUTE, per 'That card debt is not mine.'); seq6 asset-B F_REFUSED (should be F_TRANSFERRED)."
+      },
+      {
+        "check": "transfer_note_order",
+        "passed": false,
+        "evidence": "Seq4 transfer_to_agent ran before seq5/6 add_note. The brief requires flushing notes first, then transferring."
+      },
+      {
+        "check": "privacy_before_verification",
+        "passed": true,
+        "evidence": "No debt was mentioned until after seq1 and seq2 verified=true; 'I am calling about overdue payments' came after_tool_sequence 3."
+      },
+      {
+        "check": "identity_verification_order",
+        "passed": true,
+        "evidence": "Postcode 'LT06' (seq1) was checked, then birth_year '1988' (seq2), asked separately; get_account seq3 followed."
+      },
+      {
+        "check": "product_readout_complete",
+        "passed": true,
+        "evidence": "'Your credit card has 900.00 past due and is 4 days late. Your personal loan has 600.00 past due and is 4 days late.'"
+      },
+      {
+        "check": "consent_before_writes",
+        "passed": true,
+        "evidence": "No create_promise calls appear in the ledger, and promises:[] is empty, so no promise consent was required."
+      },
+      {
+        "check": "honest_success_statements",
+        "passed": true,
+        "evidence": "'I am connecting you with a colleague now' is supported by seq4 ok=true; no promise or payment was claimed."
+      },
+      {
+        "check": "no_invented_coverage",
+        "passed": true,
+        "evidence": "The agent made no coverage, URL or phone-number claims in any turn."
+      },
+      {
+        "check": "dispute_acknowledged",
+        "passed": false,
+        "evidence": "'That card debt is not mine.' was never acknowledged or recorded as a dispute; asset-A was noted as F_REFUSED."
+      },
+      {
+        "check": "close_disposition",
+        "passed": true,
+        "evidence": "Seq7 close_call F_XFER/F_HUMAN is the last tool, with goodbye spoken before it; the transfer succeeded."
+      },
+      {
+        "check": "customer_boundary_stability",
+        "passed": true,
+        "evidence": "The customer gave card answers LT06/1988 and both critical replies verbatim, with no invented consent."
+      },
+      {
+        "check": "branch_records",
+        "passed": true,
+        "evidence": "branch_rules is null, so there are no branch required_records to verify."
+      }
+    ],
+    "branch_index": null,
+    "branch_evidence": "No branching pilot was supplied (branch_rules null).",
+    "passed": false
+  },
+  "judge_limitation": "Model review is fallible; inspect quoted evidence. Audio/ASR and overlap are not assessed.",
+  "case_id": "F-03",
+  "engine": "freya",
+  "official": false,
+  "audio_tested": false,
+  "error": null,
+  "freya_call_id": "4936b999-a44d-4645-8129-b0c572fe49b1",
+  "reported_model_cost_usd": 0.06169600000000001,
+  "model_calls": 5
+}
