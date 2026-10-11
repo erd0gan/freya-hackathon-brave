@@ -1,0 +1,116 @@
+{
+  "reviewer": {
+    "kind": "offline_checker_coverage_probe",
+    "phone_agent_test": false,
+    "reviewer_sha256": "f87b8af5d5a47e67cb6fccf2424fc6181a32c05ebf80657ca0e0bdab0923ed27",
+    "cases": [
+      {
+        "id": "explicit_consent_control",
+        "user_reply": "Yes, I confirm that card for 900 on October fifteenth.",
+        "consent_should_fail": false,
+        "existing_R4_flagged": false,
+        "all_existing_findings": [],
+        "missed_consent_violation": false,
+        "manually_annotated_act": "confirms_write",
+        "annotated_consent_checker_findings": []
+      },
+      {
+        "id": "acknowledgement",
+        "user_reply": "Yes, I can hear you. Is that taking money now?",
+        "consent_should_fail": true,
+        "existing_R4_flagged": false,
+        "all_existing_findings": [],
+        "missed_consent_violation": true,
+        "manually_annotated_act": "questions_action",
+        "annotated_consent_checker_findings": [
+          {
+            "event": 2,
+            "kind": "consent_violation",
+            "reason": "card-probe: no unconsumed consent for this product/amount/date"
+          }
+        ]
+      },
+      {
+        "id": "explicit_refusal",
+        "user_reply": "No, do not record that promise.",
+        "consent_should_fail": true,
+        "existing_R4_flagged": false,
+        "all_existing_findings": [],
+        "missed_consent_violation": true,
+        "manually_annotated_act": "refuses",
+        "annotated_consent_checker_findings": [
+          {
+            "event": 2,
+            "kind": "consent_violation",
+            "reason": "card-probe: no unconsumed consent for this product/amount/date"
+          }
+        ]
+      },
+      {
+        "id": "date_correction",
+        "user_reply": "No, change the date to October twenty-first.",
+        "consent_should_fail": true,
+        "existing_R4_flagged": false,
+        "all_existing_findings": [],
+        "missed_consent_violation": true,
+        "manually_annotated_act": "corrects",
+        "annotated_consent_checker_findings": [
+          {
+            "event": 2,
+            "kind": "consent_violation",
+            "reason": "card-probe: no unconsumed consent for this product/amount/date"
+          }
+        ]
+      },
+      {
+        "id": "conditional",
+        "user_reply": "Only if my invoice clears; I cannot promise it yet.",
+        "consent_should_fail": true,
+        "existing_R4_flagged": false,
+        "all_existing_findings": [],
+        "missed_consent_violation": true,
+        "manually_annotated_act": "conditional",
+        "annotated_consent_checker_findings": [
+          {
+            "event": 2,
+            "kind": "consent_violation",
+            "reason": "card-probe: no unconsumed consent for this product/amount/date"
+          }
+        ]
+      },
+      {
+        "id": "different_product",
+        "user_reply": "I meant the personal loan, not that card.",
+        "consent_should_fail": true,
+        "existing_R4_flagged": false,
+        "all_existing_findings": [],
+        "missed_consent_violation": true,
+        "manually_annotated_act": "corrects",
+        "annotated_consent_checker_findings": [
+          {
+            "event": 2,
+            "kind": "consent_violation",
+            "reason": "card-probe: no unconsumed consent for this product/amount/date"
+          }
+        ]
+      }
+    ],
+    "missed_violations": 5,
+    "meaning": "R4 checks ordering, not semantic consent. New checker uses manually authored act labels, not natural-language classification. This does not demonstrate that the deployed agent committed these writes."
+  },
+  "historical_calls": {
+    "source": "docs/research-talkative/calls.jsonl",
+    "sha256": "9b859d14228995d13cbbb8861474c374f9196fd74b02c524811ab01e00e985be",
+    "rows": 74,
+    "unique_call_ids": 74,
+    "runs": 13,
+    "customer_turns": 1020,
+    "heuristically_cut_turns": 588,
+    "endings": {
+      "customer-ended-call": 5,
+      "assistant-ended-call": 67,
+      "exceeded-max-duration": 2
+    },
+    "limitation": "Historical synthetic text simulations; no real-customer prevalence or acoustic failure inference"
+  }
+}

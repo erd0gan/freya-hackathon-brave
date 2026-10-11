@@ -1,0 +1,629 @@
+{
+  "openapi": "3.0.3",
+  "info": {
+    "title": "Vector Bank synthetic tools",
+    "version": "1.0.0",
+    "description": "Design fixture only; no deployed API. Codes and rules are synthetic."
+  },
+  "servers": [
+    {
+      "url": "https://e-fixture.invalid/v1"
+    }
+  ],
+  "paths": {
+    "/verify_identity": {
+      "post": {
+        "operationId": "verify_identity",
+        "summary": "verify identity",
+        "description": "Read the companion brief for business constraints. REJECTED/ok=false is a definitive no-commit result; lost responses are uncertain.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "session_ref": {
+                    "type": "string"
+                  },
+                  "challenge": {
+                    "type": "string",
+                    "enum": [
+                      "member_code",
+                      "birth_year"
+                    ]
+                  },
+                  "response": {
+                    "type": "string",
+                    "description": "Preserve leading zeroes; one complete answer only."
+                  }
+                },
+                "required": [
+                  "session_ref",
+                  "challenge",
+                  "response"
+                ],
+                "additionalProperties": false
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Business result; HTTP success alone is insufficient. get_account products/assets is present on success; verify_identity verified and wrong_answers are present on a completed check.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "status": {
+                      "type": "string",
+                      "enum": [
+                        "APPLIED",
+                        "REJECTED"
+                      ]
+                    },
+                    "payload": {
+                      "type": "object",
+                      "properties": {
+                        "accepted": {
+                          "type": "boolean"
+                        },
+                        "error": {
+                          "type": "string"
+                        },
+                        "verified": {
+                          "type": "boolean"
+                        },
+                        "wrong_answers": {
+                          "type": "integer"
+                        }
+                      },
+                      "required": [
+                        "accepted"
+                      ],
+                      "additionalProperties": false
+                    }
+                  },
+                  "required": [
+                    "status",
+                    "payload"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/get_account": {
+      "post": {
+        "operationId": "get_account",
+        "summary": "get account",
+        "description": "All identity challenges must pass before this action. Read the companion brief for business constraints. REJECTED/ok=false is a definitive no-commit result; lost responses are uncertain.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "session_ref": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "session_ref"
+                ],
+                "additionalProperties": false
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Business result; HTTP success alone is insufficient. get_account products/assets is present on success; verify_identity verified and wrong_answers are present on a completed check.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "status": {
+                      "type": "string",
+                      "enum": [
+                        "APPLIED",
+                        "REJECTED"
+                      ]
+                    },
+                    "payload": {
+                      "type": "object",
+                      "properties": {
+                        "accepted": {
+                          "type": "boolean"
+                        },
+                        "error": {
+                          "type": "string"
+                        },
+                        "assets": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "asset_ref": {
+                                "type": "string"
+                              },
+                              "type": {
+                                "type": "string"
+                              },
+                              "display_name": {
+                                "type": "string"
+                              },
+                              "arrears_minor": {
+                                "type": "integer",
+                                "minimum": 0,
+                                "description": "Integer cents; 42050 means 420.50 major units."
+                              },
+                              "floor_minor": {
+                                "type": "integer",
+                                "minimum": 0,
+                                "description": "Integer cents; 42050 means 420.50 major units."
+                              },
+                              "days_late": {
+                                "type": "integer",
+                                "minimum": 1,
+                                "maximum": 60
+                              }
+                            },
+                            "required": [
+                              "asset_ref",
+                              "type",
+                              "display_name",
+                              "arrears_minor",
+                              "floor_minor",
+                              "days_late"
+                            ],
+                            "additionalProperties": false
+                          },
+                          "minItems": 1,
+                          "maxItems": 3
+                        }
+                      },
+                      "required": [
+                        "accepted"
+                      ],
+                      "additionalProperties": false
+                    }
+                  },
+                  "required": [
+                    "status",
+                    "payload"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/create_promise": {
+      "post": {
+        "operationId": "create_promise",
+        "summary": "create promise",
+        "description": "All identity challenges must pass before this action. Read the companion brief for business constraints. REJECTED/ok=false is a definitive no-commit result; lost responses are uncertain.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "session_ref": {
+                    "type": "string"
+                  },
+                  "asset_ref": {
+                    "type": "string"
+                  },
+                  "amount_minor": {
+                    "type": "integer",
+                    "minimum": 0,
+                    "description": "Integer cents; 42050 means 420.50 major units."
+                  },
+                  "due_on": {
+                    "type": "string",
+                    "format": "date"
+                  }
+                },
+                "required": [
+                  "session_ref",
+                  "asset_ref",
+                  "amount_minor",
+                  "due_on"
+                ],
+                "additionalProperties": false
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Business result; HTTP success alone is insufficient. get_account products/assets is present on success; verify_identity verified and wrong_answers are present on a completed check.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "status": {
+                      "type": "string",
+                      "enum": [
+                        "APPLIED",
+                        "REJECTED"
+                      ]
+                    },
+                    "payload": {
+                      "type": "object",
+                      "properties": {
+                        "accepted": {
+                          "type": "boolean"
+                        },
+                        "error": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "accepted"
+                      ],
+                      "additionalProperties": false
+                    }
+                  },
+                  "required": [
+                    "status",
+                    "payload"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/add_note": {
+      "post": {
+        "operationId": "add_note",
+        "summary": "add note",
+        "description": "All identity challenges must pass before this action. Read the companion brief for business constraints. REJECTED/ok=false is a definitive no-commit result; lost responses are uncertain.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "session_ref": {
+                    "type": "string"
+                  },
+                  "asset_ref": {
+                    "type": "string"
+                  },
+                  "code": {
+                    "type": "string",
+                    "enum": [
+                      "E_REFUSED",
+                      "E_HARDSHIP",
+                      "E_DISPUTE",
+                      "E_PAID",
+                      "E_SERVICE_ERROR",
+                      "E_TRANSFERRED",
+                      "E_INTERRUPTED"
+                    ]
+                  }
+                },
+                "required": [
+                  "session_ref",
+                  "asset_ref",
+                  "code"
+                ],
+                "additionalProperties": false
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Business result; HTTP success alone is insufficient. get_account products/assets is present on success; verify_identity verified and wrong_answers are present on a completed check.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "status": {
+                      "type": "string",
+                      "enum": [
+                        "APPLIED",
+                        "REJECTED"
+                      ]
+                    },
+                    "payload": {
+                      "type": "object",
+                      "properties": {
+                        "accepted": {
+                          "type": "boolean"
+                        },
+                        "error": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "accepted"
+                      ],
+                      "additionalProperties": false
+                    }
+                  },
+                  "required": [
+                    "status",
+                    "payload"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/schedule_callback": {
+      "post": {
+        "operationId": "schedule_callback",
+        "summary": "schedule callback",
+        "description": "Read the companion brief for business constraints. REJECTED/ok=false is a definitive no-commit result; lost responses are uncertain.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "session_ref": {
+                    "type": "string"
+                  },
+                  "on": {
+                    "type": "string",
+                    "format": "date"
+                  },
+                  "at": {
+                    "type": "string",
+                    "description": "HH:MM local time"
+                  }
+                },
+                "required": [
+                  "session_ref",
+                  "on",
+                  "at"
+                ],
+                "additionalProperties": false
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Business result; HTTP success alone is insufficient. get_account products/assets is present on success; verify_identity verified and wrong_answers are present on a completed check.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "status": {
+                      "type": "string",
+                      "enum": [
+                        "APPLIED",
+                        "REJECTED"
+                      ]
+                    },
+                    "payload": {
+                      "type": "object",
+                      "properties": {
+                        "accepted": {
+                          "type": "boolean"
+                        },
+                        "error": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "accepted"
+                      ],
+                      "additionalProperties": false
+                    }
+                  },
+                  "required": [
+                    "status",
+                    "payload"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/transfer_to_agent": {
+      "post": {
+        "operationId": "transfer_to_agent",
+        "summary": "transfer to agent",
+        "description": "Read the companion brief for business constraints. REJECTED/ok=false is a definitive no-commit result; lost responses are uncertain.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "session_ref": {
+                    "type": "string"
+                  },
+                  "team": {
+                    "type": "string",
+                    "enum": [
+                      "E_GENERAL",
+                      "E_PLANS",
+                      "E_SUPPORT"
+                    ]
+                  }
+                },
+                "required": [
+                  "session_ref",
+                  "team"
+                ],
+                "additionalProperties": false
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Business result; HTTP success alone is insufficient. get_account products/assets is present on success; verify_identity verified and wrong_answers are present on a completed check.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "status": {
+                      "type": "string",
+                      "enum": [
+                        "APPLIED",
+                        "REJECTED"
+                      ]
+                    },
+                    "payload": {
+                      "type": "object",
+                      "properties": {
+                        "accepted": {
+                          "type": "boolean"
+                        },
+                        "error": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "accepted"
+                      ],
+                      "additionalProperties": false
+                    }
+                  },
+                  "required": [
+                    "status",
+                    "payload"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/close_call": {
+      "post": {
+        "operationId": "close_call",
+        "summary": "close call",
+        "description": "Read the companion brief for business constraints. REJECTED/ok=false is a definitive no-commit result; lost responses are uncertain.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "session_ref": {
+                    "type": "string"
+                  },
+                  "disposition": {
+                    "type": "string",
+                    "enum": [
+                      "E_PTP",
+                      "E_PAID",
+                      "E_XFER",
+                      "E_NO_PTP",
+                      "E_NO_ID",
+                      "E_NO_CONTACT"
+                    ]
+                  },
+                  "detail": {
+                    "type": "string",
+                    "enum": [
+                      "E_HUMAN",
+                      "E_PLAN",
+                      "E_SUPPORT",
+                      "E_REFUSED",
+                      "E_HARDSHIP",
+                      "E_DISPUTE",
+                      "E_SERVICE_ERROR",
+                      "E_INTERRUPTED",
+                      "E_FAILED",
+                      "E_DECLINED",
+                      "E_CALLBACK",
+                      "E_NO_CALLBACK",
+                      "E_WRONG_NUMBER",
+                      "E_DECEASED",
+                      "E_UNCLEAR"
+                    ]
+                  }
+                },
+                "required": [
+                  "session_ref",
+                  "disposition"
+                ],
+                "additionalProperties": false
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Business result; HTTP success alone is insufficient. get_account products/assets is present on success; verify_identity verified and wrong_answers are present on a completed check.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "status": {
+                      "type": "string",
+                      "enum": [
+                        "APPLIED",
+                        "REJECTED"
+                      ]
+                    },
+                    "payload": {
+                      "type": "object",
+                      "properties": {
+                        "accepted": {
+                          "type": "boolean"
+                        },
+                        "error": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "accepted"
+                      ],
+                      "additionalProperties": false
+                    }
+                  },
+                  "required": [
+                    "status",
+                    "payload"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

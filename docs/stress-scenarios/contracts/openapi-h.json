@@ -1,0 +1,510 @@
+{
+  "openapi": "3.0.3",
+  "info": {
+    "title": "Beacon Assurance synthetic tools",
+    "version": "1.0.0",
+    "description": "Design fixture only; no deployed API. Codes and rules are synthetic."
+  },
+  "servers": [
+    {
+      "url": "https://h-fixture.invalid/v1"
+    }
+  ],
+  "paths": {
+    "/verify_identity": {
+      "post": {
+        "operationId": "verify_identity",
+        "summary": "verify identity",
+        "description": "Read the companion brief for business constraints. REJECTED/ok=false is a definitive no-commit result; lost responses are uncertain.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "customer_id": {
+                    "type": "string"
+                  },
+                  "field": {
+                    "type": "string",
+                    "enum": [
+                      "policyholder_code",
+                      "birth_year"
+                    ]
+                  },
+                  "answer": {
+                    "type": "string",
+                    "description": "Preserve leading zeroes; one complete answer only."
+                  }
+                },
+                "required": [
+                  "customer_id",
+                  "field",
+                  "answer"
+                ],
+                "additionalProperties": false
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Business result; HTTP success alone is insufficient. get_account products/assets is present on success; verify_identity verified and wrong_answers are present on a completed check.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "ok": {
+                      "type": "boolean"
+                    },
+                    "error": {
+                      "type": "string"
+                    },
+                    "verified": {
+                      "type": "boolean"
+                    },
+                    "wrong_answers": {
+                      "type": "integer"
+                    }
+                  },
+                  "required": [
+                    "ok"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/get_account": {
+      "post": {
+        "operationId": "get_account",
+        "summary": "get account",
+        "description": "All identity challenges must pass before this action. Read the companion brief for business constraints. REJECTED/ok=false is a definitive no-commit result; lost responses are uncertain.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "customer_id": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "customer_id"
+                ],
+                "additionalProperties": false
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Business result; HTTP success alone is insufficient. get_account products/assets is present on success; verify_identity verified and wrong_answers are present on a completed check.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "ok": {
+                      "type": "boolean"
+                    },
+                    "error": {
+                      "type": "string"
+                    },
+                    "products": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "product_id": {
+                            "type": "string"
+                          },
+                          "type": {
+                            "type": "string"
+                          },
+                          "display_name": {
+                            "type": "string"
+                          },
+                          "past_due": {
+                            "type": "number",
+                            "minimum": 0,
+                            "multipleOf": 0.01
+                          },
+                          "floor": {
+                            "type": "number",
+                            "minimum": 0,
+                            "multipleOf": 0.01
+                          },
+                          "days_late": {
+                            "type": "integer",
+                            "minimum": 1,
+                            "maximum": 60
+                          }
+                        },
+                        "required": [
+                          "product_id",
+                          "type",
+                          "display_name",
+                          "past_due",
+                          "floor",
+                          "days_late"
+                        ],
+                        "additionalProperties": false
+                      },
+                      "minItems": 1,
+                      "maxItems": 3
+                    }
+                  },
+                  "required": [
+                    "ok"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/create_promise": {
+      "post": {
+        "operationId": "create_promise",
+        "summary": "create promise",
+        "description": "All identity challenges must pass before this action. Read the companion brief for business constraints. REJECTED/ok=false is a definitive no-commit result; lost responses are uncertain.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "customer_id": {
+                    "type": "string"
+                  },
+                  "product_id": {
+                    "type": "string"
+                  },
+                  "amount": {
+                    "type": "number",
+                    "minimum": 0,
+                    "multipleOf": 0.01
+                  },
+                  "date": {
+                    "type": "string",
+                    "format": "date"
+                  }
+                },
+                "required": [
+                  "customer_id",
+                  "product_id",
+                  "amount",
+                  "date"
+                ],
+                "additionalProperties": false
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Business result; HTTP success alone is insufficient. get_account products/assets is present on success; verify_identity verified and wrong_answers are present on a completed check.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "ok": {
+                      "type": "boolean"
+                    },
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "ok"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/add_note": {
+      "post": {
+        "operationId": "add_note",
+        "summary": "add note",
+        "description": "All identity challenges must pass before this action. Read the companion brief for business constraints. REJECTED/ok=false is a definitive no-commit result; lost responses are uncertain.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "customer_id": {
+                    "type": "string"
+                  },
+                  "product_id": {
+                    "type": "string"
+                  },
+                  "reason": {
+                    "type": "string",
+                    "enum": [
+                      "H_REFUSED",
+                      "H_HARDSHIP",
+                      "H_DISPUTE",
+                      "H_PAID",
+                      "H_SERVICE_ERROR",
+                      "H_TRANSFERRED",
+                      "H_INTERRUPTED"
+                    ]
+                  }
+                },
+                "required": [
+                  "customer_id",
+                  "product_id",
+                  "reason"
+                ],
+                "additionalProperties": false
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Business result; HTTP success alone is insufficient. get_account products/assets is present on success; verify_identity verified and wrong_answers are present on a completed check.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "ok": {
+                      "type": "boolean"
+                    },
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "ok"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/schedule_callback": {
+      "post": {
+        "operationId": "schedule_callback",
+        "summary": "schedule callback",
+        "description": "Read the companion brief for business constraints. REJECTED/ok=false is a definitive no-commit result; lost responses are uncertain.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "customer_id": {
+                    "type": "string"
+                  },
+                  "date": {
+                    "type": "string",
+                    "format": "date"
+                  },
+                  "time": {
+                    "type": "string",
+                    "description": "HH:MM local time"
+                  }
+                },
+                "required": [
+                  "customer_id",
+                  "date",
+                  "time"
+                ],
+                "additionalProperties": false
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Business result; HTTP success alone is insufficient. get_account products/assets is present on success; verify_identity verified and wrong_answers are present on a completed check.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "ok": {
+                      "type": "boolean"
+                    },
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "ok"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/transfer_to_agent": {
+      "post": {
+        "operationId": "transfer_to_agent",
+        "summary": "transfer to agent",
+        "description": "Read the companion brief for business constraints. REJECTED/ok=false is a definitive no-commit result; lost responses are uncertain.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "customer_id": {
+                    "type": "string"
+                  },
+                  "queue": {
+                    "type": "string",
+                    "enum": [
+                      "H_GENERAL",
+                      "H_PLANS",
+                      "H_SUPPORT"
+                    ]
+                  }
+                },
+                "required": [
+                  "customer_id",
+                  "queue"
+                ],
+                "additionalProperties": false
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Business result; HTTP success alone is insufficient. get_account products/assets is present on success; verify_identity verified and wrong_answers are present on a completed check.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "ok": {
+                      "type": "boolean"
+                    },
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "ok"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/close_call": {
+      "post": {
+        "operationId": "close_call",
+        "summary": "close call",
+        "description": "Read the companion brief for business constraints. REJECTED/ok=false is a definitive no-commit result; lost responses are uncertain.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "customer_id": {
+                    "type": "string"
+                  },
+                  "outcome": {
+                    "type": "string",
+                    "enum": [
+                      "H_PTP",
+                      "H_PAID",
+                      "H_XFER",
+                      "H_NO_PTP",
+                      "H_NO_ID",
+                      "H_NO_CONTACT"
+                    ]
+                  },
+                  "reason": {
+                    "type": "string",
+                    "enum": [
+                      "H_HUMAN",
+                      "H_PLAN",
+                      "H_SUPPORT",
+                      "H_REFUSED",
+                      "H_HARDSHIP",
+                      "H_DISPUTE",
+                      "H_SERVICE_ERROR",
+                      "H_INTERRUPTED",
+                      "H_FAILED",
+                      "H_DECLINED",
+                      "H_CALLBACK",
+                      "H_NO_CALLBACK",
+                      "H_WRONG_NUMBER",
+                      "H_DECEASED",
+                      "H_UNCLEAR"
+                    ]
+                  }
+                },
+                "required": [
+                  "customer_id",
+                  "outcome"
+                ],
+                "additionalProperties": false
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Business result; HTTP success alone is insufficient. get_account products/assets is present on success; verify_identity verified and wrong_answers are present on a completed check.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "ok": {
+                      "type": "boolean"
+                    },
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "ok"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}
