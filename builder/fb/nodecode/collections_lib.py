@@ -354,29 +354,77 @@ _WORD_MONTHS = dict((m.lower(), i + 1) for i, m in enumerate(MONTHS))
 _WORD_MONTHS.update(dict((m[:3].lower(), i + 1) for i, m in enumerate(MONTHS)))
 
 
+def dob_year(y):
+    """A year of birth from what was said: 4 digits as said; 2 digits only when the century is
+    clear for a customer (30-99 -> 19xx, 00-08 -> 20xx); None otherwise ('19' or '20' is the
+    first half of a year said in two parts, '14' could be 1914 or 2014)."""
+    ys = str(y)
+    if len(ys) == 4:
+        return int(ys)
+    if len(ys) == 2:
+        n = int(ys)
+        if n >= 30:
+            return 1900 + n
+        if n <= 8:
+            return 2000 + n
+    return None
+
+
+def _dob_words(s):
+    """Words read as numbers for a date of birth, after a correction: 'the fourteenth of March,
+    nineteen eighty-eight' -> '14th of march 19 88'. Uses speech_lib (in the same code node);
+    without it (this file imported alone) the text stays as it is."""
+    try:
+        s = _last_segment(s)  # noqa: F821  ('14 March, sorry, 15 March 1988')
+        s = re.sub(r"[-,.]", " ", s)
+        s = re.sub(r"\b(?:oh|o|zero)\b", " 0 ", s)  # 'nineteen oh five' is 1905, not 195
+        return _words_to_number_tokens(s)  # noqa: F821
+    except Exception:
+        return re.sub(r"[,.]", " ", s)
+
+
 def normalize_dob(text, order="DMY"):
-    """'14 March 1988', 'March 14th, 1988', '14/03/1988' (day first; order "MDY" reads month
-    first), '1988-03-14' -> ISO."""
-    s = str(text or "").strip().lower().replace(",", " ")
-    m = re.match(r"^(\d{4})-(\d{1,2})-(\d{1,2})$", s)
+    """'14 March 1988', 'March 14th, 1988', 'the fourteenth of March nineteen eighty-eight',
+    'fourteen March one nine eight eight', '1988, March 14th', '14/03/1988' (day first; order
+    "MDY" reads month first; a month over 12 is read the other way round), '1988-03-14' ->
+    ISO. A date whose year is not whole yet ('14 March 19', '14 March 14') -> 'incomplete',
+    which the bank reads as unreadable, not as a wrong answer. Other text is returned as it is."""
+    s = str(text or "").strip().lower()
+    m = re.search(r"\b(\d{4})-(\d{1,2})-(\d{1,2})\b", s)
     if m:
         y, mo, d = int(m.group(1)), int(m.group(2)), int(m.group(3))
     else:
-        nums = re.findall(r"\d+", s)
-        mon = None
-        for w in re.findall(r"[a-z]+", s):
-            if w in _WORD_MONTHS:
-                mon = _WORD_MONTHS[w]
-        if mon and len(nums) >= 2:
-            d, y, mo = int(nums[0]), int(nums[-1]), mon
-        elif len(nums) == 3 and str(order).upper().startswith("M"):
-            mo, d, y = int(nums[0]), int(nums[1]), int(nums[2])
-        elif len(nums) == 3:
-            d, mo, y = int(nums[0]), int(nums[1]), int(nums[2])
+        m = re.search(r"\b(\d{1,2})[/.](\d{1,2})[/.](\d{2,4})\b", s)
+        toks = re.findall(r"[a-z]+|\d+(?:st|nd|rd|th)?", _dob_words(s))
+        mi = next((i for i, t in enumerate(toks) if t in _WORD_MONTHS), None)
+        if m:
+            a, b, ys = int(m.group(1)), int(m.group(2)), m.group(3)
+        elif mi is not None:
+            mo = _WORD_MONTHS[toks[mi]]
+            before = [re.sub(r"\D", "", t) for t in toks[:mi] if t[0].isdigit()]
+            after = [re.sub(r"\D", "", t) for t in toks[mi + 1 :] if t[0].isdigit()]
+            if len(before) == 1 and int(before[0]) <= 31:
+                d, ys = int(before[0]), "".join(after)  # '14 March 1988'
+            elif after and int(after[0]) <= 31 and not before:
+                d, ys = int(after[0]), "".join(after[1:])  # 'March 14th 1988'
+            elif after and int(after[-1]) <= 31 and before:
+                d, ys = int(after[-1]), "".join(before + after[:-1])  # '1988, March 14th'
+            else:
+                return s
         else:
-            return s
-    if y < 100:
-        y += 1900 if y > 30 else 2000
+            n3 = re.findall(r"\d+", s)
+            if len(n3) != 3:
+                return s
+            a, b, ys = int(n3[0]), int(n3[1]), n3[2]
+        if mi is None or m:
+            d, mo = (b, a) if str(order).upper().startswith("M") else (a, b)
+            if mo > 12 and d <= 12:
+                d, mo = mo, d  # '03/14/1988' said month first
+        if not ys:
+            return "incomplete"
+        y = dob_year(ys)
+        if y is None:
+            return "incomplete"
     try:
         return datetime.date(y, mo, d).isoformat()
     except Exception:

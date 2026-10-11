@@ -531,9 +531,19 @@ def parse_spoken_time(text, day_start=10, day_end=19):
 
 
 def digits_from_speech(text):
-    """'four four seven one', '44 71', 'forty-four seventy-one' -> '4471'."""
+    """'four four seven one', '44 71', 'forty-four seventy-one' -> '4471'; 'two thousand and
+    five' -> '2005', 'four hundred' -> '400' (a number with hundred / thousand is read whole)."""
     raw = str(text or "").lower().replace("-", " ")
     s = _last_segment(raw)
+    if re.search(r"\b(?:hundred|thousand)\b", s):
+        s = re.sub(
+            r"(?:\b(?:a|" + "|".join(list(_UNITS) + list(_TENS)) + r")\s+)*"
+            r"(?:hundred|thousand)\b(?:\s+(?:and|hundred|thousand|"
+            + "|".join(list(_UNITS) + list(_TENS))
+            + r")\b)*",
+            lambda m: " " + _words_to_number_tokens(m.group(0)) + " ",
+            s,
+        )
     out = []
     for w in re.findall(r"[a-z]+|\d+", s):
         if w.isdigit():

@@ -102,3 +102,74 @@ def test_week_forms_said_on_a_friday():
     assert date("next Friday", fri) == "2026-10-23"
     assert date("Friday after next", fri) == "2026-10-30"
     assert date("this coming Friday", fri) == "2026-10-23"
+
+
+# ---- 3. dates of birth and years in words, corrections, pieces
+@pytest.mark.parametrize(
+    "said,iso",
+    [
+        ("fourteen March one nine eight eight", "1988-03-14"),
+        ("fourteenth March 1988", "1988-03-14"),
+        ("March the fourteenth 1988", "1988-03-14"),
+        ("the fourteenth of March nineteen eighty-eight", "1988-03-14"),
+        ("the fourteenth of March, nineteen eighty-eight", "1988-03-14"),
+        ("14 March, sorry, 15 March 1988", "1988-03-15"),
+        ("1988, March 14th", "1988-03-14"),
+        ("03/14/1988", "1988-03-14"),  # a month over 12: said month first
+        ("14 March nineteen oh five", "1905-03-14"),
+        ("14 March two thousand and five", "2005-03-14"),
+        ("14 March 88", "1988-03-14"),
+        ("14/03/88", "1988-03-14"),
+        # the year is not whole: unreadable for the bank, not a wrong answer
+        ("14 March 19", "incomplete"),
+        ("14 March 14", "incomplete"),
+        ("14 March", "incomplete"),
+        # unchanged
+        ("14 March 1988", "1988-03-14"),
+        ("March 14th, 1988", "1988-03-14"),
+        ("14/03/1988", "1988-03-14"),
+        ("1988-03-14", "1988-03-14"),
+    ],
+)
+def test_normalize_dob_spoken(said, iso):
+    assert NS["normalize_dob"](said) == iso
+
+
+def test_normalize_dob_month_first_order():
+    assert NS["normalize_dob"]("03/14/1988", "MDY") == "1988-03-14"
+    assert NS["normalize_dob"]("14/03/1988", "MDY") == "1988-03-14"
+    assert NS["normalize_dob"]("04/03/1988", "MDY") == "1988-04-03"
+
+
+@pytest.mark.parametrize(
+    "said,want",
+    [
+        ("two thousand and five", "2005"),
+        ("two thousand", "2000"),
+        ("two thousand and twelve", "2012"),
+        ("nineteen eighty eight", "1988"),
+        ("nineteen oh five", "1905"),
+        ("four four seven one", "4471"),
+        ("forty-four seventy-one", "4471"),
+        ("double four seven one", "4471"),
+        ("four four seven one, no, four four seven two", "4472"),
+    ],
+)
+def test_digits_from_speech_whole_numbers(said, want):
+    assert NS["digits_from_speech"](said) == want
+
+
+def test_identity_hook_reads_a_spoken_date_of_birth():
+    from fb.generate import identity_hooks
+
+    spec = {"identity": {"questions": [{"field": "date_of_birth", "kind": "date"}]}}
+    pre, _post = identity_hooks(spec)
+    for said, last, want in [
+        ("the fourteenth of March, nineteen eighty-eight", "eighty-eight", "1988-03-14"),
+        ("14 March, sorry, 15 March 1988", "15 March 1988", "1988-03-15"),
+        ("14 March 19", "14 March 19", "incomplete"),
+    ]:
+        env = {"config": {"body": {"field": "date_of_birth", "answer": said}}}
+        env["vars"] = {"id_last": last}
+        exec(pre, env)
+        assert env["config"]["body"]["answer"] == want, said
