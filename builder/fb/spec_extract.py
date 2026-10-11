@@ -1039,6 +1039,41 @@ class SpecError(RuntimeError):
     pass
 
 
+# Every key negotiation_lib (`_line(neg, key, default)`) and the code-node bodies read from
+# neg.lines, with what is said when the brief gives no words for it. _line falls back to its
+# own default for a missing or empty value, and some of those defaults are Brief A's policy
+# ("You will receive a text message confirming this promise.", "You can change it in the
+# mobile app.", "Payments can take one business day to appear."): a hidden brief that says
+# nothing must not get them, so every key is set, to the brief's line or to a neutral sentence
+# that promises nothing.
+ENGINE_LINES: dict[str, str] = {
+    "no_account": "I am sorry, I cannot see your account details right now.",
+    "present_intro": "I am calling about a late payment.",
+    "today_question": "Can you make this payment today?",
+    "multi_today_question": "Can you pay all of them today?",
+    "confirm_question": "Do you confirm?",
+    "anything_else": "Is there anything else I can help you with?",
+    "support_reask": "Would you like that?",
+    "rest_overdue": "The rest stays overdue.",
+    "vague_ask": "On which exact day will you pay?",
+    "offer_day_question": "Can you do that, or is another day better for you?",
+    "help_first": "Before I transfer you, can I help you with this myself?",
+    "support_offer": "Would you like me to connect you with a colleague who can help?",
+    "sympathy": "I am sorry to hear that.",
+    "paid": "Thank you for letting me know.",
+    "dispute_noted": "I have noted that.",
+    "which_change": "Which promise would you like to change?",
+    "one_by_one": "Let us go through them one at a time.",
+    "recorded": "Thank you.",
+    "cannot_change": "A recorded promise cannot be changed in this call.",
+    "transfer_human": "I am connecting you with a colleague now.",
+    "transfer_restructuring": "I am connecting you with a colleague now.",
+    "transfer_support": "I am connecting you with a colleague now.",
+    "transfer_failed": "I am sorry, I could not connect you.",
+    "goodbye": "Thank you for your time. Goodbye.",
+}
+
+
 def _var(spec: dict[str, Any], role: str) -> str:
     return str((spec.get("call_variables") or {}).get(role) or role)
 
@@ -1050,24 +1085,10 @@ def to_generator(spec: dict[str, Any]) -> dict[str, Any]:
     for k, v in POLICY_DEFAULTS.items():  # check() reported missing ones to the trace
         neg.setdefault(k, v)
     lines = dict(s.get("lines") or {})
+    # every line the engine reads: the brief's words, else a neutral sentence (never the
+    # engine's built-in default, which is Brief A's wording for some)
     neg["lines"] = {
-        k: lines.get(k, "")
-        for k in (
-            "present_intro",
-            "today_question",
-            "multi_today_question",
-            "confirm_question",
-            "recorded",
-            "paid",
-            "sympathy",
-            "support_offer",
-            "help_first",
-            "goodbye",
-            "rest_overdue",
-            "cannot_change",
-            "transfer_human",
-        )
-        if lines.get(k)
+        k: str(lines.get(k) or "").strip() or neutral for k, neutral in ENGINE_LINES.items()
     }
     # close_call reasons per semantic key; "paid" only when the outcome table gives one
     # (negotiation_lib._finish must read close_reasons.paid for a call where all is paid)

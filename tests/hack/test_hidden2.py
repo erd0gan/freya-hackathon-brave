@@ -9,7 +9,7 @@ from fb.generate import build
 from fb.openapi_tools import parse_openapi
 from fb.spec_extract import check, to_generator
 
-from conftest import KIT
+from conftest import KIT, ROOT
 
 HERE = Path(__file__).parent
 OPENAPI = json.loads((KIT / "tools" / "openapi.json").read_text())
@@ -214,8 +214,6 @@ def test_note_reason_the_tool_has_no_value_for_is_not_required():
 # ---------------------------------------------------------------- 3b. problems left: publish
 def load_build():
     import importlib.util
-
-    from conftest import ROOT
 
     spec = importlib.util.spec_from_file_location("builder_main", ROOT / "builder" / "build.py")
     mod = importlib.util.module_from_spec(spec)
@@ -423,3 +421,53 @@ def structure_of(s):
     from fb.spec_extract import structure
 
     return structure(s)
+
+
+# ---------------------------------------------------------------- 8. lines the brief is silent on
+BRIEF_A_WORDS = ("text message", "mobile app", "one business day")
+
+
+def test_every_engine_line_is_set():
+    import re
+
+    from fb.spec_extract import ENGINE_LINES
+
+    src = (ROOT / "builder" / "fb" / "nodecode" / "negotiation_lib.py").read_text("utf-8")
+    keys = set(re.findall(r'_line\(\s*neg,\s*"(\w+)"', src))
+    keys |= {"transfer_" + w for w in ("restructuring", "human", "support")}
+    body = (ROOT / "builder" / "fb" / "nodecode" / "bodies.py").read_text("utf-8")
+    keys |= set(re.findall(r"get\('lines'\) or dict\(\)\)\.get\('(\w+)'\)", body))
+    assert keys - {"transfer_"} <= set(ENGINE_LINES), keys - set(ENGINE_LINES)
+    lines = to_generator(spec_with())["cfg"]["neg"]["lines"]
+    assert set(ENGINE_LINES) <= set(lines) and all(lines.values())
+
+
+def silent(s):
+    for k in ("recorded", "paid", "cannot_change", "rest_overdue"):
+        s["lines"][k] = ""
+
+
+def test_a_silent_brief_gets_no_brief_a_wording():
+    neg = to_generator(spec_with(silent))["cfg"]["neg"]
+    said = " ".join(neg["lines"].values()).lower()
+    assert not [w for w in BRIEF_A_WORDS if w in said]
+
+
+def test_paid_and_recorded_say_neutral_words_in_the_engine():
+    from fb.harness.engine_sim import simulate
+    from test_engine import CASES
+
+    cfg = to_generator(spec_with(silent))["cfg"]
+    for case, replies in (
+        ("PUB-08", [{"kind": "paid"}]),
+        ("PUB-01", [{"kind": "yes"}, {"kind": "yes"}, {"kind": "unclear"}]),
+    ):
+        r = simulate(CASES[case], replies, cfg)
+        said = " ".join(r.says).lower()
+        assert not [w for w in BRIEF_A_WORDS if w in said], r.says
+
+
+def test_the_brief_line_wins():
+    neg = to_generator(spec_with())["cfg"]["neg"]
+    assert neg["lines"]["recorded"] == "You will receive a text message confirming this promise."
+    assert neg["lines"]["paid"].endswith("Payments can take one business day to appear.")
