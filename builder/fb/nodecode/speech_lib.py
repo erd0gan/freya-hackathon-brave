@@ -434,14 +434,44 @@ def _amount_groups(s):
     return nums, toks
 
 
-def parse_amount(text):
+_SMALL = "a|an|one|two|three|four|five|six|seven|eight|nine|ten|\\d+"
+
+
+def _drop_dates(s):
+    """Day, date and time words next to an amount are not part of it: '300 on the 20th',
+    '100 pounds on Friday the 23rd', '50 in two weeks', '200 at 3pm'."""
+    months = "|".join(_MONTHS)
+    s = re.sub(r"\b(?:(?:twenty|thirty)[\s-]+)?(?:" + "|".join(_ORD) + r")\b", " ", s)
+    s = re.sub(r"\b\d{1,2}\s*(?:st|nd|rd|th)\b", " ", s)
+    s = re.sub(r"\b(?:on|by|before|after|until|till|from)\s+the\s+\d{1,2}\b(?![.\d])", " ", s)
+    s = re.sub(r"\b\d{1,2}\s+(?:of\s+)?(?:" + months + r")\b", " ", s)
+    s = re.sub(r"\b(?:" + months + r")\s+(?:the\s+)?\d{1,2}\b(?![.\d])", " ", s)
+    s = re.sub(r"\b(?:" + "|".join(_WDAYS) + r"|today|tomorrow)\b", " ", s)
+    s = re.sub(r"\b(?:in\s+)?(?:" + _SMALL + r")\s+(?:days?|weeks?|months?)\b", " ", s)
+    s = re.sub(r"\b\d{1,2}(?::\d{2})?\s*(?:am|pm|a\.m\.|p\.m\.|o'?clock)", " ", s)
+    s = re.sub(r"\bat\s+\d{1,2}(?::\d{2})?\b(?![.\d]|\s*" + _CUR + ")", " ", s)
+    return s
+
+
+def _thousands(m):
+    v = float(m.group(1)) * 1000
+    return str(int(v)) if v == int(v) else str(v)
+
+
+def parse_amount(text, lo=None, hi=None):
     """'637.50', '637,50', 'six hundred and thirty-seven fifty', 'two thousand one hundred
-    twenty-five pounds and ten pence', 'two hundred point zero five' -> float, or None.
-    Separate numbers are never glued together: after a correction ('400, no, 450') the last
-    one wins; two amounts without one ('200 or maybe 300', 'between 100 and 200') are None,
-    an amount that cannot be read, so the caller asks again instead of guessing. The only
-    pair read as one amount is pounds and pence ('210 pounds 50', 'six hundred thirty seven
-    fifty'). Thousands written with a comma or a space ('1,320', '1 320') are one number."""
+    twenty-five pounds and ten pence', 'two hundred point zero five', 'two grand' -> float, or
+    None. Separate numbers are never glued together: after a correction ('400, no, 450') the
+    last one wins; two amounts without one ('200 or maybe 300', 'between 100 and 200') are
+    None, an amount that cannot be read, so the caller asks again instead of guessing. The
+    only pair read as one amount is pounds and pence ('210 pounds 50', 'six hundred thirty
+    seven fifty'). Thousands written with a comma or a space ('1,320', '1 320') are one
+    number; day and time words are dropped first ('300 on the 20th' is 300).
+
+    `lo` / `hi` (optional, e.g. the floor and the full amount): a number said like a price,
+    'three fifty' or 'one twenty six', reads as 3.50 / 1.26 as said; when that is below `lo`
+    and the hundreds reading (350 / 126) lies in [lo, hi], the hundreds reading is taken.
+    Without `lo` the amount is read as said."""
     raw = str(text or "").lower().replace("’", "'")
     raw = re.sub(r"[£€$]", " ", raw)
     raw = re.sub(r"(\d),(\d{2})(?!\d)", r"\1.\2", raw)
@@ -452,6 +482,8 @@ def parse_amount(text):
     )
     if not raw.strip():
         return None
+    raw = re.sub(r"(\d+(?:\.\d+)?)\s*(?:k|grand|thousand)\b", _thousands, _drop_dates(raw))
+    raw = re.sub(r"\bgrand\b", "thousand", raw)
     s = _last_segment(raw)
     if re.search(r"\bpoint\b", s):
         # a spoken decimal point: what follows is a digit sequence, not a number
@@ -466,8 +498,14 @@ def parse_amount(text):
                 return None
     try:
         nums, toks = _amount_groups(s)
+        if "half" in toks:
+            return None  # 'a grand and a half', 'half of the 400': not read, asked again
         if len(nums) == 1:
-            return nums[0][1]
+            k, v = nums[0]
+            nxt = toks[k + 1] if k + 1 < len(toks) else ""
+            if re.fullmatch(_SUB, nxt) and not any(re.fullmatch(_CUR, t) for t in toks):
+                return round(v / 100.0, 2)  # '50p', 'fifty pence'
+            return v
         if len(nums) != 2:
             return None
         (i, a), (j, b) = nums
@@ -479,7 +517,18 @@ def parse_amount(text):
         # 'six hundred thirty seven fifty' (nothing between the two numbers)
         cur = bool(glue) and re.fullmatch(_CUR, glue[0]) and all(g == "and" for g in glue[1:])
         if cur or not glue or (glue == ["and"] and re.fullmatch(_SUB, nxt)):
-            return round(a + b / 100.0, 2)
+            said = round(a + b / 100.0, 2)
+            hundreds = a * 100 + b
+            if (
+                not glue
+                and a < 100
+                and a == int(a)
+                and lo is not None
+                and said < float(lo)
+                and float(lo) <= hundreds <= (float(hi) if hi is not None else hundreds)
+            ):
+                return hundreds  # 'three fifty' for a floor of 200: 350
+            return said
         return None
     except Exception:
         return None

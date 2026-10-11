@@ -104,6 +104,58 @@ def test_week_forms_said_on_a_friday():
     assert date("this coming Friday", fri) == "2026-10-23"
 
 
+# ---- 4. amounts said like prices, pounds and pence, day words next to an amount
+@pytest.mark.parametrize(
+    "text,want",
+    [
+        # as said, without a hint (unchanged)
+        ("three fifty", 3.5),
+        ("four twenty", 4.2),
+        ("one twenty six", 1.26),
+        ("twelve fifty", 12.5),
+        ("six hundred thirty seven fifty", 637.5),
+        ("210 pounds 50", 210.5),
+        ("210 pounds and 50 pence", 210.5),
+        ("two hundred pounds and five pence", 200.05),
+        ("100 and 50 pence", 100.5),
+        ("fifty pence", 0.5),
+        ("300 on the 20th", 300.0),
+        ("300 on the twentieth of October", 300.0),
+        ("100 pounds on Friday the 23rd", 100.0),
+        ("200 tomorrow", 200.0),
+        ("50 pounds a week", 50.0),
+        ("200 at 3pm", 200.0),
+        ("two grand", 2000.0),
+        ("2 grand", 2000.0),
+        ("1.5k", 1500.0),
+        ("a grand and a half", None),  # two numbers: unreadable, asked again
+    ],
+)
+def test_amount_as_said(text, want):
+    assert NS["parse_amount"](text) == want
+
+
+@pytest.mark.parametrize(
+    "text,lo,hi,want",
+    [
+        ("three fifty", 200, 637.5, 350.0),
+        ("four twenty", 200, 637.5, 420.0),
+        ("one twenty six", 100, 637.5, 126.0),
+        ("twelve fifty", 1000, 2125.1, 1250.0),
+        ("three hundred, no wait, three fifty", 200, 637.5, 350.0),
+        ("three fifty", 400, 637.5, 3.5),  # 350 is below the floor too: as said
+        ("twelve fifty", 200, 637.5, 12.5),  # 1250 is over the full amount: as said
+        ("three fifty", None, None, 3.5),
+        ("three fifty", 200, None, 350.0),
+        ("six hundred thirty seven fifty", 200, 637.5, 637.5),
+        ("three pounds fifty", 200, 637.5, 3.5),  # pounds said: no other reading
+        ("350", 200, 637.5, 350.0),
+    ],
+)
+def test_amount_price_style_with_a_range(text, lo, hi, want):
+    assert NS["parse_amount"](text, lo, hi) == want
+
+
 # ---- 3. dates of birth and years in words, corrections, pieces
 @pytest.mark.parametrize(
     "said,iso",
