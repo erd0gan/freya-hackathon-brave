@@ -3,7 +3,7 @@
   "members": [
     {"name": "Burak Erdoğan", "email": "burak.erd0g4n@gmail.com"}
   ],
-  "repo": "https://github.com/erd0gan/brave",
+  "repo": "https://github.com/erd0gan/freya-hackathon-brave",
   "commit": "85de296",
   "run_command": "python3 builder/build.py {case_folder} {mock_url}",
   "workflow": "submission/final8.workflow.json",
