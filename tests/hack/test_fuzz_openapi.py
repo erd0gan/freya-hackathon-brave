@@ -465,6 +465,39 @@ def m33(oa, spec, adapt):
     oa["paths"]["/promises/{customer_id}"] = {"post": op}
 
 
+@mut("34 operations named otherwise: camelCase ids, a bank_ prefix, Turkish paths")
+def m34(oa, spec, adapt):
+    # audit 08 TA-5: the tools are still the kit's seven roles (parse_openapi keys them by the
+    # kit name), so neither spec needs a change
+    for p, item in list(oa["paths"].items()):
+        tool = p.strip("/")
+        if tool == "close_call":
+            oa["paths"]["/gorusme/kapat"] = oa["paths"].pop(p)
+            item["post"]["summary"] = "Görüşmeyi kapat ve sonucu kaydet"
+        elif tool == "add_note":
+            oa["paths"]["/bank_add_note"] = oa["paths"].pop(p)
+        else:
+            words = tool.split("_")
+            item["post"]["operationId"] = words[0] + "".join(w.capitalize() for w in words[1:])
+
+
+# the bank's amount in cents: the engine must still say 420.00 (response_scale, applied by
+# the facts code)
+@mut(
+    "35 response amounts in minor units",
+    product=lambda p: {**p, "past_due": int(p["past_due"] * 100)},
+)
+def m35(oa, spec, adapt):
+    # audit 08 TA-4: the description says cents; parse_openapi gives the path a 0.01 scale
+    items = resp_(oa, "get_account")["properties"]["products"]["items"]
+    items = (
+        items
+        if "properties" in items
+        else oa["components"]["schemas"][items["$ref"].split("/")[-1]]
+    )
+    items["properties"]["past_due"]["description"] = "Integer cents (42050 means 420.50)."
+
+
 # ---------------------------------------------------------------- the pipeline
 def run(name: str, adapt: bool) -> dict[str, Any]:
     oa, spec = copy.deepcopy(OA), copy.deepcopy(SPEC)
@@ -756,6 +789,19 @@ def test_extract_auto_corrects_after_the_repair_and_traces_it(monkeypatch, tmp_p
     assert "spec auto-correct: product_fields.past_due" in log.read_text()
     assert any("auto-correct" in n for n in out["notes"])
     assert not [p for p in check(out, parse_openapi(oa), BRIEF, oa) if "product_fields" in p]
+
+
+def test_operations_named_otherwise_keep_their_urls_under_the_kit_names():
+    r = run("34 operations named otherwise: camelCase ids, a bank_ prefix, Turkish paths", False)
+    tools = r["tools"]
+    assert tools["close_call"].url.endswith("/gorusme/kapat")
+    assert tools["add_note"].api_name == "bank_add_note"
+    assert tools["verify_identity"].api_name == "verifyIdentity"
+    urls = {t["function"]["name"]: send(t, VALUES)["url"] for _, _, t in calls(r["wf"])}
+    assert urls["close_call"].endswith("/gorusme/kapat")
+    assert urls["add_note"].endswith("/bank_add_note")
+    r = run("35 response amounts in minor units", False)
+    assert r["tools"]["get_account"].response_scale == {"products.past_due": 0.01}
 
 
 def test_kit_openapi_needs_no_correction():

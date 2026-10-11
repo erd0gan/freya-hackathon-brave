@@ -8,19 +8,22 @@
 <h3 align="center">Brief to Reliable Agent Validation Engine</h3>
 
 <p align="center">
-  One brief and one tool API file in, one tested Freya phone agent out.
+  A bank's documents and its tool API in, one tested Freya phone agent out.
 </p>
 
 ---
 
-BRAVE is our entry for Freya's "Build the Builder" hackathon. It reads a collections brief
-(markdown) and the bank's tool API (OpenAPI JSON), and publishes a validated Freya workflow
-for a debt-collection phone agent. The model is used where language is needed; everything
-the agent writes to the bank comes from deterministic code.
+BRAVE is our entry for Freya's "Build the Builder" hackathon. It reads a bank's collections
+material (a case folder of Markdown, Word, PDF and Excel documents, or one brief) and the
+bank's tool API, and publishes a validated Freya workflow for a debt-collection phone agent.
+The model is used where language is needed; everything the agent writes to the bank comes
+from deterministic code.
 
 ```text
-brief.md + openapi.json
-  → tools        parse the OpenAPI file (fields, required flags, enums)
+case folder (or brief.md) + mock_url (or openapi.json)
+  → documents    read every file, give each a role (README.md says what each one is)
+  → tools        OpenAPI file, else the mock's /openapi.json, else the service contract
+                 (one model call, checked); tools named by role, URLs on the mock
   → spec         one model call extracts the policy; deterministic checks, one repair round
   → workflow     deterministic template: conversation, api_request, code and end_call nodes
   → validate     graph, gates (no account data before identity), turn caps, tool scope
@@ -34,29 +37,52 @@ The whole algorithm, stage by stage with diagrams: [`docs/brave-algorithm.html`]
 
 ```bash
 cp .env.example .env    # FREYA_API_KEY, OPENROUTER_API_KEY
-python3 builder/build.py kit/briefs/brief-a.md kit/tools/openapi.json
+python3 builder/build.py FreyaBank-Case/ https://our-mock.example.workers.dev   # the final's form
+python3 builder/build.py kit/briefs/brief-a.md kit/tools/openapi.json           # one brief, one file
 ```
+
+The command is `build.py <case_folder | case.zip | brief.md> [<openapi.json> | <mock_url>]`.
+A second argument starting with `http://` or `https://` is the mock's URL.
+
+### Inputs
+
+| Input | How it is read |
+|---|---|
+| Case folder or zip | Every file, recursively (`__MACOSX`, lock files and hidden files skipped). Markdown/text, Word (`.docx`: paragraphs, tables as pipe rows, header/footer, tracked deletions dropped, struck text marked), Excel (`.xlsx`: every sheet, dates by cell style), PDF (text layer with ToUnicode maps; a scan is reported), CSV, JSON, YAML, SVG/draw.io labels. UTF-8, UTF-16 and cp1254 text |
+| Document roles | From README.md's description of each file (or of its folder), else the file name, else the content: policy (BRIEF.md), analysis, flow, announcement, contract, test customers, Q&A, example conversation |
+| What the spec model gets | BRIEF first, then README, analysis, flow drawing, announcements (oldest first, with their dates), Q&A, each under `## <file> (<role>)`; the example conversations apart, marked as illustrations, not rules. Test customers are never given to it (they are the mock's data; the trace lists their columns) |
+| Tool API | An OpenAPI file (JSON or YAML, OpenAPI 3 or Swagger 2) given as the second argument or found in the folder; else `GET <mock_url>/openapi.json` (one request, 10 s); else the service contract document, turned into OpenAPI by one model call and checked against its text (paths, methods, field names, allowed values, the seven tool roles), with one repair round |
+| Tool names | An operation that plays one of the seven kit roles (`verify_identity`, `get_account`, `create_promise`, `add_note`, `schedule_callback`, `transfer_to_agent`, `close_call`) is used under that name whatever the contract calls it (camelCase, prefixes, Turkish paths or summaries); the trace shows `tool: <role> <- <contract's name>` |
+| `mock_url` | Replaces scheme and host of every tool URL; the contract's path prefix (`/v1`) is kept unless the mock URL has a path of its own. Without a mock URL the contract's server must be absolute, else the build stops |
+
+A file that cannot be read (an image, `.doc`, an encrypted PDF) is listed in the trace as
+`case: UNREAD <file>: <reason>` and the build goes on.
 
 `builder/build.py` uses only the standard library (Python 3.10+). Keys are read from the
 environment, `.env`, `env.sh` or `kit/env.sh`; the environment wins. Optional:
 `OPENROUTER_BASE_URL`, `BUILDER_MODEL_BUILDER` (overrides the spec model).
 
-Each brief gets one Freya slot, named after the brief's file stem and updated in place.
+Each case gets one Freya slot, named after the folder (or the zip's or brief's name without
+its extension) and updated in place.
 
 ### Outputs
 
 | Path | Content |
 |---|---|
-| `traces/<brief>.log` | Start/end, every model call with tokens and cost, every Freya action and test |
-| `submission/<brief>.spec.json` | The extracted spec |
-| `submission/<brief>.workflow.json` | The platform export, or the workflow as sent if the export fails |
-| `runs/<brief>/<time>/` | The previous run's trace, spec and export (moved, never overwritten) |
+| `traces/<slot>.log` | Start/end, every document read (role, size, reader) and every unread one, where each tool goes, every model call with tokens and cost, every Freya action and test |
+| `submission/<slot>.spec.json` | The extracted spec |
+| `submission/<slot>.workflow.json` | The platform export, or the workflow as sent if the export fails |
+| `submission/<slot>.manifest.json` | Inputs and hashes, document roles, checks, Freya ids, model cost |
+| `runs/<slot>/<time>/` | The previous run's trace, spec and export (moved, never overwritten) |
 
 The trace's `END` line says how far the run got: `ok` only when the chat smoke test passed,
 `ok_spec_problems` when checks were left open after the repair round (logged, the build still
 publishes: an imperfect agent scores more than none), with `_smoke_failed`,
 `_smoke_skipped` or `_export_failed` suffixes. A run that cannot produce a workflow ends with
-`spec invalid`, `generation failed`, `invalid workflow` or `dry run refused`.
+`no usable tool API`, `spec invalid`, `generation failed`, `invalid workflow` or `dry run
+refused`. The chat smoke test sends the customer's first reply in the call's language
+(`Hello?`, Turkish `Alo, evet benim.`); an error, an empty answer or a debt word before the
+identity check fails it.
 
 The whole run keeps to a 30-minute budget (3 minutes reserved for save and export). Freya
 calls retry 5xx, 429 and dropped connections with backoff; a 4xx is an answer.
@@ -65,7 +91,9 @@ calls retry 5xx, 429 and dropped connections with backoff; a 4xx is an answer.
 
 | Stage | Module | What it does |
 |---|---|---|
-| Tools | `builder/fb/openapi_tools.py` | Tool definitions from the OpenAPI file, including resolved `allOf` / `$ref` responses |
+| Documents | `builder/fb/case_input.py` | Case folder / zip readers (md, docx, xlsx, pdf, csv, json, yaml), document roles, policy / examples / customers / contract kept apart |
+| Contract | `builder/fb/contract.py` | A service contract document → OpenAPI: one model call, checks against the contract's text, one repair round |
+| Tools | `builder/fb/openapi_tools.py` | Tool definitions from the OpenAPI file (resolved `allOf` / `$ref`, Swagger 2), kit role names, mock URL, amounts in minor units, date-time fields split for the workflow |
 | Spec | `builder/fb/spec_extract.py` | Model extraction, then `check()`, `structure()`, `grounding()` (are the values in the brief?), one repair call, deterministic overrides |
 | Generator input | `to_generator()` | Engine config: bands, attempt plans, reasons, queues, lines; neutral lines where the brief is silent |
 | Workflow | `builder/fb/generate.py` | Deterministic template, no model calls (design: `docs/GENERATOR.md`) |

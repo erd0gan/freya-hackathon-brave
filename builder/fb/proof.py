@@ -25,6 +25,7 @@ import re
 from collections import Counter
 from typing import Any
 
+from fb.spec_extract import _Docs, date_mentions, detect_language, fold, time_mentions
 from fb.validate import _packed_blobs, _unpack
 
 # kind -> (regex on the unit's lower-case text, spec keys, node ids, how it is enforced)
@@ -300,7 +301,51 @@ KINDS: list[tuple[str, str, tuple[str, ...], tuple[str, ...], str]] = [
         "code",
     ),
 ]
+# The same kinds in Turkish, as folded stems (fold(): no accents, 'ı' and 'İ' are 'i'); a
+# stem matches its inflected forms ('anilmaz', 'aktarilir'). Language knowledge only.
+KINDS_TR: dict[str, str] = {
+    "opening": r"ilk cumle|arama .{0,40}(basla|acil)|kayit altina|kaydedil",
+    "who": r"ile mi gorus|siz misiniz|kendisi mi|teyit|iki kez sor",
+    "ai": r"robot|yapay zeka|bot|otomatik asistan",
+    "scam": r"dolandiric|sahte arama",
+    "third_party": r"yakin|baska biri|ucuncu (kisi|sahis)|aile",
+    "callback": r"geri ara|tekrar ara|ulasilabil",
+    "wrong_number": r"yanlis numara|numara .{0,20}ait degil",
+    "deceased": r"vefat|hayatini kaybet|oldu",
+    "forbidden": r"anilmaz|soylenmez|bahsedilmez|soyleme|bahsetme|dogrulanmadan|"
+    r"kimlik .{0,30}once",
+    "identity": r"kimlik|dogum tarihi|tc kimlik|son dort hane|guvenlik soru",
+    "identity_fail": r"yanlis cevap|hatali cevap|dogrulama basarisiz|kilitlen",
+    "identity_decline": r"cevap vermek istemez|reddeder|reddet|vermek istemez",
+    "swap": r"gun ve ay|ay ve gun|yer degistir",
+    "date_order": r"gun, ay|gun ay yil|once gun",
+    "account": r"borcu (soyle|belirt|bildir)|ekstre borcu|gecikme gun|gecikmis (tutar|borc)",
+    "calendar": r"tatil|is gunleri|resmi tatil|bayram|calisma gun",
+    "deadline": r"son tarih|son odeme|en gec|bant|vade|gecikme",
+    "date_rules": r"hafta ?sonu|belirsiz|kesin (bir )?gun|tarih .{0,30}olmali",
+    "floor": r"asgari|en az|taban|minimum",
+    "attempts": r"ikna|deneme",
+    "amounts": r"tam tutar|toplam borc|ne kadar odeyebilir",
+    "today_question": r"bugun (odeye|odeme|odenebilir)",
+    "hardship": r"hastalik|is kaybi|issiz|zor durum|maddi (sikinti|zorluk)|vefat",
+    "restructuring": r"yapilandirma|taksit|odeme plani",
+    "human": r"temsilci|musteri hizmetleri|insan|canli destek",
+    "transfer": r"aktar|yonlendir|devret",
+    "confirm": r"teyit|onayla|dogru mu|tekrar oku|geri oku",
+    "record": r"kaydet|kayit|soz al|odeme sozu",
+    "change_promise": r"degistirilemez|degistirile|iptal",
+    "paid": r"odedim|odendi|zaten ode",
+    "dispute": r"itiraz|benim degil|borcum yok",
+    "note": r"not (ekle|dus|al)",
+    "stop": r"konusmak istem|aramayin|gorusmeyi (sonlandir|bitir)",
+    "order": r"tek tek|sirayla|her (urun|kart) icin",
+    "no_info": r"bilgi(m|si) yok|cevaplayama|uydurma",
+    "no_discount": r"indirim|muafiyet|faiz silme",
+    "closing": r"kapanis|kapat|gorusmeyi bitir|sonuc kod|kod listesi|iyi gunler|hosca kal",
+    "call_vars": r"arama degisken",
+}
 KIND_RE = [(k, re.compile(rx, re.I), keys, nodes, how) for k, rx, keys, nodes, how in KINDS]
+KIND_RE_TR = {k: re.compile(rx) for k, rx in KINDS_TR.items()}
 
 # A quoted text is something the agent must SAY when the words just before it ask for that.
 SAY_CTX = re.compile(
@@ -315,8 +360,16 @@ CUST_CTX = re.compile(
     r"[^\"\n]{0,30}$|\bonly\s*$|\(\s*$",
     re.I,
 )
-LIST_CTX = re.compile(r"^[\s,]*(,|or|and)?\s*$", re.I)
-QUOTE = re.compile(r"[\"“]([^\"“”\n]{1,200})[\"”]")
+LIST_CTX = re.compile(r"^[\s,]*(,|or|and|ve|veya|ya da)?\s*$", re.I)
+QUOTE = re.compile(r"[\"“«]([^\"“”«»\n]{1,200})[\"”»]")
+# Turkish puts the verb after the quote: '"..." cümlesiyle başlar', '"..." kelimesi kullanılmaz'
+# (searched in the folded text right after the quote)
+SAY_AFTER_TR = re.compile(
+    r"^\W{0,3}(diye|der\b|deyin|denir|demeli|cumle|soru(su|yu|suyla)?\b|ifade|seklinde|sozleriyle)"
+)
+FORBID_AFTER_TR = re.compile(
+    r"^\W{0,3}(kelime|sozcu|ifade)\w*\s+(kullanilmaz|soylenmez|anilmaz|kullanma|soyleme)"
+)
 BACKTICK = re.compile(r"`([^`\n]{1,80})`")
 CODE_TOKEN = re.compile(r"^(?:[a-z][a-z0-9_]*|[A-Z][A-Z0-9_]*)$")
 UPPER = re.compile(r"\b[A-Z][A-Z0-9]*(?:_[A-Z0-9]+)+\b|\b[A-Z]{3,}\b")
@@ -325,7 +378,8 @@ TIME = re.compile(r"\b(\d{1,2}):(\d{2})\b")
 INT = re.compile(r"(?<![\w.:/-])(\d{1,4})(?:st|nd|rd|th)?(?![\w.:/-]|\.\d)")
 # rule references, attempt / stage / step names, versions and decimals are not values
 REFS = re.compile(
-    r"\b(rules?|sections?|attempts?|steps?|brief [a-z] rule|v)\s*\d+(?:\.\d+)?"
+    r"\b(rules?|sections?|attempts?|steps?|brief [a-z] rule|v|madde|kural|bölüm|bolum|belge|"
+    r"duyuru|deneme)\s*\d+(?:\.\d+)?"
     r"(?:\s*(?:,|and|or|to)\s*\d+)*|\b\d+\.\d+\b|\bv\d+\b",
     re.I,
 )
@@ -370,11 +424,13 @@ def rule_units(brief: str) -> list[dict[str, Any]]:
             units.append({"id": f"table:{ln}", "line": ln, "text": s, "table": True})
             continue
         table_header = False
-        m = re.match(r"^\s*(\d+)\.\s+", raw)
+        m = re.match(r"^\s*(\d+)[.)]\s+", raw)
         b = re.match(r"^\s*\*\*(\d+(?:\.\d+)+)\b", raw)
-        if m or b:
+        # Turkish numbering: 'Madde 3:', 'Kural 4.2 -', '**Madde 5**'
+        t = re.match(r"^\s*\**\s*(?:madde|kural|md\.)\s*(\d+(?:\.\d+)*)\**\s*[:.)-]", fold(raw))
+        if m or b or t:
             flush()
-            num = (m or b).group(1)  # type: ignore[union-attr]
+            num = (m or b or t).group(1)  # type: ignore[union-attr]
             seen_nums[num] += 1
             cur = {"id": num, "line": ln, "text": s, "table": False}
             continue
@@ -424,7 +480,8 @@ def _code_strings(src: str, depth: int = 0) -> list[str]:
 
 
 def _norm(text: str) -> str:
-    t = str(text).lower().replace("’", "'").replace("‘", "'").replace("\\", "")
+    # folded (Turkish-aware lower case, no accents): 'KAYIT ALTINA' meets 'kayıt altına'
+    t = fold(text).replace("\\", "")
     t = re.sub(r"\{\{?\s*[\w.]+\s*\}?\}", "#", t)
     t = re.sub(r"\d+", "#", t)
     t = re.sub(r"[^\w#' ]+", " ", t)
@@ -454,8 +511,8 @@ class _Hay:
         self.wf_norm = _norm(self.wf_text)
         self.spec_low = self.spec_text.lower()
         self.wf_low = self.wf_text.lower()
-        self.forbidden = {str(x).lower().strip() for x in _get(spec, "forbidden_before_verify")}
-        self.forbidden |= {str(x).lower().strip() for x in _get(gen, "forbidden_before_verify")}
+        self.forbidden = {fold(x).strip() for x in _get(spec, "forbidden_before_verify")}
+        self.forbidden |= {fold(x).strip() for x in _get(gen, "forbidden_before_verify")}
         self.nodes = (
             wf.get("nodes") if isinstance(wf, dict) and isinstance(wf.get("nodes"), dict) else {}
         )
@@ -512,8 +569,9 @@ def _overridden(brief: str) -> set[str]:
     return set(re.findall(r"\bnot\s+(\d{1,2}:\d{2}|\d{1,4}|\d{4}-\d{2}-\d{2})\b", brief))
 
 
-def _quotes(text: str) -> list[tuple[str, str]]:
-    """(role, quoted text): role say | forbid | customer | value."""
+def _quotes(text: str, lang: str = "en") -> list[tuple[str, str]]:
+    """(role, quoted text): role say | forbid | customer | value. In Turkish the verb that
+    says what a quote is often follows it ('"..." cümlesiyle başlar')."""
     out: list[tuple[str, str]] = []
     prev_end = 0
     prev_role = ""
@@ -536,6 +594,12 @@ def _quotes(text: str) -> list[tuple[str, str]]:
             role = "say"
         else:
             role = "customer"
+        if lang == "tr" and role == "customer" and not CUST_CTX.search(ctx):
+            after = fold(text[m.end() : m.end() + 40])
+            if FORBID_AFTER_TR.search(after):
+                role = "forbid"
+            elif SAY_AFTER_TR.search(after):
+                role = "say"
         if role == "say" and " " not in q and re.fullmatch(r"[A-Za-z_][\w-]*", q):
             role = "value"
         if re.search(r"<\w+>", q):
@@ -545,9 +609,9 @@ def _quotes(text: str) -> list[tuple[str, str]]:
     return out
 
 
-def literals(unit: dict[str, Any], overridden: set[str]) -> dict[str, list[Any]]:
+def literals(unit: dict[str, Any], overridden: set[str], lang: str = "en") -> dict[str, list[Any]]:
     text = unit["text"]
-    quotes = _quotes(text)
+    quotes = _quotes(text, lang)
     rest = QUOTE.sub(" ", text)
     ticks = [t for t in BACKTICK.findall(rest)]
     rest_nt = BACKTICK.sub(" ", rest)
@@ -559,6 +623,21 @@ def literals(unit: dict[str, Any], overridden: set[str]) -> dict[str, list[Any]]
             times.append(t)
     plain = ISO.sub(" ", TIME.sub(" ", rest_nt))
     plain = re.sub(r"\d{4}-\d{2}-\d{2}T\d{2}:\d{2}", " ", plain)
+    if lang == "tr":
+        # Turkish dates and times ('29 Ekim 2026', '29.10.2026', '09.00') as ISO / HH:MM; their
+        # digits are not counts (read before REFS drops '09.00' as a decimal)
+        plain = fold(plain)
+        cut = list(plain)
+        for d, _, _, a, e in date_mentions(plain):
+            if d is not None and d.isoformat() not in overridden:
+                dates.append(d.isoformat())
+            cut[a:e] = " " * (e - a)
+        for hh, mm, a, e in time_mentions(plain):
+            t = f"{hh:02d}:{mm:02d}"
+            if t not in overridden:
+                times.append(t)
+            cut[a:e] = " " * (e - a)
+        plain = "".join(cut)
     plain = REFS.sub(" ", plain)
     ints = []
     for x in INT.findall(plain):
@@ -605,14 +684,22 @@ def proof_map(
     wf = wf if isinstance(wf, dict) else {}
     try:
         hay = _Hay(spec, gen, wf)
-        units = rule_units(str(brief_text or ""))
+        lang = str(spec.get("language") or "") or detect_language(str(brief_text or ""))[0]
+        lang = "tr" if fold(lang).startswith(("tr", "turk")) else "en"
+        # test customers, example conversations and drafts are not rules: no unit of theirs
+        line_kinds = _Docs(str(brief_text or "")).kinds
+        units = [
+            u
+            for u in rule_units(str(brief_text or ""))
+            if not 0 < u["line"] <= len(line_kinds) or line_kinds[u["line"] - 1] == "rule"
+        ]
         over = _overridden(str(brief_text or ""))
     except Exception:
         return []
     out: list[dict[str, Any]] = []
     for u in units:
         try:
-            row = _unit(u, hay, over, spec, gen)
+            row = _unit(u, hay, over, spec, gen, lang)
         except Exception as e:  # one unreadable unit never hides the others
             row = {
                 "rule_id": u.get("id"),
@@ -631,11 +718,21 @@ def proof_map(
 
 
 def _unit(
-    u: dict[str, Any], hay: _Hay, over: set[str], spec: dict[str, Any], gen: dict[str, Any]
+    u: dict[str, Any],
+    hay: _Hay,
+    over: set[str],
+    spec: dict[str, Any],
+    gen: dict[str, Any],
+    lang: str = "en",
 ) -> dict[str, Any] | None:
     text = u["text"]
-    kinds = [(k, keys, nodes, how) for k, rx, keys, nodes, how in KIND_RE if rx.search(text)]
-    lit = literals(u, over)
+    folded = fold(text) if lang == "tr" else ""
+    kinds = [
+        (k, keys, nodes, how)
+        for k, rx, keys, nodes, how in KIND_RE
+        if rx.search(text) or (folded and k in KIND_RE_TR and KIND_RE_TR[k].search(folded))
+    ]
+    lit = literals(u, over, lang)
     has_lit = any(lit[k] for k in lit)
     prose = u["id"].startswith("para:") or u.get("table")
     if not kinds and not has_lit and prose:
@@ -660,9 +757,11 @@ def _unit(
     for q in lit["say"]:
         if _norm(q) and _norm(q) not in hay.wf_norm:
             missing_quotes.append(q)
-    pre_id = re.search(r"before identity|until security|before .{0,20}verified", text, re.I)
+    pre_id = re.search(
+        r"before identity|until security|before .{0,20}verified", text, re.I
+    ) or re.search(r"dogrulanmadan|dogrulamadan once|kimlik .{0,30}once", fold(text))
     for w in lit["forbid"] if pre_id else []:
-        if w.lower().strip() not in hay.forbidden:
+        if fold(w).strip() not in hay.forbidden:
             missing.append(f"forbidden word {w!r} not in forbidden_before_verify")
     spec_keys: list[str] = []
     nodes: list[str] = []

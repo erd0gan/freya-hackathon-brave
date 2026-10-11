@@ -35,14 +35,20 @@ class Trace:
         self.cost_usd = 0.0
         if path:
             path.parent.mkdir(parents=True, exist_ok=True)
-            path.write_text("")
+            path.write_text("", encoding="utf-8")
 
     def line(self, kind: str, msg: str) -> None:
         text = redact(f"{time.strftime('%H:%M:%S', time.gmtime())}  {kind:<6} {msg}")
         if self.echo:
-            print(text, file=sys.stderr, flush=True)
+            try:
+                print(text, file=sys.stderr, flush=True)
+            except UnicodeEncodeError:  # a cp1254/cp1252 console cannot print '₺' or '→'
+                enc = getattr(sys.stderr, "encoding", None) or "ascii"
+                print(text.encode(enc, "replace").decode(enc), file=sys.stderr, flush=True)
         if self.path:
-            with self.path.open("a") as f:
+            # the file is UTF-8 whatever the platform's locale: one '₺' in a Turkish document
+            # killed the whole build on a cp1254 Windows console (11 Oct audit)
+            with self.path.open("a", encoding="utf-8", errors="replace") as f:
                 f.write(text + "\n")
 
     def start(self, **info: object) -> None:

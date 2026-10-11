@@ -10,6 +10,7 @@ import ast
 import base64
 import functools
 import json
+import re
 import textwrap
 import zlib
 from pathlib import Path
@@ -127,17 +128,98 @@ def packed(lib: str) -> str:
     )
 
 
+@functools.cache
+def packed_tight(code: str) -> str:
+    """`code` packed as small as the sandbox allows, for a node that would be over the hard
+    cap with `packed`: Ascii85 (same base64 module, a quarter of the text instead of a third
+    on top of the compressed bytes; its alphabet holds no braces) in an escaped literal."""
+    blob = base64.a85encode(zlib.compress(code.encode("utf-8"), 9)).decode("ascii")
+    return (
+        "import base64\nimport zlib\n"
+        "exec(zlib.decompress(base64.a85decode(" + repr(blob) + ")).decode('utf-8'), globals())\n"
+    )
+
+
 def _defs_listed(code: str) -> str:
     names = [st.name for st in ast.parse(code).body if isinstance(st, ast.FunctionDef)]
     return "\n# ".join(textwrap.wrap(", ".join(names), 96)) if names else "(none)"
 
 
-def snippet(body: str, cfg: dict[str, Any], lib: str = LIB, on_error: str = "") -> str:
+@functools.cache
+def lang_hooks(lib: str) -> dict[str, str]:
+    """speech_lib's LANG_HOOKS: language -> the line that registers that language's readers
+    (`_rules('tr', _tr)`). A snippet holds only what its code names, so a call in that language
+    gets the line, and with it the language's rules; an English node never holds them."""
+    out: dict[str, str] = {}
+    for st in ast.parse(lib).body:
+        if not (
+            isinstance(st, ast.Assign)
+            and any(isinstance(t, ast.Name) and t.id == "LANG_HOOKS" for t in st.targets)
+        ):
+            continue
+        v = st.value
+        if isinstance(v, ast.Call) and isinstance(v.func, ast.Name) and v.func.id == "dict":
+            pairs = [(k.arg, k.value) for k in v.keywords if k.arg]
+        elif isinstance(v, ast.Dict):
+            pairs = [(getattr(k, "value", None), x) for k, x in zip(v.keys, v.values, strict=True)]
+        else:
+            pairs = []
+        for k, x in pairs:
+            if isinstance(k, str) and isinstance(x, ast.Constant) and isinstance(x.value, str):
+                out[k] = x.value
+    return out
+
+
+def lang_line(lib: str, lang: Any) -> str:
+    """The line registering the readers of `lang` ('' for English or a language the library
+    has no readers for)."""
+    code = str(lang or "en").strip().lower()[:2]
+    hook = lang_hooks(lib).get(code, "") if code != "en" else ""
+    return hook.strip() + "\n" if hook.strip() else ""
+
+
+def locale_line(lib: str, body: str) -> str:
+    """The line that makes CFG the call's config before the body runs: collections_lib's
+    prepare_cfg applies the changes dated on or before the call's day (cfg["dated"]) and sets
+    the language the date / money / speech helpers use. '' when the library has no prepare_cfg
+    (yet) or the body already calls it (or set_locale) itself."""
+    if "prepare_cfg(" in body or "set_locale(" in body:
+        return ""
+    if "def prepare_cfg(" in lib:
+        return "CFG = prepare_cfg(CFG, vars.get('now'))\n"
+    if "def set_locale(" in lib:
+        return "set_locale(CFG)\n"
+    return ""
+
+
+def snippet(
+    body: str, cfg: dict[str, Any], lib: str = LIB, on_error: str = "", pre: str = ""
+) -> str:
     """`body` runs inside try/except with `CFG`, the lib and `vars` in scope. `on_error` runs
     after an exception, so no variable keeps the value of the turn before (a stale
-    neg_action=record would call create_promise again)."""
+    neg_action=record would call create_promise again). `pre` runs first, before CFG is
+    prepared for the call's day (a brief that names the call's date otherwise copies it to
+    vars['now'] there); both are inside their own try."""
     if "{{" in lib or "}}" in lib:
         raise ValueError("code library contains a template brace pair")
+    # the call's language readers first (only in a node whose code reads what the customer
+    # said: the readers look their language's rules up in LOCALE["rules"]), then the config of
+    # the call's day (a config that cannot be prepared still runs the body as built)
+    hook = lang_line(lib, cfg.get("lang"))
+    if hook:
+        own = subset(lib, body, on_error, pre)
+        if not re.search(r"""_rewrite\(|["']rules["']""", own):
+            hook = ""
+    for extra in (hook, locale_line(lib, body)):
+        if extra:
+            pre = pre.strip() + ("\n" if pre.strip() else "") + extra
+    prep = ""
+    if pre.strip():
+        prep = (
+            "try:\n"
+            + "\n".join("    " + line for line in pre.strip().splitlines())
+            + "\nexcept Exception:\n    pass\n"
+        )
     inner = "\n".join("    " + line for line in body.strip().splitlines())
     handler = ""
     if on_error.strip():
@@ -149,12 +231,13 @@ def snippet(body: str, cfg: dict[str, Any], lib: str = LIB, on_error: str = "") 
     main = (
         "\n# ---- this node\n"
         + config_block(cfg)
+        + prep
         + "\ntry:\n"
         + inner
         + "\nexcept Exception as _e:\n    vars['code_error'] = str(_e)[:200]\n"
         + handler
     )
-    code = subset(lib, body, on_error)
+    code = subset(lib, body, on_error, pre)
     rule = "# " + "-" * 70 + "\n"
     head = (
         rule + "# Library functions this node uses (from builder/fb/nodecode/*_lib.py):\n"
@@ -162,6 +245,20 @@ def snippet(body: str, cfg: dict[str, Any], lib: str = LIB, on_error: str = "") 
     )
     src = head + code + main
     if len(src.encode("utf-8")) > CODE_BUDGET:
+        # still readable without the comments and docstrings, when that fits (the same code:
+        # the ast round trip the packed form uses too); a pair of braces the round trip
+        # brings out (the platform's placeholder) sends it to the packed form instead
+        lean = bare(code)
+        head = (
+            rule + "# Library functions this node uses (from builder/fb/nodecode/*_lib.py),\n"
+            "# without their comments and docstrings (in full this node would leave too little\n"
+            "# of code_exec's 131072 bytes for the call's data in a long call).\n"
+            "# " + _defs_listed(code) + "\n" + rule + "import json\n\n"
+        )
+        lean_src = head + lean + main
+        fits = len(lean_src.encode("utf-8")) <= CODE_BUDGET
+        if fits and "{{" not in lean_src and "}}" not in lean_src:
+            return lean_src
         head = (
             rule + "# Library functions this node uses (from builder/fb/nodecode/*_lib.py),\n"
             "# packed: in plain text this node would leave too little of code_exec's\n"
@@ -169,6 +266,34 @@ def snippet(body: str, cfg: dict[str, Any], lib: str = LIB, on_error: str = "") 
             "# " + _defs_listed(code) + "\n" + rule + "import json\n"
         )
         src = head + packed(bare(code)) + main
+        # every byte left counts now: first the list of names goes, then the library is packed
+        # tighter; the config stays readable when that fits, else it goes into the packed part
+        # with the library (it runs there first, as above)
+        head = (
+            rule + "# Library functions this node uses (from builder/fb/nodecode/*_lib.py),\n"
+            "# packed to leave code_exec room for the call's data.\n" + rule + "import json\n"
+        )
+        if len(src.encode("utf-8")) > CODE_HARD_CAP:
+            src = head + packed(bare(code)) + main
+        if len(src.encode("utf-8")) > CODE_HARD_CAP:
+            src = head + packed_tight(bare(code)) + main
+        if len(src.encode("utf-8")) > CODE_HARD_CAP:
+            head = (
+                rule + "# Library functions this node uses (from builder/fb/nodecode/*_lib.py)\n"
+                "# and this node's CFG, packed to leave code_exec room for the call's data.\n"
+                + rule
+                + "import json\n"
+            )
+            # the platform runs a node's code inside a function: `CFG = prepare_cfg(CFG, ...)`
+            # below makes CFG a local there, so the packed part's global must be bound to it
+            # first (else "cannot access local variable 'CFG'" on every turn, the error handler
+            # too, and the last sentence was said again and again: stress C-08, 11 Oct)
+            tail = main.replace(
+                config_block(cfg),
+                "# CFG: in the packed part above\nCFG = globals()['CFG']\n",
+                1,
+            )
+            src = head + packed_tight(bare(code) + "\n" + config_block(cfg)) + tail
     if "{{" in src or "}}" in src:
         raise ValueError("code snippet contains a template brace pair")
     return src

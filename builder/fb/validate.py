@@ -4,7 +4,7 @@ Checks (docs/HACKATHON_REALIGN.md §3.2): integrity of the JSON the platform wou
 strip or reject, graph shape, policy (which tools are reachable before identity is verified)
 and scope (only the tools, URLs, fields and enum values of the OpenAPI file).
 
-    python3 -m fb.validate <workflow.json> <openapi.json>     (from builder/)
+    python3 -m fb.validate <workflow.json> <openapi.json> [<bank base URL>]    (from builder/)
 """
 
 from __future__ import annotations
@@ -23,6 +23,19 @@ from typing import Any
 from urllib.parse import urlparse
 
 from fb.openapi_tools import ToolDef, parse_openapi
+
+try:
+    from fb.openapi_tools import KIT_TOOLS
+except ImportError:  # an older tool reader: the kit's names
+    KIT_TOOLS = (
+        "verify_identity",
+        "get_account",
+        "create_promise",
+        "add_note",
+        "schedule_callback",
+        "transfer_to_agent",
+        "close_call",
+    )
 
 try:
     from fb.nodecode.embed import CODE_BUDGET, CODE_HARD_CAP
@@ -188,10 +201,18 @@ class Policy:
     promise_nodes: set[str] = field(default_factory=set)
     require_turn_caps: bool = True
     # Passthrough nodes of a retry loop whose exit is decided by code with a counter
-    # (create_promise retry, one add_note per product). Not reported as passthrough cycles.
+    # (create_promise retry, one add_note per product). Not reported as passthrough cycles when
+    # the loop also ends by the platform's call counters (a transition on one of its nodes'
+    # `<node>_success_count` / `_failure_count`): a code node that never runs (code_exec
+    # refused it) leaves its variables as they were and would loop forever (LP-5).
     bounded_loops: set[str] = field(default_factory=set)
     # A platform export carries agent_config and nulls on optional node fields; accept those.
     exported: bool = False
+    # The bank's address the build was given (the mock_url): every tool URL must be on it.
+    # '' when the build has none; tool URLs must still be absolute http(s).
+    base_url: str = ""
+    # What the generator wants in the build trace (a default it had to take): warnings.
+    build_notes: list[str] = field(default_factory=list)
 
 
 @dataclass
@@ -220,15 +241,36 @@ class Report:
 _BLOB = re.compile(r"b64decode\(\s*['\"]([A-Za-z0-9+/=\s]+)['\"]")
 
 
+A85 = "a85:"  # marks an Ascii85 blob (embed.packed_tight) in what _packed_blobs returns
+
+
 def _packed_blobs(src: str) -> list[str]:
-    """The base64 parts of `exec(zlib.decompress(base64.b64decode('...')) ...)` (embed.packed)."""
+    """The encoded parts of `exec(zlib.decompress(base64.b64decode('...')) ...)` (embed.packed)
+    and of the a85decode form (embed.packed_tight, returned with the A85 mark)."""
     if "zlib.decompress" not in src:
         return []
-    return _BLOB.findall(src)
+    try:
+        tree = ast.parse(src)
+    except (SyntaxError, ValueError):
+        return _BLOB.findall(src)
+    out = []
+    for x in ast.walk(tree):
+        if (
+            isinstance(x, ast.Call)
+            and isinstance(x.func, ast.Attribute)
+            and x.func.attr in ("b64decode", "a85decode")
+            and x.args
+            and isinstance(x.args[0], ast.Constant)
+            and isinstance(x.args[0].value, str)
+        ):
+            out.append((A85 if x.func.attr == "a85decode" else "") + x.args[0].value)
+    return out
 
 
 def _unpack(blob: str) -> str | None:
     try:
+        if blob.startswith(A85):
+            return zlib.decompress(base64.a85decode(blob[len(A85) :])).decode("utf-8")
         return zlib.decompress(base64.b64decode(blob)).decode("utf-8")
     except (binascii.Error, zlib.error, UnicodeDecodeError, ValueError):
         return None
@@ -726,12 +768,24 @@ class _V:
         method = (props.get("method") or {}).get("default")
         if not url:
             self.err("url", where, "url needs a default")
+        else:
+            self.url_scope(str(url), where)
         if not method:
             self.err("method", where, "method needs a default")
         api = self.api.get(name)
         if api is None:
             self.err("unknown_tool", where, f"{name!r} is not in the OpenAPI file")
             return
+        # a bank service whose request could not be read sends nothing the bank can use: not
+        # published silently
+        unread = [w for w in getattr(api, "warnings", None) or [] if "no request field" in str(w)]
+        if unread or (name in KIT_TOOLS and not api.fields):
+            self.err(
+                "tool_no_fields",
+                where,
+                f"{name}: no request field could be read from the tool API"
+                + (f" ({unread[0]})" if unread else ""),
+            )
         if url and url != api.url:
             if urlparse(url).netloc != urlparse(api.url).netloc:
                 self.err("foreign_host", where, f"{url} is not the OpenAPI server")
@@ -770,6 +824,24 @@ class _V:
                 self.err("enum_scope", where, f"{f.name}: baked {dflt!r} not in OpenAPI enum")
         for k in set(bprops) - {f.name for f in api.fields}:
             self.warn("extra_field", where, f"{k!r} is not an OpenAPI field")
+
+    def url_scope(self, url: str, where: str) -> None:
+        """A tool URL is absolute http(s) (a relative one, from a tool API without servers,
+        goes nowhere on the platform: the call fails and the conversation drops) and, when the
+        build was given the bank's address, on it (same scheme and host, under its path)."""
+        u = urlparse(url)
+        if u.scheme not in ("http", "https") or not u.netloc:
+            self.err("url_not_absolute", where, f"{url!r} is not an absolute http(s) URL")
+            return
+        base = str(self.p.base_url or "").strip()
+        if not base:
+            return
+        b = urlparse(base)
+        path = b.path.rstrip("/")
+        if (u.scheme, u.netloc.lower()) != (b.scheme, b.netloc.lower()) or not (
+            u.path == path or u.path.startswith(path + "/")
+        ):
+            self.err("url_outside_base", where, f"{url} is not under the bank's address {base}")
 
     # ---------------------------------------------------------------- graph
     def edges(self, key: str, n: dict[str, Any]) -> list[tuple[str, dict[str, Any] | None]]:
@@ -847,6 +919,7 @@ class _V:
             self.err("no_path_to_end", f"nodes.{k}", "no path to an end of call")
         # a cycle of passthrough nodes spins without user input
         pt = {k for k, n in self.nodes.items() if n.get("passthrough")}
+        self.guarded("graph", self.loop_guards, pt, adj)
         for k in sorted(pt - self.p.bounded_loops):
             seen: set[str] = set()
             stack = [t for t, _ in adj[k] if t in pt]
@@ -863,6 +936,51 @@ class _V:
                     seen.add(x)
                     stack.extend(t for t, _ in adj[x] if t in pt)
         self.policy(init, adj)
+
+    def loop_guards(self, pt: set[str], adj: dict[str, list[tuple[str, Any]]]) -> None:
+        """Each passthrough cycle through a bounded loop needs a transition on one of its nodes
+        that reads a cycle node's platform call counter with greater_than (LP-5)."""
+        bounded = pt & self.p.bounded_loops
+        sub = {k: {t for t, _ in adj.get(k, []) if t in pt} for k in pt}
+
+        def reach(a: str) -> set[str]:
+            seen, stack = set(), [a]
+            while stack:
+                for t in sub.get(stack.pop(), ()):
+                    if t not in seen:
+                        seen.add(t)
+                        stack.append(t)
+            return seen
+
+        r = {k: reach(k) for k in bounded}
+        done: set[str] = set()
+        for k in sorted(bounded):
+            if k not in r[k] or k in done:
+                continue  # on no cycle
+            cyc = {x for x in pt if x in r[k] and k in reach(x)}
+            done |= cyc
+            counters = {f"{x}{s}" for x in cyc for s in ("_success_count", "_failure_count")}
+
+            def reads(c: Any, counters: set[str] = counters) -> bool:
+                if not isinstance(c, dict):
+                    return False
+                if "conditions" in c:
+                    return any(reads(s, counters) for s in c.get("conditions") or [])
+                return c.get("operator") == "greater_than" and c.get("variable") in counters
+
+            if not any(
+                reads(t.get("condition"))
+                for x in cyc
+                for t in self.nodes[x].get("transitions") or []
+                if isinstance(t, dict)
+            ):
+                self.err(
+                    "loop_unguarded",
+                    f"nodes.{k}",
+                    f"retry loop {sorted(cyc)} ends only by code: if a code node does not run, "
+                    "it never ends; add a transition on a <node>_success_count / "
+                    "_failure_count",
+                )
 
     @staticmethod
     def closure(start: set[str], adj: dict[str, list[tuple[str, Any]]], follow: Any) -> set[str]:
@@ -1161,6 +1279,8 @@ class _V:
                 )
 
     def run(self) -> Report:
+        for note in self.p.build_notes:
+            self.warn("build_note", "build", str(note))
         self.nulls(self.wf, "")
         self.top()
         for k, n in self.nodes.items():
@@ -1185,12 +1305,12 @@ def validate(
 
 
 def main(argv: list[str]) -> int:
-    if len(argv) != 3:
+    if len(argv) not in (3, 4):
         print(__doc__, file=sys.stderr)
         return 2
-    wf = json.loads(Path(argv[1]).read_text())
-    tools = parse_openapi(json.loads(Path(argv[2]).read_text()))
-    rep = validate(wf, tools)
+    wf = json.loads(Path(argv[1]).read_text(encoding="utf-8"))
+    tools = parse_openapi(json.loads(Path(argv[2]).read_text(encoding="utf-8")))
+    rep = validate(wf, tools, Policy(base_url=argv[3] if len(argv) == 4 else ""))
     for i in rep.issues:
         print(i)
     print(rep.summary())
