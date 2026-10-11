@@ -765,7 +765,7 @@ def run_agentic(
     state = ROOT / ".freya-agents.json"
     task = agentic.prepare(
         ws, inp.case, inp.openapi or {}, mock_url, slot, ROOT / "kit", state,
-        time.strftime("%H:%M", time.gmtime(t_agent_end - 60)),
+        time.strftime("%H:%M", time.gmtime(t_agent_end - 60)), int(minutes),
     )
     trace.note(f"agent: work folder {ws.relative_to(ROOT)}, {minutes:.0f} min, model {agentic.AGENT_MODEL}")
     session_log = ROOT / "traces" / f"{slot}.agent.jsonl"

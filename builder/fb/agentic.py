@@ -43,6 +43,7 @@ def _safe(name: str) -> str:
 # The helper the agent uses to reach Freya. It runs in the work folder with the builder's
 # environment (FREYA_API_KEY), imports the kit's client and works on the build's own slot.
 HELPER = r'''"""Freya helper for the build. Usage:
+  python ft.py gen                         run gen.py (your generator) to write workflow.json
   python ft.py dryrun                      validate workflow.json on the platform (no save)
   python ft.py save                        save + publish workflow.json in this build's slot
   python ft.py chat VARS_JSON MSG [MSG...] talk to the SAVED agent, one message per turn;
@@ -103,6 +104,11 @@ def main(argv):
                         print("  TOOL:", json.dumps(m, ensure_ascii=False)[:600])
             except Exception as e:
                 print("  (call events unavailable:", str(e)[:200], ")")
+    elif cmd == "gen":
+        # the agent's generator: gen.py in this folder writes workflow.json
+        import runpy
+        runpy.run_path("gen.py", run_name="__main__")
+        print("GEN OK", len(json.dumps(load())), "bytes")
     elif cmd == "sim":
         # personas.json: [{{"name", "prompt", "successCriteria", "variables": {{...}}}}]
         state = json.load(open(STATE, encoding="utf-8"))
@@ -156,6 +162,17 @@ Time: you must be finished, with the final version saved, by {deadline_utc} UTC.
 - `kit/workflow-format.md`, `kit/tools-and-code.md`, `kit/api.md`: Freya's workflow format,
   tools, code steps and API. `kit/base-agent.json` is a small working example (a pattern for the
   JSON, not an answer). Read the format documents fully before writing.
+
+## How to work fast
+- You have about {minutes} minutes in all. Work in parallel: start sub-agents (the Agent
+  tool) for independent parts, e.g. one writes `rules.md` from the documents while you read
+  the format docs, or one runs `python ft.py sim` while you fix another branch. Sub-agents
+  have the same permissions as you.
+- Write the workflow with a generator: `gen.py` in this folder builds `workflow.json` (code
+  nodes, sentences, tools) and `python ft.py gen` runs it. Then `python ft.py dryrun`,
+  `python ft.py save`. Other shell commands are not available.
+- One step per stage of the call (not one big prompt node): the small model follows short
+  steps with code-made sentences far more reliably.
 
 ## How to work
 1. Read every document. Sources were written at different times and disagree. Write
@@ -213,7 +230,7 @@ tools. End with one line: `DONE workflow.json steps=<n> tools=<n> tests=<what pa
 
 
 def prepare(ws: Path, case, openapi: dict, mock_url: str | None, slot: str, kit: Path,
-            state_file: Path, deadline_utc: str) -> str:
+            state_file: Path, deadline_utc: str, minutes: int = 25) -> str:
     """Fill the work folder; returns the task text."""
     if ws.exists():
         shutil.rmtree(ws, ignore_errors=True)
@@ -238,7 +255,7 @@ def prepare(ws: Path, case, openapi: dict, mock_url: str | None, slot: str, kit:
     (ws / "ft.py").write_text(
         HELPER.format(kit=str(kit), slot=slot, state=str(state_file)), encoding="utf-8")
     return TASK.format(deadline_utc=deadline_utc, now_utc=time.strftime("%H:%M", time.gmtime()),
-                       mock_url=mock_url or "(see openapi.json)")
+                       mock_url=mock_url or "(see openapi.json)", minutes=minutes)
 
 
 def _claude() -> str:
@@ -266,7 +283,8 @@ def run_agent(trace, ws: Path, task: str, session_log: Path, seconds: float) -> 
     cmd = [_claude(), "-p", task, "--output-format", "stream-json", "--verbose",
            "--model", AGENT_MODEL, "--permission-mode", "acceptEdits",
            "--allowedTools", "Read", "Write", "Edit", "Glob", "Grep", "Bash(python ft.py:*)",
-           "--disallowedTools", "WebFetch", "WebSearch", "Task",
+           "Agent", "Task",
+           "--disallowedTools", "WebFetch", "WebSearch",
            "--add-dir", str(ws)]
     trace.model(f"claude-code/{AGENT_MODEL}",
                 "coding agent: read the case documents, write workflow.json, dry-run, save, "
