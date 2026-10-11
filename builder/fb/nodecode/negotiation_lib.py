@@ -204,9 +204,7 @@ def _short(st, neg):
     if phase == "closing":
         return _line(neg, "anything_else", "Is there anything else I can help you with?")
     if phase == "hardship_offer":
-        return _line(
-            neg, "support_offer", "Would you like me to connect you with our customer support team?"
-        )
+        return _line(neg, "support_reask", "Would you like that?")
     if phase == "offer":
         # From the second unusable turn in a row, leave room for a counter-day: a customer who
         # wants another day was cut off 20-30 times in a row on "Can you do that?" (PUB-06,
@@ -538,8 +536,9 @@ def step(st, r, neg, cal, now, cfg):
         elif kind in ("paid", "dispute"):
             phase = "offer"
         elif kind == "unclear":
-            # a turn we could not use (often cut off) is no answer: keep the offer open, uncounted
-            st["say"] = _sorry(st, r) + " " + support_offer
+            # a turn we could not use (often cut off) is no answer: keep the offer open, uncounted.
+            # Short: the whole offer said again was counted as offered four times (A PUB-05).
+            st["say"] = _sorry(st, r) + " " + _short(st, neg)
             return st
         elif kind in ("question", "hardship", "evasive"):
             # a question is not an answer to the offer: answer it and keep the offer open
@@ -557,7 +556,7 @@ def step(st, r, neg, cal, now, cfg):
                     + '"'
                 )
             else:
-                st["say"] = support_offer
+                st["say"] = _short(st, neg)
             return st
         else:
             _close_hardship(st, neg)

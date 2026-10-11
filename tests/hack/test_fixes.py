@@ -196,3 +196,12 @@ def test_a_cut_stop_is_not_counted():
 def test_no_to_all_today_says_one_at_a_time():
     r = simulate(CASES["PUB-13"], [N], CFG)
     assert r.says[1].startswith("Let us go through them one at a time. Could you pay"), r.says[1]
+
+
+# talkative A PUB-05: after the support offer every cut turn heard the whole offer again (judge:
+# "offered four times"); the re-ask is short, the offer is said once
+def test_support_offer_reask_is_short():
+    U = {"kind": "unclear", "text": "My cousin's wedding is on the thirtieth and"}
+    r = simulate(CASES["PUB-05"], [{"kind": "hardship"}, U, U, N], CFG_A)
+    assert sum("support team" in s for s in r.says) == 1
+    assert r.says[2].endswith("Would you like that?")

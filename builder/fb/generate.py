@@ -660,8 +660,11 @@ def build(spec: dict[str, Any], tools: dict[str, ToolDef]) -> tuple[dict[str, An
         who_routes("who2", "fin_unclear"),
         on_enter={
             "type": "llm",
+            # talkative A PUB-05: "I am sorry to hear that your commute was difficult." here,
+            # and the judge counted two sympathy sentences where the brief allows one
             "prompt": "If the person asked something, answer it in one short sentence as your "
-            'task says. Then ask exactly: "' + q(who_q) + '"',
+            "task says. Do not comment on small talk about their day, traffic or work: no "
+            'sympathy, no "sorry to hear". Then ask exactly: "' + q(who_q) + '"',
         },
         extraction=[enum_var("who2", who_values, who_desc)],
         max_turns=2,
