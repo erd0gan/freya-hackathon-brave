@@ -338,7 +338,7 @@ def _export_candidates(report: BuildReport, out_dir: Path) -> None:
     cdir.mkdir(exist_ok=True)
     pool = {**report.pool, report.champion.candidate_id: report.champion}
     for cid, spec in pool.items():
-        (cdir / f"{cid}.json").write_text(spec.model_dump_json(indent=2))
+        (cdir / f"{cid}.json").write_text(spec.model_dump_json(indent=2), encoding="utf-8")
     record = {
         "champion": report.champion.candidate_id,
         "fallback_used": report.fallback_used,
