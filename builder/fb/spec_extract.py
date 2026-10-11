@@ -186,7 +186,10 @@ SCHEMA = {
             "lists no reason for that case",
         },
         "queues": {"restructuring": "...", "human": "...", "support": "..."},
-        "transfer_reasons": {"restructuring": "...", "human": "...", "support": "..."},
+        "transfer_reasons": {
+            k: "close_call reason for this transfer, '' when the outcome table lists none"
+            for k in ("restructuring", "human", "support")
+        },
         "notes": "bool: products without a promise get add_note",
         **{k: "see the policy list" for k in POLICY_DEFAULTS},
     },
@@ -692,11 +695,18 @@ def structure(spec: dict[str, Any]) -> list[str]:
         ("outcomes", ("promise", "paid", "transferred", "no_promise")),
         ("reasons", ("refused", "hardship", "dispute", "service_error")),
         ("queues", ("restructuring", "human", "support")),
-        ("transfer_reasons", ("restructuring", "human", "support")),
     ):
         got = neg.get(k)
         if not isinstance(got, dict) or any(not str(got.get(x) or "").strip() for x in keys):
             bad.append(f"neg.{k} needs a value for each of {list(keys)}")
+    # A table whose `transferred` row lists no reason is valid: '' means none is sent.
+    tr_keys = ("restructuring", "human", "support")
+    got = neg.get("transfer_reasons")
+    if not isinstance(got, dict) or any(not isinstance(got.get(x), str) for x in tr_keys):
+        bad.append(
+            f"neg.transfer_reasons needs a value for each of {list(tr_keys)} ('' when the "
+            "outcome table lists no reason for a transfer)"
+        )
     outcomes = spec.get("outcomes") or {}
     for k in (
         "unclear",

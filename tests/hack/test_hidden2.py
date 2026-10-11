@@ -87,3 +87,28 @@ def test_paid_close_reason_outside_the_enum_is_reported():
     s = spec_with(paid_as_no_promise)
     out = check(s, parse_openapi(o), BRIEF, o)
     assert any(p.startswith("neg.close_reasons.paid: 'paid'") for p in out), out
+
+
+# ---------------------------------------------------------------- 2. a transfer without a reason
+def no_transfer_reason(s):
+    s["neg"]["transfer_reasons"] = {"restructuring": "", "human": "", "support": ""}
+
+
+def code_of(wf, node):
+    fn = wf["nodes"][node]["pre_actions"][0]["function"]
+    return fn["parameters"]["properties"]["code"]["default"]
+
+
+def test_transfer_without_a_reason_is_a_valid_spec():
+    assert check(spec_with(no_transfer_reason), parse_openapi(OPENAPI), BRIEF, OPENAPI) == []
+    # a missing key is still reported (the repair round fills it, '' allowed)
+    s = spec_with(lambda s: s["neg"]["transfer_reasons"].pop("human"))
+    out = check(s, parse_openapi(OPENAPI), BRIEF, OPENAPI)
+    assert any(p.startswith("neg.transfer_reasons needs") for p in out)
+
+
+def test_transfer_without_a_reason_sends_none():
+    wf = workflow(spec_with(no_transfer_reason))
+    assert "vars['final_reason'] = ''" in code_of(wf, "pre_transfer")
+    body = run_hook(close_hook(wf), {"customer_id": "c1", "outcome": "transferred", "reason": ""})
+    assert body == {"customer_id": "c1", "outcome": "transferred"}

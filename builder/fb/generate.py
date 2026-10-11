@@ -964,12 +964,14 @@ def build(spec: dict[str, Any], tools: dict[str, ToolDef]) -> tuple[dict[str, An
         [tr("pre_human", "always")],
     )
     n_oc = neg.get("outcomes") or {}
+    # '' is a value: the table lists no reason for a transfer (close_call's hook drops it)
+    human_reason = (neg.get("transfer_reasons") or {}).get("human")
     nodes["pre_transfer"] = code_node(
         "pre_transfer",
         f"vars['transfer_queue'] = {str((neg.get('queues') or {}).get('human') or 'human')!r}\n"
         + bodies.finish_pre(
             str(n_oc.get("transferred") or "transferred"),
-            str((neg.get("transfer_reasons") or {}).get("human") or "human"),
+            str(human_reason if isinstance(human_reason, str) else "human"),
             (
                 (neg.get("lines") or {}).get("transfer_human")
                 or "I am connecting you with a colleague now."
