@@ -64,9 +64,12 @@ def test_person_before_verification_has_its_own_path():
     assert validate(wf, parse_openapi(OPENAPI), policy).ok
     nodes = wf["nodes"]
     targets = [t["target_node"] for t in nodes["identity"]["transitions"]]
-    assert targets.index("pre_transfer") < targets.index("pre_human") < targets.index("identity2")
+    assert (
+        targets.index("pre_transfer") < targets.index("pre_human") < targets.index("decline_check")
+    )
     assert nodes["pre_human"]["on_enter"]["text"].startswith("Before I transfer you")
-    assert nodes["transfer_pre"]["transitions"][-1]["target_node"] == "goodbye"
+    assert nodes["transfer_pre"]["transitions"][-1]["target_node"] == "after_transfer_pre"
+    assert nodes["after_transfer_pre"]["transitions"][-1]["target_node"] == "goodbye"
     code = nodes["pre_transfer"]["pre_actions"][0]["function"]["parameters"]["properties"]
     src = code["code"]["default"]
     assert "'general'" in src and "'transferred'" in src and "'human'" in src

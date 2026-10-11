@@ -32,6 +32,30 @@ if st.get('action') == 'record':
     vars['rec_ok'] = ''
 publish(vars, st, neg)
 clear_reply(vars)
+vars['neg_errors'] = '0'
+"""
+
+# After an exception in DECIDE / AFTER_RECORD (wired as `on_error`). The action of the turn
+# before must not stay (neg_action=record would call create_promise again): one error gets a
+# re-ask, a second one in a row (or one right after a write) ends the call. An empty outcome is
+# filled by close_call's hook from the state; a promise the bank just confirmed is a promise.
+NEG_ERROR = """
+n = str(vars.get('neg_errors') or '0')
+n = int(n) + 1 if n.isdigit() else 1
+vars['neg_errors'] = str(n)
+vars['neg_mode'] = 'speak'
+was = str(vars.get('neg_action') or '')
+if n >= 2 or was == 'record':
+    vars['neg_action'] = 'finish'
+    neg = CFG.get('neg') or dict()
+    ok = str(vars.get('rec_ok') or '').strip().lower() == 'true'
+    vars['final_outcome'] = (neg.get('outcomes') or dict()).get('promise', 'promise') if ok else ''
+    vars['final_reason'] = ''
+    vars['note_count'] = '0'
+    vars['final_say'] = str((neg.get('lines') or dict()).get('goodbye') or 'Goodbye.')
+else:
+    vars['neg_action'] = 'say'
+    vars['neg_say'] = 'Sorry, could you say that again?'
 """
 
 AFTER_RECORD = """
@@ -46,7 +70,41 @@ publish(vars, st, neg)
 """
 
 AFTER_NOTE = """
-pop_note(vars)
+pop_note(vars, bool(CFG.get('note_check')))
+"""
+
+# FACTS failed (an account answer we cannot read): no negotiation, a service error close.
+FACTS_ERROR = """
+neg = CFG.get('neg') or dict()
+vars['neg_action'] = 'finish'
+vars['neg_say'] = ''
+vars['final_outcome'] = (neg.get('outcomes') or dict()).get('no_promise', 'no_promise')
+vars['final_reason'] = (neg.get('reasons') or dict()).get('service_error', 'service_error')
+vars['note_count'] = '0'
+vars['final_say'] = str((neg.get('lines') or dict()).get('goodbye') or 'Goodbye.')
+"""
+
+# After transfer_to_agent: a failed transfer is not closed as `transferred`. One more try, then
+# the call closes as no_promise / service_error with a sentence that says so.
+AFTER_TRANSFER = """
+ok = str(vars.get('transfer_ok') or '').strip().lower() == 'true'
+tries = str(vars.get('transfer_tries') or '0')
+tries = int(tries) + 1 if tries.isdigit() else 1
+vars['transfer_tries'] = str(tries)
+vars['transfer_ok'] = ''
+neg = CFG.get('neg') or dict()
+if ok:
+    vars['transfer_next'] = 'done'
+elif tries < 2:
+    vars['transfer_next'] = 'retry'
+else:
+    vars['transfer_next'] = 'failed'
+    vars['final_outcome'] = (neg.get('outcomes') or dict()).get('no_promise', 'no_promise')
+    vars['final_reason'] = (neg.get('reasons') or dict()).get('service_error', 'service_error')
+    vars['final_say'] = (
+        str((neg.get('lines') or dict()).get('transfer_failed') or
+            'I am sorry, I could not connect you.')
+        + ' ' + str((neg.get('lines') or dict()).get('goodbye') or 'Goodbye.'))
 """
 
 
@@ -121,4 +179,16 @@ def finish_pre(outcome: str, reason: str, say: str) -> str:
         f"vars['final_outcome'] = {outcome!r}\n"
         f"vars['final_reason'] = {reason!r}\n"
         f"vars['final_say'] = {say!r}\n"
+    )
+
+
+def decline_check(var: str) -> str:
+    """Code node after the model labelled a security answer `declines`: it counts only when the
+    customer's own words are whole and refuse, end the talk or ask what the call is about."""
+    return (
+        "raw = last_customer_text(vars)\n"
+        "real = (not raw) or (not is_cut(raw) and bool(REFUSAL_WORDS.search(raw) "
+        "or STOP_WORDS.search(raw) or ABOUT_WORDS.search(raw)))\n"
+        "vars['decline_real'] = 'yes' if real else 'no'\n"
+        f"if not real:\n    vars[{var!r}] = 'unclear'\n"
     )

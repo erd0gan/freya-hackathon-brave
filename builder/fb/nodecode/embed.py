@@ -42,11 +42,20 @@ def packed(lib: str) -> str:
     )
 
 
-def snippet(body: str, cfg: dict[str, Any], lib: str = LIB) -> str:
-    """`body` runs inside try/except with `CFG`, the lib and `vars` in scope."""
+def snippet(body: str, cfg: dict[str, Any], lib: str = LIB, on_error: str = "") -> str:
+    """`body` runs inside try/except with `CFG`, the lib and `vars` in scope. `on_error` runs
+    after an exception, so no variable keeps the value of the turn before (a stale
+    neg_action=record would call create_promise again)."""
     if "{{" in lib or "}}" in lib:
         raise ValueError("code library contains a template brace pair")
     inner = "\n".join("    " + line for line in body.strip().splitlines())
+    handler = ""
+    if on_error.strip():
+        handler = (
+            "    try:\n"
+            + "\n".join("        " + line for line in on_error.strip().splitlines())
+            + "\n    except Exception:\n        pass\n"
+        )
     src = (
         packed(lib)
         + "\n\nCFG = json.loads("
@@ -54,6 +63,7 @@ def snippet(body: str, cfg: dict[str, Any], lib: str = LIB) -> str:
         + ")\ntry:\n"
         + inner
         + "\nexcept Exception as _e:\n    vars['code_error'] = str(_e)[:200]\n"
+        + handler
     )
     if "{{" in src or "}}" in src:
         raise ValueError("code snippet contains a template brace pair")

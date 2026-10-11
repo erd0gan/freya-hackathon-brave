@@ -319,7 +319,9 @@ def identity_hooks(
         + repr(resp("verify_identity", "all_verified"))
         + ")):\n"
         + "                _m = 'Both answers are correct. Thank the customer in a few words.'\n"
-        + "            elif not _t(_d.get('ok')) and _left != '0':\n"
+        + "            elif not _t(_d.get("
+        + repr(resp("verify_identity", "ok"))
+        + ")) and _left != '0':\n"
         + "                _m = 'The answer could not be read. Ask for it again.'\n"
         + "            elif _left == '0':\n"
         + "                _m = "
@@ -356,7 +358,8 @@ CLOSE_PRE = (
     "            except Exception:\n"
     "                st = None\n"
     "            ps = (st or {}).get('p') or [] if isinstance(st, dict) else []\n"
-    "            if any(isinstance(q, dict) and q.get('status') == 'recorded' for q in ps):\n"
+    "            rec = (st or dict()).get('recorded') if isinstance(st, dict) else None\n"
+    "            if rec or any(isinstance(q, dict) and q.get('status') == 'recorded' for q in ps):\n"
     "                b[F_OUT], b[F_REASON] = HANGUP['promise'], ''\n"
     "            elif isinstance(st, dict):\n"
     "                b[F_OUT], b[F_REASON] = HANGUP['no_promise']\n"
@@ -744,7 +747,7 @@ def build(spec: dict[str, Any], tools: dict[str, ToolDef]) -> tuple[dict[str, An
             tr("account", "both answers verified", verified),
             tr("fin_failed", "no wrong answers left", locked),
             *human_routes("id1"),
-            tr("identity2", "the customer declines", eq("id1", "declines")),
+            tr("decline_check", "the customer declines", eq("id1", "declines")),
         ],
         on_enter={
             "type": "tts",
@@ -767,7 +770,7 @@ def build(spec: dict[str, Any], tools: dict[str, ToolDef]) -> tuple[dict[str, An
             tr("account", "both answers verified", verified),
             tr("fin_failed", "no wrong answers left", locked),
             *human_routes("id2"),
-            tr("fin_declined", "the customer declines again", eq("id2", "declines")),
+            tr("decline_check2", "the customer declines again", eq("id2", "declines")),
         ],
         on_enter={
             "type": "llm",
@@ -781,6 +784,22 @@ def build(spec: dict[str, Any], tools: dict[str, ToolDef]) -> tuple[dict[str, An
         first_entry_only=True,
     )
 
+    # A `declines` read from a cut-off message or one without a refusal is not acted on: the
+    # model's label is checked against the customer's own words (research T1).
+    nodes["decline_check"] = code_node(
+        "decline_check",
+        snippet(bodies.decline_check("id1"), cfg),
+        [tr("identity2", "a real refusal", eq("decline_real", "yes")), tr("identity", "always")],
+    )
+    nodes["decline_check2"] = code_node(
+        "decline_check2",
+        snippet(bodies.decline_check("id2"), cfg),
+        [
+            tr("fin_declined", "a real refusal", eq("decline_real", "yes")),
+            tr("identity2", "always"),
+        ],
+    )
+
     help_first = (
         (neg.get("lines") or {}).get("help_first")
         or L.get("help_first")
@@ -791,7 +810,21 @@ def build(spec: dict[str, Any], tools: dict[str, ToolDef]) -> tuple[dict[str, An
         "The customer asked for a person. Do not call any tool. Never say why you are calling "
         f"and never say {forbidden}, an amount or a product.",
         [
-            tr("pre_transfer", "the customer insists", eq("hum1", "insists")),
+            # the insist is request number pre_human_count + 2 (review: with a count of 3 the
+            # second request transferred)
+            tr(
+                "pre_transfer",
+                "the customer insists",
+                all_of(
+                    {"variable": "hum1", "operator": "equals", "operand": "insists"},
+                    {
+                        "variable": "pre_human_count",
+                        "operator": "greater_than",
+                        "operand": human_limit - 3,
+                    },
+                ),
+            ),
+            tr("pre_human_more", "the customer insists, below the count", eq("hum1", "insists")),
             tr("pre_human_back", "the customer goes on"),
         ],
         on_enter={"type": "tts", "text": help_first},
@@ -809,8 +842,16 @@ def build(spec: dict[str, Any], tools: dict[str, ToolDef]) -> tuple[dict[str, An
         "pre_human_back",
         "c = vars.get('pre_human_count') or '0'\n"
         "vars['pre_human_count'] = str(int(c) + 1) if str(c).isdigit() else '1'\n"
-        "vars['id1'] = ''\nvars['id2'] = ''\nvars['hum1'] = ''\n",
+        # enum variables are cleared to one of their values ('' is rejected by the platform)
+        "vars['id1'] = 'unclear'\nvars['id2'] = 'unclear'\nvars['hum1'] = 'continues'\n",
         [tr("identity", "always")],
+    )
+    nodes["pre_human_more"] = code_node(
+        "pre_human_more",
+        "c = vars.get('pre_human_count') or '0'\n"
+        "vars['pre_human_count'] = str(int(c) + 1) if str(c).isdigit() else '1'\n"
+        "vars['hum1'] = 'continues'\n",
+        [tr("pre_human", "always")],
     )
     n_oc = neg.get("outcomes") or {}
     nodes["pre_transfer"] = code_node(
@@ -836,7 +877,14 @@ def build(spec: dict[str, Any], tools: dict[str, ToolDef]) -> tuple[dict[str, An
         [tr("facts", "always")],
         [{"path": "data." + str(spec.get("products_list") or "products"), "variable": "products"}],
     )
-    nodes["facts"] = code_node("facts", snippet(bodies.FACTS, cfg), [tr("negotiate_say", "always")])
+    nodes["facts"] = code_node(
+        "facts",
+        snippet(bodies.FACTS, cfg, on_error=bodies.FACTS_ERROR),
+        [
+            tr("wrap", "no usable account", eq("neg_action", "finish")),
+            tr("negotiate_say", "always"),
+        ],
+    )
     neg_task = (
         "Your instruction for this turn: {{neg_say}}\n\n"
         "Follow that instruction, in one or two short sentences. Do not call any tool. Never "
@@ -875,27 +923,53 @@ def build(spec: dict[str, Any], tools: dict[str, ToolDef]) -> tuple[dict[str, An
         tr("negotiate", "the model answers a question", eq("neg_mode", "llm")),
         tr("negotiate_say", "continue"),
     ]
-    nodes["decide"] = code_node("decide", snippet(bodies.DECIDE, cfg), after())
+    nodes["decide"] = code_node(
+        "decide", snippet(bodies.DECIDE, cfg, on_error=bodies.NEG_ERROR), after()
+    )
     nodes["record"] = api_node(
         "record",
         promise_fn,
         [tr("after_record", "always")],
-        [{"path": "data.ok", "variable": "rec_ok"}],
+        [{"path": "data." + resp("create_promise", "ok"), "variable": "rec_ok"}],
     )
-    nodes["after_record"] = code_node("after_record", snippet(bodies.AFTER_RECORD, cfg), after())
-    nodes["transfer"] = api_node("transfer", transfer_fn, [tr("wrap", "always")])
+    nodes["after_record"] = code_node(
+        "after_record", snippet(bodies.AFTER_RECORD, cfg, on_error=bodies.NEG_ERROR), after()
+    )
+    # a failed transfer is tried once more, then closed as a service error, not `transferred`
+    tr_ok = [{"path": "data." + resp("transfer_to_agent", "ok"), "variable": "transfer_ok"}]
+    nodes["transfer"] = api_node("transfer", transfer_fn, [tr("after_transfer", "always")], tr_ok)
+    nodes["after_transfer"] = code_node(
+        "after_transfer",
+        snippet(bodies.AFTER_TRANSFER, cfg, LIB_CALENDAR),
+        [tr("transfer", "one more try", eq("transfer_next", "retry")), tr("wrap", "always")],
+    )
     # before verification: no notes are possible, straight to the goodbye
-    nodes["transfer_pre"] = api_node("transfer_pre", transfer_fn, [tr("goodbye", "always")])
+    nodes["transfer_pre"] = api_node(
+        "transfer_pre", transfer_fn, [tr("after_transfer_pre", "always")], tr_ok
+    )
+    nodes["after_transfer_pre"] = code_node(
+        "after_transfer_pre",
+        snippet(bodies.AFTER_TRANSFER, cfg, LIB_CALENDAR),
+        [
+            tr("transfer_pre", "one more try", eq("transfer_next", "retry")),
+            tr("goodbye", "always"),
+        ],
+    )
     notes_on = bool(neg.get("notes")) and note_fn is not None
     wrap_routes = [tr("goodbye", "always")]
     if notes_on:
         wrap_routes.insert(0, tr("note", "a note to add", gt("note_count", 0)))
     nodes["wrap"] = code_node("wrap", bodies.WRAP, wrap_routes)
     if notes_on:
-        nodes["note"] = api_node("note", note_fn, [tr("after_note", "always")])
+        nodes["note"] = api_node(
+            "note",
+            note_fn,
+            [tr("after_note", "always")],
+            [{"path": "data." + resp("add_note", "ok"), "variable": "note_ok"}],
+        )
         nodes["after_note"] = code_node(
             "after_note",
-            snippet(bodies.AFTER_NOTE, cfg),
+            snippet(bodies.AFTER_NOTE, {**cfg, "note_check": True}),
             [tr("note", "another note", gt("note_count", 0)), tr("goodbye", "always")],
         )
 
@@ -990,7 +1064,7 @@ def build(spec: dict[str, Any], tools: dict[str, ToolDef]) -> tuple[dict[str, An
             ),
             tr("fin_callback", "always"),
         ],
-        [{"path": "data.ok", "variable": "cb_ok"}],
+        [{"path": "data." + resp("schedule_callback", "ok"), "variable": "cb_ok"}],
     )
 
     # ---- endings before the negotiation
@@ -1054,7 +1128,16 @@ def build(spec: dict[str, Any], tools: dict[str, ToolDef]) -> tuple[dict[str, An
     policy = Policy(
         verified_vars={"verify_identity_response.data." + resp("verify_identity", "all_verified")},
         promise_nodes={"record"},
-        bounded_loops={"record", "after_record", "note", "after_note"},
+        bounded_loops={
+            "record",
+            "after_record",
+            "note",
+            "after_note",
+            "transfer",
+            "after_transfer",
+            "transfer_pre",
+            "after_transfer_pre",
+        },
     )
     return wf, policy
 
