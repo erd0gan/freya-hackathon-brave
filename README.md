@@ -33,6 +33,44 @@ case folder (or brief.md) + mock_url (or openapi.json)
 The whole algorithm, stage by stage with diagrams: [`docs/brave-algorithm.html`](docs/brave-algorithm.html)
 (one self-contained file; open it in a browser).
 
+## Final submission: Freya Bank credit card statement debt (11 Oct 2026)
+
+The final case was not a collections call. It was an inbound call about a credit card
+statement: pick the card, read the debt in four currencies, change the statement week, e-mail
+the statement. The deterministic template only builds the collections call, so the builder
+now has a **general path** ([`builder/fb/agentic.py`](builder/fb/agentic.py)). It is taken
+when the tool API plays none of the collections roles. Nothing about the final case is
+written into the builder.
+
+```text
+case folder + mock_url
+  → documents, tools         same as above (the mock serves /openapi.json)
+  → general path             a coding agent (Claude Code, headless, scoped permissions:
+                             files in its work folder + the build's Freya helper only) reads
+                             every document, resolves where they disagree (latest decision
+                             wins), writes rules.md and a generator for the workflow, then
+                             dry-runs, saves, chat-tests and simulates it against the mock
+                             and fixes what fails
+  → builder                  dry run → save and publish → export → chat smoke → simulation
+                             smoke, all inside the rules' 30 minutes
+```
+
+| What | Where |
+|---|---|
+| Mock of the bank's 7 services (Cloudflare Worker) | [`mock/`](mock/), live at https://freyabank-statement-mock.burak-erd0g4n.workers.dev |
+| Mock self-test (all 617 test-customer answers byte-exact, 645 checks) | `node mock/test_mock.mjs` |
+| Submission | [`submission.json`](submission.json) |
+| Exported workflow | [`submission/final.workflow.json`](submission/final.workflow.json) (37 steps, 7 tools) |
+| Builder trace | [`traces/final.log`](traces/final.log) |
+| Coding agent's session log | [`traces/final.agent.jsonl`](traces/final.agent.jsonl) |
+| Rules the agent derived, with sources | [`submission/final.rules.md`](submission/final.rules.md) |
+
+Run command: `python3 builder/build.py {case_folder} {mock_url}`. The submitted run built
+the case folder in 20 min 52 s (status ok, smoke passed). On Freya's own simulation with 12
+callers (the six example scenarios plus six edge cases), it passed 10, 11, 11 and 11 of 12 in
+four runs. The one repeated miss: a caller who asks for a person in the first sentence is
+offered the main menu instead of being transferred at once.
+
 ## Quick start
 
 ```bash

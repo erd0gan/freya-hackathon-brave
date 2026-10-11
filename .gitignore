@@ -17,3 +17,10 @@ runs/
 docs/research-talkative/raw/
 docs/research-talkative/compare/raw/
 .claude/
+
+# final case pack and the per-run copies of it (inputs, not part of the builder)
+FINAL_BRIEF/
+final/
+final[0-9]/
+mock/.wrangler/
+mock/node_modules/
