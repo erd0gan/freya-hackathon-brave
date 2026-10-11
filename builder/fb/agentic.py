@@ -121,7 +121,9 @@ Time: you must be finished, with the final version saved, by {deadline_utc} UTC.
 {now_utc} UTC. Keep at least 5 minutes in hand.
 
 ## Inputs
-- `docs/INDEX.md` lists every document with the role the builder gave it.
+- `docs/INDEX.md` lists every document with its original path. A document marked
+  unreadable (a drawing, a scan) is still in `case/`: read the original file (the Read tool
+  shows PDFs and images).
 - `openapi.json` is the tool API. Every tool URL is `servers[0].url` + the path, exactly; the
   services run on our mock at {mock_url} and answer the bank's test customers.
 - `kit/workflow-format.md`, `kit/tools-and-code.md`, `kit/api.md`: Freya's workflow format,
@@ -175,12 +177,13 @@ def prepare(ws: Path, case, openapi: dict, mock_url: str | None, slot: str, kit:
         shutil.rmtree(ws, ignore_errors=True)
     (ws / "docs").mkdir(parents=True)
     (ws / "kit").mkdir()
-    index = ["| file | role | original |", "|---|---|---|"]
+    # no roles here: the agent judges each document by its name, place and content
+    index = ["| file | original path in the case |", "|---|---|"]
     for i, d in enumerate(getattr(case, "documents", []) or []):
         fname = f"{i:02d}-{_safe(d.name)}.txt"
         text = d.text if not d.error else f"(unreadable: {d.error})"
         (ws / "docs" / fname).write_text(text, encoding="utf-8")
-        index.append(f"| {fname} | {d.role} | {d.name} |")
+        index.append(f"| {fname} | {d.name} |")
     (ws / "docs" / "INDEX.md").write_text("\n".join(index) + "\n", encoding="utf-8")
     root = getattr(case, "root", "")
     if root and Path(root).is_dir():

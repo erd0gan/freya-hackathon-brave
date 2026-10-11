@@ -46,6 +46,7 @@ import inspect
 import json
 import os
 import re
+import shutil
 import subprocess
 import sys
 import time
@@ -89,7 +90,7 @@ load_env()
 sys.path.insert(0, str(ROOT / "kit"))
 
 import freya  # noqa: E402
-from fb import contract  # noqa: E402
+from fb import agentic, contract  # noqa: E402
 from fb.case_input import (  # noqa: E402
     decode_text,
     is_openapi,
@@ -593,7 +594,9 @@ def fetch_mock_openapi(trace: Trace, mock_url: str) -> dict | None:
     the contract it was written from). None, with a trace line, on any failure."""
     url = mock_url.rstrip("/") + "/openapi.json"
     try:
-        req = urllib.request.Request(url, headers={"Accept": "application/json"}, method="GET")
+        # Cloudflare refuses urllib's default User-Agent (error 1010) on workers.dev
+        headers = {"Accept": "application/json", "User-Agent": "Mozilla/5.0 (agent-builder)"}
+        req = urllib.request.Request(url, headers=headers, method="GET")
         with urllib.request.urlopen(req, timeout=MOCK_OPENAPI_TIMEOUT_S) as r:
             text, _ = decode_text(r.read())
         doc = load_json_or_yaml(text)
