@@ -76,7 +76,18 @@
   /* ---------- layout ---------- */
   .layout { display: grid; grid-template-columns: 250px minmax(0, 1fr); padding-top: 56px; }
   nav.toc { position: sticky; top: 56px; align-self: start; height: calc(100vh - 56px); overflow-y: auto; padding: 26px 16px; border-right: 1px solid var(--line); }
-  nav.toc ol { list-style: none; margin: 0; padding: 0; counter-reset: toc; }
+  nav.toc ol { list-style: none; margin: 0; padding: 0; counter-reset: toc -1; }
+  .codeblock { background: #1e1e22; border: 1px solid var(--line); border-radius: 12px; padding: 14px 16px; font: 13.5px/1.6 var(--mono); color: var(--text); overflow-x: auto; white-space: pre; margin: 10px 0; }
+  .codeblock .c { color: var(--muted); } .codeblock .k { color: var(--orange-2); } .codeblock .s { color: var(--green); }
+  dl.gloss { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px 18px; margin: 12px 0; }
+  dl.gloss div { background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 10px 14px; }
+  dl.gloss dt { font: 700 15px var(--display); color: var(--orange-2); }
+  dl.gloss dd { margin: 2px 0 0; font-size: 15px; color: var(--text); }
+  .example { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 12px; align-items: stretch; }
+  .example > :nth-child(3) { grid-column: 1 / -1; }
+  .example .card { display: flex; flex-direction: column; }
+  .example .card .codeblock { flex: 1; font-size: 12.5px; }
+  .limits li { margin: 6px 0; }
   nav.toc li { counter-increment: toc; }
   nav.toc a {
     display: flex; gap: 10px; padding: 6px 10px; border-radius: 6px; color: var(--muted); font: 500 14.5px var(--display); position: relative; transition: color .2s, background .2s;
@@ -232,6 +243,7 @@
     .g3 { grid-template-columns: repeat(2, 1fr); }
     .g3 > :nth-child(3):last-child { grid-column: 1 / -1; }
     .explorer { grid-template-columns: 1fr; }
+    .example { grid-template-columns: 1fr; }
   }
   @media (max-width: 1000px) {
     .layout { grid-template-columns: minmax(0, 1fr); }
@@ -251,7 +263,9 @@
     section { padding-top: 60px; }
     h2 { font-size: 26px; gap: 10px; } h3 { font-size: 19px; }
     .lead { font-size: 16.5px; }
-    .g2, .g3 { grid-template-columns: 1fr; }
+    .g2, .g3, dl.gloss { grid-template-columns: 1fr; }
+    figure.scroll-x svg#glance-svg { min-width: 760px; }
+    .codeblock { font-size: 12px; }
     .card { padding: 16px 16px; }
     .card:hover { transform: none; }
     .hero p.sub { font-size: 17px; }
@@ -308,6 +322,7 @@
 <div class="layout">
 <nav class="toc" aria-label="Contents">
   <ol>
+    <li><a href="#glance"><span data-l="en">At a glance</span><span data-l="tr">Bir bakışta</span></a></li>
     <li><a href="#problem"><span data-l="en">The task</span><span data-l="tr">Görev</span></a></li>
     <li><a href="#principle"><span data-l="en">Core principle</span><span data-l="tr">Temel ilke</span></a></li>
     <li><a href="#pipeline"><span data-l="en">Pipeline</span><span data-l="tr">İşlem hattı</span></a></li>
@@ -355,13 +370,91 @@
     <span data-l="tr">Girdi: yazılı bir brief ve bir tool API dosyası. Çıktı: borç tahsilatı için test edilmiş bir Freya telefon ajanı. Bu sayfa her aşamayı, her kuralı ve neden orada olduğunu anlatıyor.</span>
   </p>
   <div class="stats fade-up" style="animation-delay:1.8s">
-    <div class="stat"><b><span data-count="30">0</span><span class="u">min</span></b><span data-l="en">budget for the whole build</span><span data-l="tr">tüm build için süre</span></div>
-    <div class="stat"><b>≤<span data-count="2">0</span></b><span data-l="en">model calls at build time</span><span data-l="tr">build sırasında model çağrısı</span></div>
-    <div class="stat"><b><span data-count="0">0</span></b><span data-l="en">bank values written by the model</span><span data-l="tr">modelin bankaya yazdığı değer</span></div>
-    <div class="stat"><b><span data-count="355">0</span></b><span data-l="en">tests for the builder</span><span data-l="tr">builder testi</span></div>
+    <div class="stat"><b><span data-count="30">0</span><span class="u"><span data-l="en">min</span><span data-l="tr">dk</span></span></b><span data-l="en">budget for the whole build</span><span data-l="tr">tüm build için süre</span></div>
+    <div class="stat"><b><span data-count="2">0</span></b><span data-l="en">independent model readings of the brief</span><span data-l="tr">brief'in modelce bağımsız okunması</span></div>
+    <div class="stat"><b><span data-count="0">0</span></b><span data-l="en">bank writes whose values the model chooses</span><span data-l="tr">değerini modelin seçtiği banka yazması</span></div>
+    <div class="stat"><b><span data-count="430">0</span></b><span data-l="en">tests for the builder</span><span data-l="tr">builder testi</span></div>
   </div>
   <div class="scroll-hint"><i></i><span data-l="en">SCROLL</span><span data-l="tr">KAYDIR</span></div>
 </header>
+
+<!-- ================= 00 GLANCE ================= -->
+<section id="glance">
+  <h2 class="reveal"><span class="num">00</span><span data-l="en">At a glance</span><span data-l="tr">Bir bakışta</span></h2>
+  <p class="lead reveal">
+    <span data-l="en"><b>Freya</b> is a platform for phone agents. An agent on Freya is a <b>workflow</b>: a graph of nodes. In <i>conversation</i> nodes the platform's own model talks to the caller and pulls values out of what they say; <i>code</i> nodes run Python; <i>api_request</i> nodes call the bank's HTTP tools; an <i>end_call</i> node hangs up. BRAVE writes that workflow.</span>
+    <span data-l="tr"><b>Freya</b>, telefon ajanları için bir platform. Freya'da bir ajan bir <b>workflow</b>'dur: node'lardan oluşan bir graf. <i>conversation</i> node'larında platformun kendi modeli arayanla konuşur ve söylediklerinden değer çıkarır; <i>code</i> node'ları Python çalıştırır; <i>api_request</i> node'ları bankanın HTTP tool'larını çağırır; <i>end_call</i> node'u çağrıyı kapatır. BRAVE bu workflow'u yazar.</span>
+  </p>
+  <figure class="reveal scroll-x">
+    <svg viewBox="0 0 1000 330" role="img" aria-label="Build time and call time" id="glance-svg">
+      <defs><marker id="a0" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0L10 5L0 10Z" fill="#8d8c97"/></marker></defs>
+      <rect x="4" y="6" width="992" height="140" rx="14" fill="rgba(241,90,43,0.06)" stroke="#47474f" stroke-dasharray="5 5"/>
+      <text class="svg-s" x="20" y="28"><tspan data-l="en">BUILD TIME · once per brief · ≤ 30 min</tspan><tspan data-l="tr">BUILD ZAMANI · brief başına bir kez · ≤ 30 dk</tspan></text>
+      <rect x="24" y="48" width="170" height="70" rx="10" fill="#313136" stroke="#47474f"/><text class="svg-t" x="109" y="78" text-anchor="middle">brief.md</text><text class="svg-t" x="109" y="100" text-anchor="middle">openapi.json</text>
+      <rect x="250" y="40" width="440" height="86" rx="12" fill="#3a2a26" stroke="#f15a2b"/>
+      <text class="svg-t" x="470" y="66" text-anchor="middle">BRAVE · builder/build.py</text>
+      <text class="svg-s" x="470" y="90" text-anchor="middle"><tspan data-l="en">model reads the brief → spec · code checks it</tspan><tspan data-l="tr">model brief'i okur → spec · kod kontrol eder</tspan></text>
+      <text class="svg-s" x="470" y="110" text-anchor="middle"><tspan data-l="en">template → workflow · validator · publish</tspan><tspan data-l="tr">şablon → workflow · doğrulayıcı · yayınla</tspan></text>
+      <rect x="760" y="48" width="216" height="70" rx="10" fill="#313136" stroke="#f2c14e"/><text class="svg-t" x="868" y="78" text-anchor="middle">Freya</text><text class="svg-s" x="868" y="100" text-anchor="middle"><tspan data-l="en">published workflow</tspan><tspan data-l="tr">yayınlanmış workflow</tspan></text>
+      <path class="flow-edge" d="M194 83H250" marker-end="url(#a0)"/><path class="flow-edge" d="M690 83H760" marker-end="url(#a0)"/>
+      <rect x="4" y="170" width="992" height="152" rx="14" fill="rgba(127,178,255,0.05)" stroke="#47474f" stroke-dasharray="5 5"/>
+      <text class="svg-s" x="20" y="192"><tspan data-l="en">CALL TIME · every call · no BRAVE process running</tspan><tspan data-l="tr">ÇAĞRI ZAMANI · her çağrı · BRAVE süreci çalışmıyor</tspan></text>
+      <rect x="24" y="214" width="170" height="80" rx="10" fill="#313136" stroke="#47474f"/><text class="svg-t" x="109" y="248" text-anchor="middle"><tspan data-l="en">customer</tspan><tspan data-l="tr">müşteri</tspan></text><text class="svg-s" x="109" y="270" text-anchor="middle"><tspan data-l="en">(simulated in scoring)</tspan><tspan data-l="tr">(puanlamada simüle)</tspan></text>
+      <rect x="290" y="206" width="400" height="96" rx="12" fill="#313136" stroke="#f2c14e"/>
+      <text class="svg-t" x="490" y="232" text-anchor="middle"><tspan data-l="en">Freya agent = BRAVE's workflow</tspan><tspan data-l="tr">Freya ajanı = BRAVE'in workflow'u</tspan></text>
+      <rect x="306" y="246" width="176" height="42" rx="8" fill="#3a3a41" stroke="#7fb2ff"/><text class="svg-s" x="394" y="266" text-anchor="middle"><tspan data-l="en">platform model</tspan><tspan data-l="tr">platform modeli</tspan></text><text class="svg-s" x="394" y="281" text-anchor="middle"><tspan data-l="en">talks · classifies</tspan><tspan data-l="tr">konuşur · sınıflar</tspan></text>
+      <rect x="498" y="246" width="176" height="42" rx="8" fill="#22362b" stroke="#5cc98b"/><text class="svg-s" x="586" y="266" text-anchor="middle"><tspan data-l="en">BRAVE code nodes</tspan><tspan data-l="tr">BRAVE kod node'ları</tspan></text><text class="svg-s" x="586" y="281" text-anchor="middle"><tspan data-l="en">decide · parse · record</tspan><tspan data-l="tr">karar · okuma · kayıt</tspan></text>
+      <rect x="770" y="214" width="206" height="80" rx="10" fill="#313136" stroke="#47474f"/><text class="svg-t" x="873" y="244" text-anchor="middle"><tspan data-l="en">bank tool API</tspan><tspan data-l="tr">banka tool API'si</tspan></text><text class="svg-s" x="873" y="266" text-anchor="middle">verify · account · promise</text><text class="svg-s" x="873" y="282" text-anchor="middle">note · callback · close</text>
+      <path class="flow-edge" d="M194 246H290" marker-end="url(#a0)"/><path class="flow-edge" d="M290 266H194" marker-end="url(#a0)"/>
+      <path class="flow-edge" d="M690 246H770" marker-end="url(#a0)"/><path class="flow-edge" d="M770 266H690" marker-end="url(#a0)"/>
+      <path class="flow-edge" d="M868 118C868 170 640 165 620 206" marker-end="url(#a0)" style="stroke:#f2c14e"/>
+    </svg>
+    <figcaption><span data-l="en">BRAVE runs once and publishes. During a call only the published workflow runs: Freya's model does the talking, BRAVE's code nodes do the deciding, and the bank's tools are called with values from code.</span><span data-l="tr">BRAVE bir kez çalışır ve yayınlar. Çağrı sırasında yalnızca yayınlanan workflow çalışır: konuşmayı Freya'nın modeli, kararları BRAVE'in kod node'ları yapar; bankanın tool'ları koddan gelen değerlerle çağrılır.</span></figcaption>
+  </figure>
+
+  <h3 class="reveal"><span data-l="en">Glossary</span><span data-l="tr">Sözlük</span></h3>
+  <dl class="gloss stagger" data-l="en">
+    <div><dt>brief</dt><dd>The bank's written collections policy for one campaign. Unseen until build time.</dd></div>
+    <div><dt>spec</dt><dd>BRAVE's fixed JSON reading of the brief: lines, identity questions, bands, outcomes, policy knobs, field names.</dd></div>
+    <div><dt>workflow · node</dt><dd>The Freya agent: a graph of conversation, code, api_request and end_call nodes joined by transitions.</dd></div>
+    <div><dt>hook</dt><dd>A short piece of code run right before (pre) or after (post) a tool call, e.g. to normalise identity answers.</dd></div>
+    <div><dt>product</dt><dd>One overdue account of the customer (card, personal loan, car loan); up to 3 per call.</dd></div>
+    <div><dt>full · floor</dt><dd>Full = the past-due amount. Floor = the smallest payment the bank accepts (e.g. the card's minimum payment).</dd></div>
+    <div><dt>band · deadline</dt><dd>A days-late range (e.g. 8–45 days = "late"). Each band sets the latest allowed promise date and the number of attempts.</dd></div>
+    <div><dt>attempt</dt><dd>One persuasion offer (amount + date). A flat refusal uses one; when they run out the product counts as refused.</dd></div>
+    <div><dt>outcome · reason</dt><dd>How the call is closed in the bank (promise, paid, no_promise, transferred, not_reached …) and why.</dd></div>
+    <div><dt>policy knob</dt><dd>One of 12 numbers or choices the brief sets, e.g. how many person requests before a transfer.</dd></div>
+    <div><dt>now</dt><dd>The call's date and time, passed in as a variable. Calls are scored on different days, so every date is computed from it.</dd></div>
+    <div><dt>honesty</dt><dd>Scored by a judge model on the transcript. BRAVE keeps to it with fixed lines from the brief and "I do not have that information" instead of guesses.</dd></div>
+  </dl>
+  <dl class="gloss stagger" data-l="tr">
+    <div><dt>brief</dt><dd>Bankanın bir kampanya için yazılı tahsilat politikası. Build anına kadar görülmez.</dd></div>
+    <div><dt>spec</dt><dd>BRAVE'in brief'i okuyup çıkardığı sabit JSON: cümleler, kimlik soruları, bantlar, sonuçlar, politika ayarları, alan adları.</dd></div>
+    <div><dt>workflow · node</dt><dd>Freya ajanı: geçişlerle bağlı conversation, code, api_request ve end_call node'larından oluşan graf.</dd></div>
+    <div><dt>hook</dt><dd>Bir tool çağrısından hemen önce (pre) ya da sonra (post) çalışan kısa kod; ör. kimlik cevaplarını normalleştirmek.</dd></div>
+    <div><dt>ürün</dt><dd>Müşterinin gecikmiş bir hesabı (kart, ihtiyaç kredisi, taşıt kredisi); çağrı başına en fazla 3.</dd></div>
+    <div><dt>tam · taban (floor)</dt><dd>Tam = gecikmiş tutar. Taban = bankanın kabul ettiği en düşük ödeme (ör. kartın asgari ödemesi).</dd></div>
+    <div><dt>bant · son tarih</dt><dd>Bir gecikme aralığı (ör. 8–45 gün = "geç"). Her bant izin verilen en geç söz tarihini ve deneme sayısını belirler.</dd></div>
+    <div><dt>deneme</dt><dd>Bir ikna teklifi (tutar + tarih). Düz bir ret bir deneme harcar; denemeler bitince ürün reddedilmiş sayılır.</dd></div>
+    <div><dt>sonuç · sebep</dt><dd>Çağrının bankada nasıl kapandığı (promise, paid, no_promise, transferred, not_reached …) ve neden.</dd></div>
+    <div><dt>politika ayarı</dt><dd>Brief'in belirlediği 12 sayı ya da seçenekten biri; ör. aktarmadan önce kaç kişi talebi.</dd></div>
+    <div><dt>now</dt><dd>Çağrının tarihi ve saati, değişken olarak gelir. Çağrılar farklı günlerde puanlandığı için her tarih buradan hesaplanır.</dd></div>
+    <div><dt>dürüstlük</dt><dd>Konuşma dökümü üzerinden bir hakem modelce puanlanır. BRAVE bunu brief'in sabit cümleleriyle ve tahmin yerine "Bu bilgi bende yok" diyerek korur.</dd></div>
+  </dl>
+
+  <h3 class="reveal"><span data-l="en">How to run</span><span data-l="tr">Nasıl çalıştırılır</span></h3>
+  <div class="codeblock reveal"><span class="c"># Python 3.10+, standard library only. Keys from the environment, .env, env.sh or kit/env.sh</span>
+<span class="k">export</span> FREYA_API_KEY=…  OPENROUTER_API_KEY=…
+<span class="c"># optional: BUILDER_MODEL_BUILDER (spec model), BUILDER_OBSERVER=0 (no second reading)</span>
+python3 builder/build.py kit/briefs/brief-a.md kit/tools/openapi.json
+
+<span class="c"># outputs</span>
+traces/brief-a.log                     <span class="c"># every model call, Freya action and test; keys redacted</span>
+submission/brief-a.spec.json           <span class="c"># the extracted spec</span>
+submission/brief-a.workflow.json       <span class="c"># the platform export (or the workflow as sent)</span>
+submission/brief-a.manifest.json       <span class="c"># inputs, hashes, checks, Freya ids, model cost</span>
+<span class="s">END status=ok smoke=passed export=platform …</span></div>
+</section>
 
 <!-- ================= 01 ================= -->
 <section id="problem">
@@ -410,14 +503,14 @@
     <div class="card">
       <h4><span class="tag model">model</span><span data-l="en">What the model does</span><span data-l="tr">Modelin işi</span></h4>
       <ul data-l="en">
-        <li><b>Build time:</b> reads the brief once and fills a fixed JSON spec (one call, one repair call at most).</li>
+        <li><b>Build time:</b> reads the brief and fills a fixed JSON spec (one call, at most one repair call). A second, independent reading runs in the background as a cross-check.</li>
         <li><b>Call time:</b> speaks the given lines, sorts each reply into an enum, copies date and amount words as said, answers a side question in one sentence.</li>
-        <li>Fills only the two <code>verify_identity</code> arguments; a pre-hook normalises them.</li>
+        <li>The only values it passes to a bank tool are the customer's identity answers to <code>verify_identity</code>, and a pre-hook normalises those first. It writes nothing to the bank.</li>
       </ul>
       <ul data-l="tr">
-        <li><b>Build sırasında:</b> brief'i bir kez okur ve sabit bir JSON spec'i doldurur (bir çağrı, en fazla bir onarım çağrısı).</li>
+        <li><b>Build sırasında:</b> brief'i okur ve sabit bir JSON spec'i doldurur (bir çağrı, en fazla bir onarım çağrısı). Arka planda ikinci, bağımsız bir okuma çapraz kontrol için çalışır.</li>
         <li><b>Çağrı sırasında:</b> verilen cümleleri söyler, her cevabı bir enum'a ayırır, tarih ve tutar kelimelerini olduğu gibi kopyalar, yan soruya tek cümleyle cevap verir.</li>
-        <li>Sadece iki <code>verify_identity</code> argümanını doldurur; bir pre-hook bunları normalleştirir.</li>
+        <li>Bir banka tool'una ilettiği tek değer müşterinin <code>verify_identity</code> için verdiği kimlik cevaplarıdır; bunları da önce bir pre-hook normalleştirir. Bankaya hiçbir şey yazmaz.</li>
       </ul>
     </div>
     <div class="card accent">
@@ -441,13 +534,13 @@
     <li>A model-written workflow varies from run to run; the score demands 3 of 3.</li>
     <li>There are no practice customers for a hidden brief, so a build cannot test its way to correctness.</li>
     <li>30 minutes fits one or two simulated calls, not an optimisation loop.</li>
-    <li>The platform's agent model is weak at arithmetic and dates. Code is not.</li>
+    <li>The platform's agent model is weak at arithmetic and dates. Code is not. (The measured platform behaviour behind these choices is in <a href="#platform">§16</a>.)</li>
   </ul>
   <ul class="reveal" data-l="tr">
     <li>Modelin yazdığı workflow her koşuda değişir; puan 3'te 3 istiyor.</li>
     <li>Gizli brief için deneme müşterisi yok; build test ederek doğruya ulaşamaz.</li>
     <li>30 dakikaya bir iki simüle çağrı sığar, bir optimizasyon döngüsü sığmaz.</li>
-    <li>Platformdaki ajan modeli aritmetik ve tarihte zayıf. Kod değil.</li>
+    <li>Platformdaki ajan modeli aritmetik ve tarihte zayıf. Kod değil. (Bu kararların arkasındaki ölçülmüş platform davranışları <a href="#platform">§16</a>'da.)</li>
   </ul>
 </section>
 
@@ -468,7 +561,7 @@
       <g class="stage" data-i="6"><rect x="890" y="40" width="100" height="206" rx="10" fill="#3a2a26" stroke="#f15a2b" stroke-width="1.5"/>
         <text class="svg-t" x="940" y="70" text-anchor="middle">6 · Freya</text>
         <text class="svg-s" x="940" y="104" text-anchor="middle">dry run</text><text class="svg-s" x="940" y="134" text-anchor="middle">save</text>
-        <text class="svg-s" x="940" y="164" text-anchor="middle">smoke</text><text class="svg-s" x="940" y="194" text-anchor="middle">export</text><text class="svg-s" x="940" y="224" text-anchor="middle">END</text></g>
+        <text class="svg-s" x="940" y="164" text-anchor="middle">export</text><text class="svg-s" x="940" y="194" text-anchor="middle">smoke</text><text class="svg-s" x="940" y="224" text-anchor="middle">END</text></g>
       <path class="flow-edge" d="M150 68H200" marker-end="url(#arr)"/>
       <path class="flow-edge" d="M150 218H200" marker-end="url(#arr)"/>
       <path class="flow-edge" d="M270 190V96" marker-end="url(#arr)"/>
@@ -490,11 +583,12 @@
     <thead><tr><th><span data-l="en">Stage</span><span data-l="tr">Aşama</span></th><th><span data-l="en">Module</span><span data-l="tr">Modül</span></th><th><span data-l="en">Result</span><span data-l="tr">Sonuç</span></th></tr></thead>
     <tbody>
       <tr><td>1 · Tools</td><td><code>builder/fb/openapi_tools.py</code></td><td><span data-l="en">Typed tool definitions with resolved responses</span><span data-l="tr">Response'ları çözülmüş tipli tool tanımları</span></td></tr>
-      <tr><td>2 · Spec</td><td><code>spec_extract.py</code>, <code>llm.py</code></td><td><code>submission/&lt;brief&gt;.spec.json</code>, <span data-l="en">written before any check</span><span data-l="tr">kontrollerden önce yazılır</span></td></tr>
+      <tr><td>2 · Spec</td><td><code>spec_extract.py</code>, <code>llm.py</code></td><td><code>submission/&lt;brief&gt;.spec.json</code>, <span data-l="en">written as soon as extraction ends, before the build goes on</span><span data-l="tr">çıkarım biter bitmez, build devam etmeden yazılır</span></td></tr>
       <tr><td>3 · Config</td><td><code>to_generator()</code></td><td><span data-l="en">Engine config with defaults and neutral lines</span><span data-l="tr">Varsayılanlar ve nötr cümlelerle motor ayarı</span></td></tr>
       <tr><td>4 · Workflow</td><td><code>generate.py</code>, <code>nodecode/</code></td><td><span data-l="en">Freya workflow JSON + the policy the validator enforces</span><span data-l="tr">Freya workflow JSON'u + doğrulayıcının uyguladığı politika</span></td></tr>
       <tr><td>5 · Validate</td><td><code>validate.py</code></td><td><span data-l="en">Errors stop the run before anything is saved</span><span data-l="tr">Hata varsa hiçbir şey kaydedilmeden durur</span></td></tr>
       <tr><td>6 · Freya</td><td><code>kit/freya.py</code></td><td><span data-l="en">Published agent, export, trace</span><span data-l="tr">Yayınlanmış ajan, export, trace</span></td></tr>
+      <tr><td><span data-l="en">side checks</span><span data-l="tr">yan kontroller</span></td><td><code>spec_extract.observe</code>, <code>harness/selftest</code>, <code>proof</code></td><td><span data-l="en">Second reading of the brief (differences logged as "uncertainty:"), offline engine selftest on this spec, brief rule → spec/workflow map, manifest. They never stop the build; the only change is that the words not to say before identity is verified are taken from both readings.</span><span data-l="tr">Brief'in ikinci okuması (farklar "uncertainty:" olarak loglanır), bu spec üzerinde çevrimdışı motor selftest'i, brief kuralı → spec/workflow eşlemesi, manifest. Build'i asla durdurmazlar; tek değişiklik, kimlik doğrulanmadan söylenmeyecek kelimelerin iki okumadan birlikte alınmasıdır.</span></td></tr>
     </tbody>
   </table>
 </section>
@@ -561,16 +655,58 @@
     <thead><tr><th><span data-l="en">Key</span><span data-l="tr">Anahtar</span></th><th><span data-l="en">Meaning</span><span data-l="tr">Anlamı</span></th></tr></thead>
     <tbody>
       <tr><td><code>call_variables</code></td><td><span data-l="en">Role → variable name: customer id, title, names, now</span><span data-l="tr">Rol → değişken adı: müşteri no, hitap, isimler, now</span></td></tr>
-      <tr><td><code>lines</code></td><td><span data-l="en">24 spoken sentences: opening, who question, identity intro, today question, confirm, recorded, sympathy, support offer, goodbye …</span><span data-l="tr">24 cümle: açılış, kim sorusu, kimlik girişi, bugün sorusu, onay, kaydedildi, empati, destek teklifi, veda …</span></td></tr>
+      <tr><td><code>lines</code></td><td><span data-l="en">23 spoken sentences: opening, who question, identity intro, today question, confirm, recorded, sympathy, support offer, goodbye …</span><span data-l="tr">23 cümle: açılış, kim sorusu, kimlik girişi, bugün sorusu, onay, kaydedildi, empati, destek teklifi, veda …</span></td></tr>
       <tr><td><code>forbidden_before_verify</code></td><td><span data-l="en">Words never said before identity is verified</span><span data-l="tr">Kimlik doğrulanmadan asla söylenmeyecek kelimeler</span></td></tr>
       <tr><td><code>identity</code></td><td><span data-l="en">Questions <code>{field, ask, kind}</code>, swap hint, date order</span><span data-l="tr">Sorular <code>{field, ask, kind}</code>, yer değiştirme ipucu, tarih sırası</span></td></tr>
       <tr><td><code>outcomes</code></td><td><span data-l="en">[close outcome, reason] for unclear, callback, wrong number, deceased, failed, declined …</span><span data-l="tr">belirsiz, geri arama, yanlış numara, vefat, başarısız, reddetti … için [kapanış sonucu, sebep]</span></td></tr>
       <tr><td><code>bands</code></td><td><span data-l="en">Days-late ranges, each with a deadline and a number of persuasion attempts</span><span data-l="tr">Gecikme gün aralıkları; her birinin son tarihi ve ikna deneme sayısı</span></td></tr>
       <tr><td><code>attempt_plan</code></td><td><span data-l="en">One <code>{amount, date}</code> step per attempt</span><span data-l="tr">Her deneme için bir <code>{amount, date}</code> adımı</span></td></tr>
       <tr><td><code>tool_fields</code></td><td><span data-l="en">Role → real request and response field names in this API</span><span data-l="tr">Rol → bu API'deki gerçek istek ve response alan adları</span></td></tr>
-      <tr><td><code>neg</code>, <code>policy</code></td><td><span data-l="en">Outcomes, note reasons, queues; 11 policy knobs (person requests, stops, hardship, floor offers, reason priority …)</span><span data-l="tr">Sonuçlar, not sebepleri, kuyruklar; 11 politika ayarı (kişi talebi, durdurma, zorluk, taban teklif, sebep önceliği …)</span></td></tr>
+      <tr><td><code>neg</code>, <code>policy</code></td><td><span data-l="en">Outcomes, note reasons, queues; 12 policy knobs (below)</span><span data-l="tr">Sonuçlar, not sebepleri, kuyruklar; 12 politika ayarı (aşağıda)</span></td></tr>
     </tbody>
   </table>
+  <div class="pills reveal">
+    <span class="pill">human_requests_to_transfer = 2</span><span class="pill">stop_requests_to_close = 2</span><span class="pill">promise_attempts = 2</span>
+    <span class="pill">record_failure = continue | transfer</span><span class="pill">record_failure_queue</span><span class="pill">hardship = offer_support | transfer | close</span>
+    <span class="pill">hardship_queue</span><span class="pill">no_promise_reason = first_product | priority</span><span class="pill">reason_priority</span>
+    <span class="pill">notes_on_transfer = false</span><span class="pill">vague_date_asks = 1</span><span class="pill">floor_offers = 1</span>
+  </div>
+  <p class="muted reveal" style="font-size:14px"><span data-l="en">Defaults shown; the brief overrides them. Optional: <code>product_order</code>.</span><span data-l="tr">Varsayılanlar gösteriliyor; brief bunları değiştirir. İsteğe bağlı: <code>product_order</code>.</span></p>
+
+  <h3 class="reveal"><span data-l="en">Worked example: one rule from brief to call</span><span data-l="tr">Örnek: bir kuralın brief'ten çağrıya yolculuğu</span></h3>
+  <div class="example stagger">
+    <div class="card"><h4><span data-l="en">1 · Brief A says</span><span data-l="tr">1 · Brief A diyor ki</span></h4>
+<div class="codeblock">| days_late | Band  | Deadline                 | Attempts |
+| 1 to 7    | early | the 12th business day …  | 1        |
+| 8 to 45   | late  | the 7th business day …   | 2        |
+
+25. The floor is minimum_payment for a
+    credit card and instalment_amount for
+    a personal loan or a car loan.</div></div>
+    <div class="card"><h4><span data-l="en">2 · The spec gets</span><span data-l="tr">2 · Spec'e yazılan</span></h4>
+<div class="codeblock">"bands": [
+ {"name": "early", "min_days_late": 1,
+  "max_days_late": 7, "deadline_days": 12,
+  "deadline_unit": "business", "attempts": 1},
+ {"name": "late", "min_days_late": 8,
+  "max_days_late": 45, "deadline_days": 7,
+  "deadline_unit": "business", "attempts": 2}],
+"floor_field": {
+  "credit_card": "minimum_payment",
+  "personal_loan": "instalment_amount",
+  "car_loan": "instalment_amount"}</div></div>
+    <div class="card"><h4><span data-l="en">3 · The call does</span><span data-l="tr">3 · Çağrıda olan</span></h4>
+<div class="codeblock"><span class="c"># check(): every band int, no gap;
+# "minimum_payment" is a real field of
+# get_account; grounding: 12, 7, 45 are
+# in the brief text.</span>
+<span class="c"># facts (code node), call on Wed 14 Oct:</span>
+card, 12 days late → band <span class="s">late</span>
+deadline → <span class="s">Fri 23 Oct</span> (7 business days)
+floor    → product.<span class="s">minimum_payment</span>
+attempts → <span class="s">2</span>
+<span class="c"># decide (code node) offers within these.</span></div></div>
+  </div>
 </section>
 
 <!-- ================= 06 ================= -->
@@ -579,8 +715,8 @@
   <p class="lead reveal"><span data-l="en">The model's spec is checked by code against the tool API and against the brief's own text.</span><span data-l="tr">Modelin spec'i kodla hem tool API'ye hem de brief'in kendi metnine karşı kontrol edilir.</span></p>
   <div class="g3 stagger">
     <div class="card"><h4>check()</h4>
-      <ul data-l="en"><li>Every close, note, queue and identity value is in the tool's enum</li><li>Holidays are ISO dates; bands are integers</li><li>All 11 knobs present; required lines present</li></ul>
-      <ul data-l="tr"><li>Her kapanış, not, kuyruk ve kimlik değeri tool'un enum'unda</li><li>Tatiller ISO tarih; bantlar tam sayı</li><li>11 ayarın hepsi ve zorunlu cümleler mevcut</li></ul></div>
+      <ul data-l="en"><li>Every close, note, queue and identity value is in the tool's enum</li><li>Holidays are ISO dates; bands are integers</li><li>All 12 knobs present; required lines present</li></ul>
+      <ul data-l="tr"><li>Her kapanış, not, kuyruk ve kimlik değeri tool'un enum'unda</li><li>Tatiller ISO tarih; bantlar tam sayı</li><li>12 ayarın hepsi ve zorunlu cümleler mevcut</li></ul></div>
     <div class="card"><h4>bindings() · responses()</h4>
       <ul data-l="en"><li>Every required request field has a role or a fixed value</li><li>Response fields the workflow reads really exist</li><li>Every product type has a floor field and a spoken name</li></ul>
       <ul data-l="tr"><li>Her zorunlu istek alanının bir rolü ya da sabit değeri var</li><li>Workflow'un okuduğu response alanları gerçekten var</li><li>Her ürün tipinin taban alanı ve okunuşu var</li></ul></div>
@@ -593,12 +729,14 @@
   <ol class="steps stagger" data-l="en">
     <li><b>Repair round</b> (only if a check failed): the conversation continues with "These checks failed: …". A value "not found in the brief" stays only with a note quoting where. One round, no second repair.</li>
     <li><b>Deterministic overrides:</b> a callback sentence that says "business day" forces business-day callbacks (a real extraction once offered a Saturday).</li>
-    <li><b>Blocking:</b> only two problems stop the build: no identity question, or no usable band.</li>
+    <li><b>Auto-correct:</b> a field name or enum value the tool API does not have is set to the API's field or value it stands for (same name written otherwise, a unique close name). Each change is noted.</li>
+    <li><b>Blocking:</b> only two spec problems stop the build: no identity question, or no usable band. (Later, a validator error or a dry-run refusal also stops it, see §14–15.)</li>
   </ol>
   <ol class="steps stagger" data-l="tr">
     <li><b>Onarım turu</b> (sadece bir kontrol başarısızsa): konuşma "Şu kontroller başarısız: …" ile devam eder. "Brief'te bulunamadı" denen bir değer ancak nerede geçtiğini alıntılayan bir notla kalır. Tek tur, ikinci onarım yok.</li>
     <li><b>Deterministik düzeltmeler:</b> geri arama cümlesi "iş günü" diyorsa geri aramalar iş gününe zorlanır (gerçek bir çıkarım bir keresinde Cumartesi önermişti).</li>
-    <li><b>Durdurma:</b> build'i sadece iki sorun durdurur: kimlik sorusu yok ya da kullanılabilir bant yok.</li>
+    <li><b>Otomatik düzeltme:</b> tool API'de olmayan bir alan adı ya da enum değeri, API'de karşılık geldiği alana ya da değere çevrilir (farklı yazılmış aynı ad, tek yakın ad). Her değişiklik not edilir.</li>
+    <li><b>Durdurma:</b> build'i sadece iki spec sorunu durdurur: kimlik sorusu yok ya da kullanılabilir bant yok. (Daha sonra doğrulayıcı hatası ya da deneme çalıştırmasının reddi de durdurur, bkz. §14–15.)</li>
   </ol>
   <div class="callout reveal">
     <span data-l="en"><b>An imperfect agent beats no agent.</b> A false positive in one check once ended a run with nothing published. Now open problems are logged (<code>ok_spec_problems</code>) and the agent is still built, validated and published.</span>
@@ -711,11 +849,11 @@
   </div>
   <div class="g2 stagger">
     <div class="card"><h4><span data-l="en">Writes to the bank</span><span data-l="tr">Bankaya yazma</span></h4>
-      <ul data-l="en"><li>Write tools: 25 s timeout (a slow <code>add_note</code> once landed after <code>close_call</code>).</li><li>No automatic retry on writes (no double promises); <code>get_account</code> retries once, <code>close_call</code> twice.</li><li>"Already recorded" or a bare 409 counts as success.</li></ul>
-      <ul data-l="tr"><li>Yazma tool'ları: 25 sn zaman aşımı (yavaş bir <code>add_note</code> bir keresinde <code>close_call</code>'dan sonra ulaşmıştı).</li><li>Yazmalarda otomatik tekrar yok (çift söz olmasın); <code>get_account</code> bir, <code>close_call</code> iki kez tekrar dener.</li><li>"Zaten kayıtlı" ya da yalın 409 başarı sayılır.</li></ul></div>
+      <ul data-l="en"><li>Write tools: 25 s timeout (a slow <code>add_note</code> once landed after <code>close_call</code>).</li><li>No platform-level retry on writes; the workflow decides: <code>create_promise</code> up to <code>promise_attempts</code> tries, a callback and a transfer once more. <code>get_account</code> retries once, <code>close_call</code> twice.</li><li>"Already recorded" or a bare 409 counts as success, so a retry never makes a double promise.</li></ul>
+      <ul data-l="tr"><li>Yazma tool'ları: 25 sn zaman aşımı (yavaş bir <code>add_note</code> bir keresinde <code>close_call</code>'dan sonra ulaşmıştı).</li><li>Yazmalarda platform düzeyinde tekrar yok; workflow karar verir: <code>create_promise</code> en fazla <code>promise_attempts</code> kez, geri arama ve aktarma bir kez daha. <code>get_account</code> bir, <code>close_call</code> iki kez tekrar dener.</li><li>"Zaten kayıtlı" ya da yalın 409 başarı sayılır; böylece tekrar asla çift söz üretmez.</li></ul></div>
     <div class="card"><h4><span data-l="en">close_call pre-hook</span><span data-l="tr">close_call pre-hook</span></h4>
-      <ul data-l="en"><li>If the customer hung up with no outcome, it is rebuilt from the engine state: recorded promise → promise; all paid → paid; negotiating → no_promise with the right reason; never verified → not_reached.</li><li>Drops a reason the outcome never takes.</li></ul>
-      <ul data-l="tr"><li>Müşteri sonuçsuz kapattıysa sonuç motor durumundan yeniden kurulur: kayıtlı söz → promise; hepsi ödenmiş → paid; pazarlık sürüyorsa → doğru sebeple no_promise; hiç doğrulanmadıysa → not_reached.</li><li>Sonucun almadığı bir sebebi düşürür.</li></ul></div>
+      <ul data-l="en"><li>If the customer hung up before an outcome was set, it is rebuilt from the engine state: recorded promise → promise; all paid → paid; negotiating → no_promise with the right reason (hardship during a hardship offer). Before the account was reached, the brief's "unclear" pair is used (by default not_reached / unclear).</li><li>Drops a reason the outcome never takes.</li></ul>
+      <ul data-l="tr"><li>Müşteri sonuç belirlenmeden kapattıysa sonuç motor durumundan yeniden kurulur: kayıtlı söz → promise; hepsi ödenmiş → paid; pazarlık sürüyorsa → doğru sebeple no_promise (zorluk teklifi sırasında hardship). Hesaba ulaşılmadan kapandıysa brief'in "unclear" çifti kullanılır (varsayılan not_reached / unclear).</li><li>Sonucun almadığı bir sebebi düşürür.</li></ul></div>
   </div>
 </section>
 
@@ -727,8 +865,8 @@
       <ul data-l="en"><li>Date answers go through <code>normalize_dob</code>; a lone century ("19", "198") is sent as <code>incomplete</code>, so the bank does not count a wrong answer.</li><li>Digits via <code>digits_from_speech</code> ("double four seven one" → 4471); the heard order wins over the model's.</li><li>Heard words are used once, then cleared.</li></ul>
       <ul data-l="tr"><li>Tarih cevapları <code>normalize_dob</code>'dan geçer; tek başına yüzyıl ("19", "198") <code>incomplete</code> gider, banka yanlış cevap saymaz.</li><li>Rakamlar <code>digits_from_speech</code> ile ("double four seven one" → 4471); duyulan sıra modelinkine üstün gelir.</li><li>Duyulan kelimeler bir kez kullanılır, sonra temizlenir.</li></ul></div>
     <div class="card"><h4><span data-l="en">Post-hook (after)</span><span data-l="tr">Post-hook (sonra)</span></h4>
-      <ul data-l="en"><li>One instruction for the model: year incomplete · day/month swapped · correct, now ask the next · unreadable · locked · wrong.</li><li>Verified by <code>all_verified</code>, or, if the API lacks it, when every answer counts as right (<code>id_all_ok</code>).</li><li><code>wrong_answers_left = 0</code> → failed; a second 5xx → service-error close.</li></ul>
-      <ul data-l="tr"><li>Model için tek talimat: yıl eksik · gün/ay yer değiştirmiş · doğru, sıradakini sor · okunamadı · kilitlendi · yanlış.</li><li><code>all_verified</code> ile doğrulanır; API'de yoksa her cevap doğru sayıldığında (<code>id_all_ok</code>).</li><li><code>wrong_answers_left = 0</code> → başarısız; ikinci 5xx → servis hatasıyla kapanış.</li></ul></div>
+      <ul data-l="en"><li>One instruction for the model: year incomplete · day/month swapped · correct, now ask the next · both correct, thank the customer · unreadable · locked · wrong.</li><li>Verified by <code>all_verified</code>, or, if the API lacks it, when every answer counts as right (<code>id_all_ok</code>).</li><li><code>wrong_answers_left = 0</code> → failed. Two service failures in a row (5xx, no JSON, "unavailable") → <code>fin_id_error</code>: a technical-problem line and the brief's "failed" outcome.</li></ul>
+      <ul data-l="tr"><li>Model için tek talimat: yıl eksik · gün/ay yer değiştirmiş · doğru, sıradakini sor · ikisi de doğru, teşekkür et · okunamadı · kilitlendi · yanlış.</li><li><code>all_verified</code> ile doğrulanır; API'de yoksa her cevap doğru sayıldığında (<code>id_all_ok</code>).</li><li><code>wrong_answers_left = 0</code> → başarısız. Üst üste iki servis hatası (5xx, JSON yok, "unavailable") → <code>fin_id_error</code>: teknik sorun cümlesi ve brief'in "failed" sonucu.</li></ul></div>
   </div>
   <div class="callout reveal">
     <span data-l="en"><b>Gate:</b> <code>get_account</code>, <code>create_promise</code> and <code>add_note</code> are unreachable until the verified transition. The validator proves it before saving; the smoke test fails if "debt" or "overdue" is said before verification.</span>
@@ -751,28 +889,32 @@
   <ol class="steps" id="order-en" data-l="en">
     <li data-k="pieces">Join an amount said in two pieces ("Sorry, I think you were cut off. Please go on.").</li>
     <li data-k="product">Pick the product: the one named, else the current one. An offer for a refused product reopens it.</li>
-    <li data-k="price">Price-style re-read: "three fifty" is read as 350 when 3.50 is outside [floor, full].</li>
+    <li data-k="price">Price-style re-read: when "three fifty" (3.50) is below the floor and 350 lies in [floor, full], it is read as 350.</li>
     <li data-k="weekday">"Yes, that Tuesday" to an offered Tuesday keeps the offered date.</li>
     <li data-k="human">Restructure → transfer. Person requests: help first, transfer at the brief's limit.</li>
     <li data-k="hardship">Hardship → by policy: offer support (sympathy once, offer once), transfer or close. No persuasion after hardship.</li>
     <li data-k="stop">Stop: counted; at the limit open products are refused and the call ends.</li>
     <li data-k="paid">Paid / dispute: set on the named product, move on.</li>
     <li data-k="question">Question → the model answers in one sentence, then repeats the last ask exactly.</li>
-    <li data-k="confirm">Confirm phase: a yes is checked again (floor ≤ amount ≤ full, date rules); only then record. A no asks which promise to change.</li>
-    <li data-k="offer">Offer phase: yes accepts; no / evasive → next attempt; an offer is applied; too much → the floor on a valid day, once.</li>
+    <li data-k="closing">Closing phase (after recording): a change request gets "A recorded promise cannot be changed in this call"; one cut-off turn gets one more ask; otherwise finish.</li>
+    <li data-k="confirm">Confirm phase: a yes is checked again (floor ≤ amount ≤ full, date rules); only then record. A no with several promises and none named asks which one to change; otherwise it uses the next attempt.</li>
+    <li data-k="offer">Offer phase: yes accepts; no / evasive → next attempt; an offer is applied; too much → the floor once, on the date already offered (or today) moved to a valid day.</li>
+    <li data-k="unclear">Unclear or cut-off turn: a short rotating re-ask. A cut no / stop / evasive with no value counts nothing; the third cut turn in a row is taken as said.</li>
   </ol>
   <ol class="steps" id="order-tr" data-l="tr">
     <li data-k="pieces">İki parçada söylenen tutarı birleştir ("Sanırım sesiniz kesildi, devam edin lütfen.").</li>
     <li data-k="product">Ürünü seç: adı geçen ürün, yoksa sıradaki. Reddedilmiş bir ürün için teklif onu yeniden açar.</li>
-    <li data-k="price">Fiyat tarzı okuma: 3,50 [taban, tam] dışındaysa "three fifty" 350 okunur.</li>
+    <li data-k="price">Fiyat tarzı okuma: "three fifty" (3,50) tabanın altındaysa ve 350 [taban, tam] içindeyse 350 okunur.</li>
     <li data-k="weekday">Teklif edilen Salı'ya "Evet, o Salı" denirse teklif edilen tarih korunur.</li>
     <li data-k="human">Yapılandırma → aktarma. Kişi talebi: önce yardım teklifi, brief'in sınırında aktarma.</li>
     <li data-k="hardship">Maddi zorluk → politikaya göre: destek teklif et (bir kez empati, bir kez teklif), aktar ya da kapat. Zorluktan sonra ikna yok.</li>
     <li data-k="stop">Durdurma: sayılır; sınıra gelince açık ürünler reddedilmiş sayılır ve çağrı biter.</li>
     <li data-k="paid">Ödendi / itiraz: adı geçen ürüne işlenir, devam edilir.</li>
     <li data-k="question">Soru → model tek cümleyle cevaplar, sonra son soruyu aynen tekrarlar.</li>
-    <li data-k="confirm">Onay aşaması: "evet" yeniden kontrol edilir (taban ≤ tutar ≤ tam, tarih kuralları); ancak o zaman kayıt. "Hayır" hangi sözün değişeceğini sorar.</li>
-    <li data-k="offer">Teklif aşaması: evet kabul eder; hayır / kaçamak → sonraki deneme; teklif uygulanır; çok fazla → geçerli bir günde taban, bir kez.</li>
+    <li data-k="closing">Kapanış aşaması (kayıttan sonra): değişiklik isteğine "Kaydedilmiş bir söz bu çağrıda değiştirilemez" denir; tek bir yarım tur bir soru daha alır; yoksa bitir.</li>
+    <li data-k="confirm">Onay aşaması: "evet" yeniden kontrol edilir (taban ≤ tutar ≤ tam, tarih kuralları); ancak o zaman kayıt. Birden fazla söz varken ürün adı geçmeyen bir "hayır" hangisinin değişeceğini sorar; aksi halde sonraki denemeyi kullanır.</li>
+    <li data-k="offer">Teklif aşaması: evet kabul eder; hayır / kaçamak → sonraki deneme; teklif uygulanır; çok fazla → taban bir kez, zaten teklif edilen tarihte (ya da bugün), geçerli bir güne kaydırılarak.</li>
+    <li data-k="unclear">Belirsiz ya da yarım tur: dönen kısa bir tekrar soru. Değer içermeyen yarım bir hayır / dur / kaçamak hiçbir şey saymaz; üst üste üçüncü yarım tur söylendiği gibi alınır.</li>
   </ol>
 
   <div class="g2 stagger">
@@ -784,8 +926,8 @@
       <ul data-l="tr"><li>Tam tutarla sınırlı. Tabanın altında: "X'i kaydedemem. En az F. D tarihinde F ödeyebilir misiniz?"</li><li>Gün yok → "Hangi gün?"; belirsiz → "Tam olarak hangi gün?", sonra "Kaydedebileceğim en geç tarih …".</li><li>Tarih kontrolü: uygun · geçmiş · son tarihten sonra · iş günü değil → sonraki iş günü önerilir.</li></ul></div>
   </div>
   <div class="callout reveal">
-    <span data-l="en"><b>Record only what the customer confirmed, inside the rules.</b> Only a yes to the read-back ("To confirm: £350 on Friday 16 October for your card. Do you confirm?") records. A recorded promise is never undone; a transfer drops agreed but unrecorded promises.</span>
-    <span data-l="tr"><b>Sadece müşterinin onayladığını, kurallar içinde kaydet.</b> Kayıt yalnızca tekrar okumaya verilen "evet"le yapılır ("Teyit ediyorum: kartınız için 16 Ekim Cuma günü 350 £. Onaylıyor musunuz?"). Kaydedilen söz geri alınmaz; aktarma, anlaşılmış ama kaydedilmemiş sözleri düşürür.</span>
+    <span data-l="en"><b>Record only what the customer confirmed, inside the rules.</b> Only a yes to the read-back ("To confirm: the card, 350.00 on Friday 16 October 2026. Do you confirm?") records. A recorded promise is never undone; a transfer drops agreed but unrecorded promises.</span>
+    <span data-l="tr"><b>Sadece müşterinin onayladığını, kurallar içinde kaydet.</b> Kayıt yalnızca tekrar okumaya verilen "evet"le yapılır (ajanın sözü: "To confirm: the card, 350.00 on Friday 16 October 2026. Do you confirm?"). Kaydedilen söz geri alınmaz; aktarma, anlaşılmış ama kaydedilmemiş sözleri düşürür.</span>
   </div>
 </section>
 
@@ -823,19 +965,19 @@
     <div class="meter" id="m-old"><div class="code" id="m-old-c"></div><div class="data" id="m-old-d"></div></div>
     <div class="meter-label"><span><span data-l="en">before: 66 KB code</span><span data-l="tr">önce: 66 KB kod</span></span><span id="m-old-t"></span></div>
     <div class="meter" id="m-new" style="margin-top:14px"><div class="code" id="m-new-c"></div><div class="data" id="m-new-d"></div></div>
-    <div class="meter-label"><span><span data-l="en">now: largest node 27.6 KB</span><span data-l="tr">şimdi: en büyük node 27,6 KB</span></span><span id="m-new-t"></span></div>
+    <div class="meter-label"><span><span data-l="en">now: largest node (decide, packed) 27.6 KB</span><span data-l="tr">şimdi: en büyük node (decide, paketli) 27,6 KB</span></span><span id="m-new-t"></span></div>
     <p class="muted" style="margin:12px 0 0;font-size:14px"><span data-l="en">Estimate: code + 1.3 KB per turn against 128 KB.</span><span data-l="tr">Tahmin: kod + tur başına 1,3 KB, 128 KB sınırına karşı.</span></p>
   </div>
   <ol class="steps stagger" data-l="en">
     <li><b>AST subset:</b> each node carries only the library functions, constants and imports its body reaches.</li>
     <li>Snippet = header, library subset, <code>CFG = json.loads(…)</code>, then the body in try/except that sets <code>code_error</code>.</li>
-    <li>Over 30 KB the library is stripped of docstrings and packed with zlib + base64, then unpacked into <code>globals()</code>. 36 KB is the hard cap.</li>
+    <li>Over 30 KB the library is stripped of docstrings and packed with zlib + base64, then unpacked into <code>globals()</code>. Only <code>decide</code> needs it: 36.3 KB → 27.6 KB. The validator warns above 36 KB and stops the build above 71 KB (131,072 − 60,000 kept for call data).</li>
     <li>No <code>{{</code> or <code>}}</code> anywhere: the platform would read it as a placeholder.</li>
   </ol>
   <ol class="steps stagger" data-l="tr">
     <li><b>AST alt kümesi:</b> her node yalnızca gövdesinin eriştiği kütüphane fonksiyonlarını, sabitleri ve import'ları taşır.</li>
     <li>Parça = başlık, kütüphane alt kümesi, <code>CFG = json.loads(…)</code>, ardından <code>code_error</code> ayarlayan try/except içinde gövde.</li>
-    <li>30 KB üstünde kütüphanenin docstring'leri atılır, zlib + base64 ile paketlenir ve <code>globals()</code> içine açılır. Kesin sınır 36 KB.</li>
+    <li>30 KB üstünde kütüphanenin docstring'leri atılır, zlib + base64 ile paketlenir ve <code>globals()</code> içine açılır. Buna yalnızca <code>decide</code> ihtiyaç duyar: 36,3 KB → 27,6 KB. Doğrulayıcı 36 KB üstünde uyarır, 71 KB üstünde build'i durdurur (131.072 − çağrı verisi için ayrılan 60.000).</li>
     <li>Hiçbir yerde <code>{{</code> ya da <code>}}</code> yok: platform bunu yer tutucu sanardı.</li>
   </ol>
 </section>
@@ -846,7 +988,7 @@
   <p class="lead reveal"><span data-l="en">Runs before anything goes to Freya. An error stops the run; the export is checked again after save.</span><span data-l="tr">Freya'ya bir şey gitmeden önce çalışır. Hata çalışmayı durdurur; export kaydedildikten sonra tekrar kontrol edilir.</span></p>
   <div class="g3 stagger">
     <div class="card"><h4><span data-l="en">Integrity</span><span data-l="tr">Bütünlük</span></h4><ul data-l="en"><li>Initial node exists</li><li>Tools only on conversation nodes</li><li>Passthrough nodes end with <code>always</code></li></ul><ul data-l="tr"><li>Başlangıç node'u var</li><li>Tool'lar yalnızca conversation node'larında</li><li>Passthrough node'lar <code>always</code> ile biter</li></ul></div>
-    <div class="card"><h4><span data-l="en">Conditions and turns</span><span data-l="tr">Koşullar ve turlar</span></h4><ul data-l="en"><li>Every conversation node has a turn cap</li><li>Deterministic operators only</li><li>No dead transitions</li></ul><ul data-l="tr"><li>Her conversation node'unun tur sınırı var</li><li>Sadece deterministik operatörler</li><li>Ölü geçiş yok</li></ul></div>
+    <div class="card"><h4><span data-l="en">Conditions and turns</span><span data-l="tr">Koşullar ve turlar</span></h4><ul data-l="en"><li>Every conversation node has a turn cap</li><li>Deterministic operators (or an intent match with a description)</li><li>No dead transitions</li></ul><ul data-l="tr"><li>Her conversation node'unun tur sınırı var</li><li>Deterministik operatörler (ya da açıklamalı bir niyet eşleşmesi)</li><li>Ölü geçiş yok</li></ul></div>
     <div class="card"><h4><span data-l="en">Code safety</span><span data-l="tr">Kod güvenliği</span></h4><ul data-l="en"><li>Syntax and size limits</li><li>No network, process or <code>__import__</code></li><li>Packed blobs unpacked and scanned</li></ul><ul data-l="tr"><li>Sözdizimi ve boyut sınırları</li><li>Ağ, süreç ya da <code>__import__</code> yok</li><li>Paketli bloklar açılıp taranır</li></ul></div>
     <div class="card"><h4><span data-l="en">Scope</span><span data-l="tr">Kapsam</span></h4><ul data-l="en"><li>URL, host and method match the OpenAPI file</li><li>Required fields and enums valid</li></ul><ul data-l="tr"><li>URL, host ve method OpenAPI ile aynı</li><li>Zorunlu alanlar ve enum'lar geçerli</li></ul></div>
     <div class="card"><h4><span data-l="en">Graph</span><span data-l="tr">Graf</span></h4><ul data-l="en"><li>Every node reachable</li><li>Every node reaches an end</li><li>No unbounded loops</li></ul><ul data-l="tr"><li>Her node'a erişilebiliyor</li><li>Her node bir sona ulaşıyor</li><li>Sınırsız döngü yok</li></ul></div>
@@ -860,19 +1002,19 @@
   <ol class="steps stagger" data-l="en">
     <li><b>Dry run.</b> A 4xx means the platform read the workflow and refused it: write the local file and stop. Other failures are ignored; saving validates again.</li>
     <li><b>Save and publish</b> into one slot per brief: create on the first run, update and publish afterwards.</li>
-    <li><b>Smoke test</b> (if more than 60 s are left): one "Hello?" over chat. Fails on an error or on a debt word before verification.</li>
-    <li><b>Export</b>; if that fails, the workflow as sent is written. A submission file always exists once a workflow is saved.</li>
+    <li><b>Export</b>; if that fails, the workflow as sent is written. A submission file always exists once a workflow is saved. The export is validated again (logged only).</li>
+    <li><b>Smoke test</b> (if more than 60 s are left before the export reserve; up to 150 s): one "Hello?" over chat. Fails on an error, or on "debt", "collections", "past due", "overdue" or a brief's forbidden word before verification.</li>
   </ol>
   <ol class="steps stagger" data-l="tr">
     <li><b>Deneme çalıştırması.</b> 4xx, platformun workflow'u okuyup reddettiği anlamına gelir: yerel dosya yazılır, durulur. Diğer hatalar yok sayılır; kaydetme zaten tekrar doğrular.</li>
     <li><b>Kaydet ve yayınla:</b> brief başına bir slot; ilk koşuda oluştur, sonra güncelle ve yayınla.</li>
-    <li><b>Smoke test</b> (60 sn'den fazla kaldıysa): chat üzerinden tek bir "Hello?". Hata olursa ya da doğrulamadan önce borç kelimesi geçerse başarısız.</li>
-    <li><b>Export</b>; başarısız olursa gönderilen workflow yazılır. Workflow kaydedildiyse teslim dosyası her zaman vardır.</li>
+    <li><b>Export</b>; başarısız olursa gönderilen workflow yazılır. Workflow kaydedildiyse teslim dosyası her zaman vardır. Export tekrar doğrulanır (sadece loglanır).</li>
+    <li><b>Smoke test</b> (export payından önce 60 sn'den fazla kaldıysa; en fazla 150 sn): chat üzerinden tek bir "Hello?". Hata olursa ya da doğrulamadan önce "debt", "collections", "past due", "overdue" veya brief'in yasak kelimelerinden biri geçerse başarısız.</li>
   </ol>
   <div class="g2 stagger">
     <div class="card"><h4><span data-l="en">Budget and retries</span><span data-l="tr">Bütçe ve tekrarlar</span></h4>
-      <ul data-l="en"><li>30 minutes in total; 3 kept for save and export; 60 s for the smoke test.</li><li>Freya calls ≤ 120 s each; 5xx, 429 and dropped connections retried with backoff 4 → 30 s; a 4xx is an answer.</li><li>A previous run's files move to <code>runs/</code>, never overwritten.</li></ul>
-      <ul data-l="tr"><li>Toplam 30 dakika; 3'ü kaydetme ve export için, 60 sn smoke test için ayrılır.</li><li>Freya çağrıları en fazla 120 sn; 5xx, 429 ve kopan bağlantı 4 → 30 sn bekleyerek tekrarlanır; 4xx bir cevaptır.</li><li>Önceki koşunun dosyaları <code>runs/</code>'a taşınır, üzerine yazılmaz.</li></ul></div>
+      <ul data-l="en"><li>30 minutes in total; 3 kept for save and export. The second reading is waited for at most 2 minutes; the smoke test runs only if time is left.</li><li>Freya calls ≤ 120 s each; 5xx, 429 and dropped connections retried with backoff 4 → 30 s; a 4xx is an answer.</li><li>A previous run's files move to <code>runs/</code>, never overwritten.</li></ul>
+      <ul data-l="tr"><li>Toplam 30 dakika; 3'ü kaydetme ve export için ayrılır. İkinci okuma en fazla 2 dakika beklenir; smoke test ancak süre kalırsa çalışır.</li><li>Freya çağrıları en fazla 120 sn; 5xx, 429 ve kopan bağlantı 4 → 30 sn bekleyerek tekrarlanır; 4xx bir cevaptır.</li><li>Önceki koşunun dosyaları <code>runs/</code>'a taşınır, üzerine yazılmaz.</li></ul></div>
     <div class="card"><h4><span data-l="en">The END line</span><span data-l="tr">END satırı</span></h4>
       <ul data-l="en"><li><code>ok</code>: published, smoke test passed.</li><li><code>ok_spec_problems</code>: published with logged problems.</li><li>Suffixes <code>_smoke_failed</code>, <code>_smoke_skipped</code>, <code>_export_failed</code>; keys are redacted in the trace.</li></ul>
       <ul data-l="tr"><li><code>ok</code>: yayınlandı, smoke test geçti.</li><li><code>ok_spec_problems</code>: loglanmış sorunlarla yayınlandı.</li><li>Ekler <code>_smoke_failed</code>, <code>_smoke_skipped</code>, <code>_export_failed</code>; anahtarlar trace'te gizlenir.</li></ul></div>
@@ -908,8 +1050,8 @@
       <tr><td><span data-l="en">Same re-ask word for word; read-back loop</span><span data-l="tr">Aynı soru kelimesi kelimesine; tekrar okuma döngüsü</span></td><td><span data-l="en">Rotating short re-asks; "Do you confirm?"</span><span data-l="tr">Dönen kısa sorular; "Onaylıyor musunuz?"</span></td></tr>
       <tr><td><span data-l="en">"All of them today?" counted as attempt one everywhere</span><span data-l="tr">"Hepsini bugün?" her üründe ilk deneme sayıldı</span></td><td><span data-l="en">"Let us go through them one at a time."</span><span data-l="tr">"Tek tek ele alalım."</span></td></tr>
       <tr><td><span data-l="en">A hang-up sent an empty outcome</span><span data-l="tr">Kapatılan çağrı boş sonuç gönderdi</span></td><td><span data-l="en"><code>close_call</code> pre-hook rebuilds it</span><span data-l="tr"><code>close_call</code> pre-hook yeniden kurar</span></td></tr>
-      <tr><td><span data-l="en">A cut "no" used up an attempt</span><span data-l="tr">Yarım bir "hayır" bir denemeyi harcadı</span></td><td><span data-l="en">Cut turns without a value count nothing</span><span data-l="tr">Değersiz yarım turlar hiçbir şey saymaz</span></td></tr>
-      <tr><td><span data-l="en">An 80-turn call overflowed the code limit</span><span data-l="tr">80 turluk çağrı kod sınırını aştı</span></td><td><span data-l="en">AST subset and packing</span><span data-l="tr">AST alt kümesi ve paketleme</span></td></tr>
+      <tr><td><span data-l="en">A cut "no" used up an attempt</span><span data-l="tr">Yarım bir "hayır" bir denemeyi harcadı</span></td><td><span data-l="en">Cut turns without a value count nothing (the third in a row is taken as said)</span><span data-l="tr">Değersiz yarım turlar hiçbir şey saymaz (üst üste üçüncüsü söylendiği gibi alınır)</span></td></tr>
+      <tr><td><span data-l="en">A long call hit the code limit at turn 51 (66 KB of code)</span><span data-l="tr">Uzun bir çağrı 51. turda kod sınırına takıldı (66 KB kod)</span></td><td><span data-l="en">AST subset and packing</span><span data-l="tr">AST alt kümesi ve paketleme</span></td></tr>
       <tr><td><span data-l="en">Floor offer cut off 20–30 times in a row</span><span data-l="tr">Taban teklif üst üste 20–30 kez kesildi</span></td><td><span data-l="en">"…or is another day better for you?"</span><span data-l="tr">"…yoksa başka bir gün mü daha uygun?"</span></td></tr>
       <tr><td><span data-l="en">"Yes, that Tuesday" read as the nearest Tuesday</span><span data-l="tr">"Evet, o Salı" en yakın Salı sanıldı</span></td><td><span data-l="en">Keeps the offered day</span><span data-l="tr">Teklif edilen gün korunur</span></td></tr>
     </tbody>
@@ -921,11 +1063,28 @@
   <h2 class="reveal"><span class="num">18</span><span data-l="en">Results and tests</span><span data-l="tr">Sonuçlar ve testler</span></h2>
   <div class="g2 stagger">
     <div class="card accent"><h4><span data-l="en">Public practice set (13 customers)</span><span data-l="tr">Açık deneme seti (13 müşteri)</span></h4>
-      <ul data-l="en"><li>Model-extracted spec, full build: <b>Brief A 10/10</b>, <b>Brief B 3/3</b>, every customer 3 of 3 runs.</li><li>Hand-written spec, same generator: the same result.</li><li>Talkative style after the fixes: Brief B 3/3 on all three runs; Brief A 10/10, 9/10 and 5/10 (the 5/10 on a slow-model run).</li><li>Extraction: about 50 s and $0.15 per build.</li></ul>
-      <ul data-l="tr"><li>Modelin çıkardığı spec, tam build: <b>Brief A 10/10</b>, <b>Brief B 3/3</b>, her müşteri 3 koşunun 3'ünde.</li><li>Elle yazılmış spec, aynı üretici: aynı sonuç.</li><li>Düzeltmelerden sonra konuşkan tarz: Brief B üç koşunun hepsinde 3/3; Brief A 10/10, 9/10 ve 5/10 (5/10 yavaş modelli bir koşuda).</li><li>Spec çıkarma: build başına yaklaşık 50 sn ve 0,15 $.</li></ul></div>
+      <ul data-l="en"><li><b>Scored the official way</b> (a customer counts only if 3 of 3 runs pass), model-extracted spec, full build: <b>Brief A 10/10</b> and <b>Brief B 3/3</b> customers.</li><li>Hand-written spec, same generator: the same result.</li><li><b>Talkative style, single runs</b> (customers passed in one run) after the fixes: Brief B 3/3 in each of three runs; Brief A 10/10, 9/10 and 5/10 (the 5/10 on a slow-model run). Before the fixes: A 7/10, B 0/3.</li><li>One extraction: about 50 s and $0.15 (measured before the second reading was added, which roughly doubles the model cost).</li></ul>
+      <ul data-l="tr"><li><b>Resmi yöntemle</b> (bir müşteri ancak 3 koşunun 3'ü geçerse sayılır), modelin çıkardığı spec, tam build: <b>Brief A 10/10</b> ve <b>Brief B 3/3</b> müşteri.</li><li>Elle yazılmış spec, aynı üretici: aynı sonuç.</li><li><b>Konuşkan tarz, tekil koşular</b> (bir koşuda geçen müşteri sayısı), düzeltmelerden sonra: Brief B üç koşunun her birinde 3/3; Brief A 10/10, 9/10 ve 5/10 (5/10 yavaş modelli bir koşuda). Düzeltmelerden önce: A 7/10, B 0/3.</li><li>Tek bir çıkarım: yaklaşık 50 sn ve 0,15 $ (ikinci okuma eklenmeden önce ölçüldü; o, model maliyetini kabaca ikiye katlar).</li></ul></div>
     <div class="card"><h4><span data-l="en">Tests</span><span data-l="tr">Testler</span></h4>
-      <ul data-l="en"><li><code>tests/hack</code>: 25 files, 355 test functions: engine, policy, invariants, speech, calendar, generator, validator, spec checks, review regressions.</li><li>Local harness: the real code-node snippets run against a mock bank and are scored with the organisers' scorer.</li><li>An unseen-brief sample checks nothing is tied to Brief A.</li></ul>
-      <ul data-l="tr"><li><code>tests/hack</code>: 25 dosya, 355 test fonksiyonu: motor, politika, değişmezler, konuşma, takvim, üretici, doğrulayıcı, spec kontrolleri, inceleme regresyonları.</li><li>Yerel düzenek: gerçek kod node parçaları sahte bir bankaya karşı çalışır, organizatörlerin puanlayıcısıyla puanlanır.</li><li>Görülmemiş bir brief örneği hiçbir şeyin Brief A'ya bağlı olmadığını kontrol eder.</li></ul></div>
+      <ul data-l="en"><li><code>tests/hack</code>: 30 files, 430 test functions: engine, policy, invariants, speech, calendar, generator, validator, spec checks, review regressions.</li><li>Local harness: the real code-node snippets run against a mock bank and are scored with the organisers' scorer.</li><li>An unseen-brief sample checks nothing is tied to Brief A.</li></ul>
+      <ul data-l="tr"><li><code>tests/hack</code>: 30 dosya, 430 test fonksiyonu: motor, politika, değişmezler, konuşma, takvim, üretici, doğrulayıcı, spec kontrolleri, inceleme regresyonları.</li><li>Yerel düzenek: gerçek kod node parçaları sahte bir bankaya karşı çalışır, organizatörlerin puanlayıcısıyla puanlanır.</li><li>Görülmemiş bir brief örneği hiçbir şeyin Brief A'ya bağlı olmadığını kontrol eder.</li></ul></div>
+  </div>
+  <h3 class="reveal"><span data-l="en">Limitations</span><span data-l="tr">Sınırlamalar</span></h3>
+  <div class="card reveal">
+    <ul class="limits" data-l="en">
+      <li>Up to 3 products per customer.</li>
+      <li>A hidden brief comes with no practice customers: correctness on it rests on the checks, the 430 tests and the offline selftest, not on a measured score.</li>
+      <li>Grounding is a heuristic (values must appear in the brief's text), and the second reading only logs disagreements.</li>
+      <li>Policy and honesty are judged by a model reading the transcript. BRAVE keeps to them with fixed lines, gates and code decisions; it has no judge of its own at build time.</li>
+      <li>The platform model's speed and its handling of cut-off speech are outside BRAVE's control (the 5/10 talkative run).</li>
+    </ul>
+    <ul class="limits" data-l="tr">
+      <li>Müşteri başına en fazla 3 ürün.</li>
+      <li>Gizli bir brief deneme müşterisiyle gelmez: oradaki doğruluk ölçülmüş bir puana değil, kontrollere, 430 teste ve çevrimdışı selftest'e dayanır.</li>
+      <li>Grounding bir sezgisel kontrol (değerler brief metninde geçmeli); ikinci okuma da sadece farkları loglar.</li>
+      <li>Politika ve dürüstlük, dökümü okuyan bir modelce değerlendirilir. BRAVE bunlara sabit cümleler, kapılar ve kod kararlarıyla uyar; build sırasında kendi hakemi yok.</li>
+      <li>Platform modelinin hızı ve yarım kalan konuşmayı ele alışı BRAVE'in kontrolü dışında (konuşkan tarzdaki 5/10 koşusu).</li>
+    </ul>
   </div>
   <h3 class="reveal"><span data-l="en">The ideas in one list</span><span data-l="tr">Fikirler tek listede</span></h3>
   <ol class="steps stagger" data-l="en">
@@ -1031,14 +1190,14 @@
         b: [[S, "today 2026-10-14 · attempt1 2026-10-16 · deadline_late 2026-10-23"]] },
       { n: "identity", x: { en: "The pre-hook normalises the spoken date before verify_identity; the bank answers all_verified.", tr: "Pre-hook konuşulan tarihi verify_identity'den önce normalleştirir; banka all_verified döner." },
         b: [[A, { en: "For security, can you confirm your date of birth?", tr: "Güvenlik için doğum tarihinizi teyit edebilir misiniz?" }], [C, { en: "Fourteenth of March, eighty-eight.", tr: "On dört Mart, seksen sekiz." }], [S, "normalize_dob → 1988-03-14 · all_verified = true"]] },
-      { n: "account", x: { en: "get_account is reachable only now. Its products are mapped into a variable.", tr: "get_account'a ancak şimdi erişilebilir. Ürünler bir değişkene aktarılır." }, b: [[S, "products: card · £637.50 past due · 12 days late"]] },
-      { n: "facts", x: { en: "Per-product facts. The facts the model sees leave out the floor and the deadline.", tr: "Ürün bazında bilgiler. Modelin gördükleri tabanı ve son tarihi içermez." }, b: [[S, "band late · floor £200 · deadline 2026-10-23 · 2 attempts"]] },
+      { n: "account", x: { en: "get_account is reachable only now. Its products are mapped into a variable.", tr: "get_account'a ancak şimdi erişilebilir. Ürünler bir değişkene aktarılır." }, b: [[S, "products: card · 637.50 past due · 12 days late"]] },
+      { n: "facts", x: { en: "Per-product facts. The facts the model sees leave out the floor and the deadline.", tr: "Ürün bazında bilgiler. Modelin gördükleri tabanı ve son tarihi içermez." }, b: [[S, "band late · floor 200.00 · deadline 2026-10-23 · 2 attempts"]] },
       { n: "say", x: { en: "The engine's line is spoken word for word.", tr: "Motorun cümlesi kelimesi kelimesine söylenir." },
-        b: [[A, { en: "Your card has £637.50 past due and is 12 days late. Can you make this payment today?", tr: "Kartınızda 637,50 £ gecikmiş borç var ve 12 gün gecikmede. Bugün ödeyebilir misiniz?" }], [C, { en: "Not today… maybe three fifty on Friday?", tr: "Bugün olmaz… belki Cuma three fifty?" }]] },
-      { n: "decide", x: { en: "reply_kind = offer. 'three fifty' is re-read as 350 inside [200, 637.50]; Friday is a business day before the deadline.", tr: "reply_kind = offer. 'three fifty' [200, 637,50] içinde 350 okunur; Cuma, son tarihten önce bir iş günü." },
+        b: [[A, { en: "Your card has 637.50 past due and is 12 days late. Can you make this payment today?", tr: "Kartınızda 637.50 gecikmiş borç var ve 12 gün gecikmede. Bugün ödeyebilir misiniz?" }], [C, { en: "Not today… maybe three fifty on Friday?", tr: "Bugün olmaz… belki Cuma three fifty?" }]] },
+      { n: "decide", x: { en: "reply_kind = offer. 'three fifty' (3.50) is below the floor, so it is re-read as 350, inside [200, 637.50]; Friday is a business day before the deadline.", tr: "reply_kind = offer. 'three fifty' (3,50) tabanın altında; bu yüzden [200, 637,50] içindeki 350 olarak okunur. Cuma, son tarihten önce bir iş günü." },
         b: [[S, "offer · amount 350 · date 2026-10-16 · ok → read-back"]] },
       { n: "say", x: { en: "Read-back before anything is recorded.", tr: "Hiçbir şey kaydedilmeden önce tekrar okuma." },
-        b: [[A, { en: "To confirm: £350 on Friday 16 October for your card. The rest stays overdue. Do you confirm?", tr: "Teyit ediyorum: kartınız için 16 Ekim Cuma 350 £. Kalanı gecikmede kalır. Onaylıyor musunuz?" }], [C, { en: "Yes.", tr: "Evet." }]] },
+        b: [[A, { en: "I have noted the card for 350.00 on Friday 16 October 2026. To confirm: the card, 350.00 on Friday 16 October 2026. Do you confirm?", tr: "Kartınız için 16 Ekim 2026 Cuma, 350.00 not ettim. Teyit ediyorum: kart, 16 Ekim 2026 Cuma, 350.00. Onaylıyor musunuz?" }], [C, { en: "Yes.", tr: "Evet." }]] },
       { n: "decide", x: { en: "Confirm phase: the yes is checked again against the rules, then action = record.", tr: "Onay aşaması: evet kurallara karşı tekrar kontrol edilir, sonra action = record." }, b: [[S, "floor ≤ 350 ≤ full · date ok · action = record"]] },
       { n: "record", x: { en: "create_promise with values from code, never from the model.", tr: "create_promise, değerler koddan gelir, asla modelden değil." }, b: [[S, "create_promise(product_id, 350, 2026-10-16) → ok"]] },
       { n: "after", x: { en: "The result is read; the closing line follows.", tr: "Sonuç okunur; kapanış cümlesi gelir." }, b: [[A, { en: "Your promise is recorded. Is there anything else I can help with?", tr: "Sözünüz kaydedildi. Yardımcı olabileceğim başka bir şey var mı?" }], [C, { en: "No, thanks.", tr: "Hayır, teşekkürler." }]] },
@@ -1052,21 +1211,21 @@
       { n: "setup_tp", x: { en: "Code prepares the callback window and allowed days.", tr: "Kod geri arama aralığını ve izinli günleri hazırlar." }, b: [[S, "window 10:00–19:00 · business days only"]] },
       { n: "third", x: { en: "The day and the time are copied as said.", tr: "Gün ve saat söylendiği gibi kopyalanır." },
         b: [[A, { en: "When would be a good time to call back?", tr: "Ne zaman tekrar aramamız uygun olur?" }], [C, { en: "Tomorrow morning, around eleven.", tr: "Yarın sabah, on bir gibi." }]] },
-      { n: "cbcheck", x: { en: "The day said inside the time words is read; Thursday 11:00 is inside the window.", tr: "Saat ifadesinin içindeki gün de okunur; Perşembe 11:00 aralığın içinde." }, b: [[S, "cb_state = ok · 2026-10-15 11:00"]] },
+      { n: "cbcheck", x: { en: "Code parses the day ('tomorrow') and the time ('around eleven'): Thursday 11:00 is a business day inside the window. (If only the time words name a day, that day is used.)", tr: "Kod günü ('yarın') ve saati ('on bir gibi') okur: Perşembe 11:00 aralığın içinde bir iş günü. (Gün sadece saat ifadesinde geçiyorsa o gün kullanılır.)" }, b: [[S, "cb_state = ok · 2026-10-15 11:00"]] },
       { n: "cbbook", x: { en: "schedule_callback with values from code.", tr: "schedule_callback, değerler koddan." }, b: [[S, "schedule_callback(2026-10-15, 11:00) → ok"]] },
-      { n: "goodbye", x: { en: "fin_callback sets the outcome; goodbye.", tr: "fin_callback sonucu ayarlar; veda." }, b: [[A, { en: "Thank you, we will call back tomorrow at 11. Goodbye.", tr: "Teşekkürler, yarın 11'de tekrar arayacağız. İyi günler." }]] },
+      { n: "goodbye", x: { en: "fin_callback sets the outcome and says the brief's fixed 'callback booked' line; goodbye.", tr: "fin_callback sonucu ayarlar ve brief'in sabit 'geri arama alındı' cümlesini söyler; veda." }, b: [[A, { en: "Thank you, we will call back then. Goodbye.", tr: "Teşekkürler, o zaman tekrar arayacağız. İyi günler." }]] },
       { n: "close", x: { en: "close_call with the callback outcome.", tr: "close_call, geri arama sonucuyla." }, b: [[S, "close_call(outcome = callback)"]] }
     ]},
     { id: "hardship", name: { en: "Hardship", tr: "Maddi zorluk" }, steps: [
       { n: "identity", x: { en: "Verified as in the promise call.", tr: "Söz senaryosundaki gibi doğrulandı." }, b: [[S, "all_verified = true"]] },
       { n: "account", x: { en: "Account fetched.", tr: "Hesap alındı." }, b: [] },
       { n: "say", x: { en: "The engine asks about today.", tr: "Motor bugünü sorar." },
-        b: [[A, { en: "Your card has £637.50 past due. Can you make this payment today?", tr: "Kartınızda 637,50 £ gecikmiş borç var. Bugün ödeyebilir misiniz?" }], [C, { en: "I lost my job last month, I can't pay anything.", tr: "Geçen ay işimi kaybettim, hiçbir şey ödeyemiyorum." }]] },
+        b: [[A, { en: "Your card has 637.50 past due and is 12 days late. Can you make this payment today?", tr: "Kartınızda 637.50 gecikmiş borç var ve 12 gün gecikmede. Bugün ödeyebilir misiniz?" }], [C, { en: "I lost my job last month, I can't pay anything.", tr: "Geçen ay işimi kaybettim, hiçbir şey ödeyemiyorum." }]] },
       { n: "decide", x: { en: "reply_kind = hardship. Policy offer_support: one sympathy line, one support offer, no persuasion.", tr: "reply_kind = hardship. offer_support politikası: bir empati cümlesi, bir destek teklifi, ikna yok." },
         b: [[A, { en: "I am sorry to hear that. Our support team can look at options with you. Would you like me to transfer you?", tr: "Bunu duyduğuma üzüldüm. Destek ekibimiz sizinle seçeneklere bakabilir. Sizi aktarmamı ister misiniz?" }], [C, { en: "Yes, please.", tr: "Evet, lütfen." }]] },
       { n: "transfer", x: { en: "transfer_to_agent to the support queue from the spec.", tr: "transfer_to_agent, spec'teki destek kuyruğuna." }, b: [[S, "transfer_to_agent(queue = support)"]] },
       { n: "wrap", x: { en: "No note on a transfer unless the brief asks for one.", tr: "Brief istemedikçe aktarmada not yok." }, b: [] },
-      { n: "close", x: { en: "close_call: transferred, reason hardship.", tr: "close_call: transferred, sebep hardship." }, b: [[S, "close_call(transferred, hardship)"]] }
+      { n: "close", x: { en: "close_call: transferred, with the brief's reason for the support queue (Brief A: support).", tr: "close_call: transferred, brief'in destek kuyruğu için verdiği sebeple (Brief A: support)." }, b: [[S, "close_call(transferred, support)"]] }
     ]},
     { id: "failed", name: { en: "Identity fails", tr: "Kimlik başarısız" }, steps: [
       { n: "opening", x: { en: "The customer confirms.", tr: "Müşteri onaylar." }, b: [[S, "who1 = confirms"]] },
@@ -1128,16 +1287,16 @@
   var REPLIES = [
     { k: "offer", c: { en: "\"Maybe 300 on the 20th?\"", tr: "\"20'sinde 300 olur mu?\"" }, rule: "offer",
       d: { en: "An offer. The amount is checked against floor and full, the date against business days and the deadline. Valid → it is noted and the next product or the read-back follows.", tr: "Bir teklif. Tutar taban ve tam tutara, tarih iş günlerine ve son tarihe karşı kontrol edilir. Geçerliyse not edilir; sıradaki ürün ya da tekrar okuma gelir." },
-      s: { en: "I have noted £300 on Tuesday 20 October. To confirm: … Do you confirm?", tr: "20 Ekim Salı 300 £ not ettim. Teyit ediyorum: … Onaylıyor musunuz?" } },
+      s: { en: "I have noted the card for 300.00 on Tuesday 20 October 2026. To confirm: … Do you confirm?", tr: "Kartınız için 20 Ekim 2026 Salı, 300.00 not ettim. Teyit ediyorum: … Onaylıyor musunuz?" } },
     { k: "too_much", c: { en: "\"That's too much.\"", tr: "\"Bu çok fazla.\"" }, rule: "offer",
-      d: { en: "too_much → the floor on a valid day, once (floor_offers). If that offer was already refused, the next attempt.", tr: "too_much → geçerli bir günde taban tutar, bir kez (floor_offers). O teklif zaten reddedildiyse sonraki deneme." },
-      s: { en: "Could you pay £200 by Friday 23 October? The rest stays overdue.", tr: "23 Ekim Cuma'ya kadar 200 £ ödeyebilir misiniz? Kalanı gecikmede kalır." } },
+      d: { en: "too_much → the floor, once (floor_offers), on the date already offered or today, moved to a valid day. If that offer was already refused, the next attempt.", tr: "too_much → taban tutar, bir kez (floor_offers), zaten teklif edilen tarihte ya da bugün, geçerli bir güne kaydırılarak. O teklif zaten reddedildiyse sonraki deneme." },
+      s: { en: "The minimum for the card is 200.00. Could you pay 200.00 on Wednesday 14 October 2026? The rest stays overdue.", tr: "Kart için en az tutar 200.00. 14 Ekim 2026 Çarşamba günü 200.00 ödeyebilir misiniz? Kalanı gecikmede kalır." } },
     { k: "vague", c: { en: "\"Sometime next month.\"", tr: "\"Gelecek ay bir ara.\"" }, rule: "offer",
-      d: { en: "A vague day is asked once more (vague_date_asks), then the latest allowed date is stated.", tr: "Belirsiz gün bir kez daha sorulur (vague_date_asks), sonra izin verilen en geç tarih söylenir." },
-      s: { en: "On which exact day will you pay? The latest date I can record is Friday 23 October.", tr: "Tam olarak hangi gün ödersiniz? Kaydedebileceğim en geç tarih 23 Ekim Cuma." } },
+      d: { en: "A vague day gets one more ask (vague_date_asks). If the next answer is vague again, the latest allowed date is stated.", tr: "Belirsiz bir gün bir kez daha sorulur (vague_date_asks). Sonraki cevap da belirsizse izin verilen en geç tarih söylenir." },
+      s: { en: "On which exact day will you pay?", tr: "Tam olarak hangi gün ödersiniz?" } },
     { k: "no", c: { en: "\"No, I can't.\"", tr: "\"Hayır, yapamam.\"" }, rule: "offer",
-      d: { en: "A flat refusal uses one persuasion attempt and moves to the next step of the attempt plan. When attempts run out, the product is refused.", tr: "Düz bir ret bir ikna denemesi harcar ve deneme planının sonraki adımına geçer. Denemeler bitince ürün reddedilmiş sayılır." },
-      s: { en: "Could you pay the minimum of £200 by Friday 23 October?", tr: "En az tutar olan 200 £'u 23 Ekim Cuma'ya kadar ödeyebilir misiniz?" } },
+      d: { en: "A flat refusal uses one persuasion attempt. The first gets attempt 1 (the full amount on the last business day of this week); the next, attempt 2 (the floor on the deadline). When attempts run out, the product is refused.", tr: "Düz bir ret bir ikna denemesi harcar. İlki deneme 1'i alır (tam tutar, bu haftanın son iş günü); sonraki deneme 2'yi (son tarihte taban). Denemeler bitince ürün reddedilmiş sayılır." },
+      s: { en: "Could you pay 637.50 on Friday 16 October 2026?", tr: "16 Ekim 2026 Cuma günü 637.50 ödeyebilir misiniz?" } },
     { k: "hardship", c: { en: "\"I lost my job.\"", tr: "\"İşimi kaybettim.\"" }, rule: "hardship",
       d: { en: "Hardship follows the policy: offer support (one sympathy, one offer), transfer or close. No more persuasion.", tr: "Zorluk politikaya göre ilerler: destek teklifi (bir empati, bir teklif), aktarma ya da kapanış. Artık ikna yok." },
       s: { en: "I am sorry to hear that. Our support team can help. Would you like that?", tr: "Bunu duyduğuma üzüldüm. Destek ekibimiz yardımcı olabilir. İster misiniz?" } },
@@ -1146,7 +1305,7 @@
       s: { en: "I can help you with this right now. Shall we continue?", tr: "Size şu an bu konuda yardımcı olabilirim. Devam edelim mi?" } },
     { k: "stop", c: { en: "\"Stop calling me.\"", tr: "\"Beni aramayı bırakın.\"" }, rule: "stop",
       d: { en: "Counted. At stop_requests_to_close, open products are refused and the call is closed politely.", tr: "Sayılır. stop_requests_to_close'a gelince açık ürünler reddedilmiş sayılır ve çağrı kibarca kapanır." },
-      s: { en: "I understand. Thank you for your time. Goodbye.", tr: "Anlıyorum. Zaman ayırdığınız için teşekkürler. İyi günler." } },
+      s: { en: "(at the second request) I understand. Thank you for your time. Goodbye.", tr: "(ikinci talepte) Anlıyorum. Zaman ayırdığınız için teşekkürler. İyi günler." } },
     { k: "question", c: { en: "\"Why is it so high?\"", tr: "\"Neden bu kadar yüksek?\"" }, rule: "question",
       d: { en: "mode = llm: the model answers in one sentence from the facts it has, then repeats the last ask exactly.", tr: "mode = llm: model elindeki bilgilerle tek cümleyle cevaplar, sonra son soruyu aynen tekrarlar." },
       s: { en: "I do not have that information. Can you make this payment today?", tr: "Bu bilgi bende yok. Bugün bu ödemeyi yapabilir misiniz?" } },
@@ -1156,9 +1315,9 @@
     { k: "yes", c: { en: "\"Yes.\" (to the read-back)", tr: "\"Evet.\" (tekrar okumaya)" }, rule: "confirm",
       d: { en: "Only here is a promise recorded, after the rules are checked again. One create_promise per agreed product.", tr: "Söz yalnızca burada, kurallar tekrar kontrol edildikten sonra kaydedilir. Anlaşılan her ürün için bir create_promise." },
       s: { en: "Your promise is recorded. Is there anything else?", tr: "Sözünüz kaydedildi. Başka bir şey var mı?" } },
-    { k: "cut", c: { en: "\"No, I—\" (cut off)", tr: "\"Hayır, ben—\" (kesildi)" }, rule: "pieces",
-      d: { en: "A cut-off refusal without a value counts nothing: it becomes unclear and gets a short re-ask. The third cut turn in a row is taken as said.", tr: "Değer içermeyen yarım bir ret hiçbir şey saymaz: belirsiz olur ve kısa bir tekrar soru alır. Üst üste üçüncü yarım tur söylendiği gibi alınır." },
-      s: { en: "Sorry, I think you were cut off. Please go on.", tr: "Sanırım sesiniz kesildi, devam edin lütfen." } }
+    { k: "cut", c: { en: "\"No, I—\" (cut off)", tr: "\"Hayır, ben—\" (kesildi)" }, rule: "unclear",
+      d: { en: "A cut-off refusal without a value counts nothing: it becomes unclear and gets a short rotating re-ask. The third cut turn in a row is taken as said. ('Please go on.' is only for an amount left unfinished.)", tr: "Değer içermeyen yarım bir ret hiçbir şey saymaz: belirsiz olur ve dönen kısa bir tekrar soru alır. Üst üste üçüncü yarım tur söylendiği gibi alınır. ('Devam edin' sadece yarım kalan bir tutar içindir.)" },
+      s: { en: "Sorry, I did not catch that. Can you do that?", tr: "Kusura bakmayın, anlayamadım. Bunu yapabilir misiniz?" } }
   ];
   var chips = document.getElementById("chips"), ans = document.getElementById("answer"), curR = null;
   function renderChips() {
@@ -1183,7 +1342,7 @@
 
   /* ---------- speech examples + typewriter ---------- */
   var EX = [
-    ["next Friday", "2026-10-23"],
+    ["next Friday", { en: "2026-10-23 (the Friday of next week)", tr: "2026-10-23 (gelecek haftanın Cuması)" }],
     ["the 21st, sorry, I mean the 20th", "2026-10-20"],
     ["Monday? No, Friday.", "2026-10-16"],
     ["the 5th", { en: "2026-11-05 (this month's 5th has passed)", tr: "2026-11-05 (bu ayın 5'i geçti)" }],
