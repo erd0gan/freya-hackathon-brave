@@ -180,9 +180,56 @@ timelines), then a simulation check.
 | `ab8f89b` | T3, T13 | identity prompt: small talk / cut turn is neither answer nor refusal, short varied re-ask; protect line only for a refusal, once |
 | `9efb3a4` | T11 | engine library packed in code nodes, 63 KB -> 22 KB (L4) |
 | `8d1eb42` | T7 | "Let us go through them one at a time." after a no to all of them today |
+| `d139c61` | T16 | offer re-ask from the second unusable turn: "Can you do that, or is another day better for you?" |
+| `e2948ce` | T20 | `opening2` no comment on small talk; support re-ask "Would you like that?" |
+| `6cd7414` | T18 | enum reply variables cleared to an enum value, not `''` |
+| `753a72a` | T19 | a yes naming only the offered weekday keeps the offered day |
 
 Open: T1 deterministic guard on `declines` (no misreading seen on the new agent: 29 + 16 cut
 turns at identity all `unclear`), T6 per-product refusal at the read-back, T14 `id_heard`.
+
+## 7. Results on `8d1eb42` (talkative, separate single runs)
+
+| Run | Simulation | Result | Notes |
+|---|---|---|---|
+| B rep1 | `77d0fa96` | 3/3 | |
+| B rep2 | `1af3d8cd` | 3/3 | run_cases lost DNS; dumped from the platform, scored from the ledgers |
+| B rep3 | `15fd0205` | 3/3 | |
+| A rep1 | `16924cb5` | 10/10 | |
+| A rep2 | `d5c01c41` | 9/10 | PUB-06: T16 |
+| A rep3 | `ae038f33` | 5/10 | slow run (median turn 25 s, kit warning); PUB-01, PUB-03: T17; PUB-06: T16; PUB-05, PUB-07 to read |
+
+B is 3/3 on every case (before: PUB-11 and PUB-13 2/3). A: PUB-06 fails 2 of 3.
+
+- **T16** PUB-06 (full amount too much, wants the floor on Friday). After "Could you pay 637.50
+  on Wednesday 14 October 2026? The rest stays overdue." the customer was cut off 20-30 turns
+  in a row ("I've been so busy at the office [CUT]") on every "Can you do that?", until the
+  call hit `exceeded-max-duration` (rep2: the right answer came at 386 s, the read-back at
+  410 s, too late). The same offer that the customer accepts as it stands (B) is cut 0 of 7
+  times; here the customer has to turn it down and name another day. Over all timelines,
+  after a cut turn the next one is cut 76% of the time after a short re-ask (<= 4 words) and
+  61-67% after a long one: stickiness dominates, the wording only nudges.
+  Fix: in the offer phase, from the second unusable turn in a row, "Can you do that, or is
+  another day better for you?" (still no amount: repeating it read as a second offer).
+- **T17** slow model (rep3): identity extraction 20-41 s instead of ~2 s, then no agent turn
+  before the customer hung up at ~65 s (`customer-ended-call`, `not_reached`). Outside the
+  agent; the kit prints the warning for such runs.
+- **T18** every code node's `validation_errors`: "variable 'reply_kind' / 'all_products' /
+  'about_product' / 'has_question' rejected by schema validation" (592 times in these
+  timelines; `tp_reply` 18). Clearing an enum variable to `''` is rejected, so the last
+  turn's value stays when the extraction gives nothing. Seen: a stale `has_question=yes` put
+  "I am sorry, I do not have that information." before every re-ask (A PUB-05 rep3); a stale
+  `about_product` can send a reply to the wrong product. Fix: each enum gets a "no" value
+  (`no` / `none` / `unclear` / `other`) and is cleared to it.
+- **T19** A PUB-07 rep3: to "Could you pay 540.00 on the next business day, Tuesday 27 October
+  2026?" the customer said "Yes, that Tuesday works for me."; `said_date_text="that Tuesday"`
+  turned the yes into an offer for the nearest Tuesday (20 Oct), the read-back said 20 Oct,
+  and the customer (who now had to correct it) was cut off for 100+ s. Fix: a yes that names
+  only the weekday of the pending offer takes the offered day.
+- **T20** A PUB-05 rep3 (judge: sympathy twice, support offered four times): `opening2` (LLM)
+  said "I am sorry to hear that your commute was difficult."; every cut turn after the support
+  offer heard the whole offer again. Fix: `opening2` makes no comment on small talk; the
+  re-ask in the support offer is "Would you like that?".
 
 ## Blocker (11 Oct, solved by another network)
 
