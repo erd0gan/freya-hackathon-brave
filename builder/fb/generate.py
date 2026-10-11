@@ -36,6 +36,8 @@ ALWAYS = {"operator": "always"}
 # an add_note sent at 28 s with the default 12 s timeout landed after the call was closed). No
 # automatic retry: a late first request plus a retry would record the write twice.
 WRITE_TIMEOUT_MS = 25000
+# close_call is the exception: see build().
+CLOSE_RETRIES = 2
 # Turn cap of the identity steps. At 16 a talkative customer whose turns kept arriving cut off was
 # closed as declined (B PUB-11, 15 small-talk fragments, none a refusal).
 ID_MAX_TURNS = 60
@@ -464,6 +466,41 @@ CLOSE_PRE = (
 )
 
 
+# After schedule_callback (needs CB_MODE, as negotiation_lib.call_ok's mode). The platform's
+# failure counter catches a call that failed outright (its response maps nothing); a booking
+# not confirmed is tried once more, then the call closes without a callback.
+AFTER_CB = (
+    "try:\n"
+    "    v = vars.get('cb_ok')\n"
+    "    v = str(v if v is not None else '').strip().lower()\n"
+    "    if CB_MODE == 'present':\n"
+    "        ok = v not in ('', 'false', 'none', 'null', '0')\n"
+    "    elif CB_MODE == 'no_error':\n"
+    "        ok = v in ('', 'none', 'null', 'false')\n"
+    "    else:\n"
+    "        ok = v == 'true'\n"
+    "    f = str(vars.get('cb_book_failure_count') or '0')\n"
+    "    f = int(f) if f.isdigit() else 0\n"
+    "    seen = str(vars.get('cb_fail_seen') or '0')\n"
+    "    seen = int(seen) if seen.isdigit() else 0\n"
+    "    if f > seen:\n"
+    "        ok = False\n"
+    "    vars['cb_fail_seen'] = str(f)\n"
+    "    tries = str(vars.get('cb_tries_book') or '0')\n"
+    "    tries = int(tries) + 1 if tries.isdigit() else 1\n"
+    "    vars['cb_tries_book'] = str(tries)\n"
+    "    vars['cb_ok'] = ''\n"
+    "    if ok:\n"
+    "        vars['cb_next'] = 'done'\n"
+    "    elif tries < 2:\n"
+    "        vars['cb_next'] = 'retry'\n"
+    "    else:\n"
+    "        vars['cb_next'] = 'failed'\n"
+    "except Exception:\n"
+    "    vars['cb_next'] = 'failed'\n"
+)
+
+
 # ---------------------------------------------------------------- editor layout
 COL_W, ROW_H = 420, 190
 
@@ -682,6 +719,9 @@ def build(spec: dict[str, Any], tools: dict[str, ToolDef]) -> tuple[dict[str, An
     for fn in (promise_fn, note_fn, cb_fn, transfer_fn, close_fn):
         if fn is not None:
             fn["config"]["timeoutMs"] = WRITE_TIMEOUT_MS
+    # A 500 on close_call left the call with no outcome at all. The tool API says nothing was
+    # recorded and the call may be repeated; a repeat after a success only gets "already closed".
+    close_fn["config"]["maxRetries"] = CLOSE_RETRIES
 
     # ---- extraction schemas
     who_values = ["confirms", "someone_else", "wrong_number", "deceased", "question", "unclear"]
@@ -1213,30 +1253,23 @@ def build(spec: dict[str, Any], tools: dict[str, ToolDef]) -> tuple[dict[str, An
             tr("third_party", "keep talking"),
         ],
     )
-    # F11: say "booked" only when the bank booked it; a failed booking closes without one
+    # F11: say "booked" only when the bank booked it. A failed booking (a 500: "nothing was
+    # recorded, the call may be repeated") is tried once more, then closes without one.
+    cb_field, cb_mode = success_field(t_cb, resp("schedule_callback", "ok"))
     nodes["cb_book"] = api_node(
         "cb_book",
         cb_fn,
+        [tr("after_cb", "always")],
+        [{"path": "data." + cb_field, "variable": "cb_ok"}],
+    )
+    nodes["after_cb"] = code_node(
+        "after_cb",
+        f"CB_MODE = {cb_mode!r}\n" + AFTER_CB,
         [
-            tr(
-                "fin_no_callback",
-                "the booking failed",
-                {
-                    "logic": "or",
-                    "conditions": [
-                        {
-                            "variable": "cb_book_failure_count",
-                            "operator": "greater_than",
-                            "operand": 0,
-                        },
-                        {"variable": "cb_ok", "operator": "equals", "operand": "false"},
-                        {"variable": "cb_ok", "operator": "equals", "operand": "False"},
-                    ],
-                },
-            ),
-            tr("fin_callback", "always"),
+            tr("cb_book", "one more try", eq("cb_next", "retry")),
+            tr("fin_callback", "the callback is booked", eq("cb_next", "done")),
+            tr("fin_no_callback", "the booking failed"),
         ],
-        [{"path": "data." + resp("schedule_callback", "ok"), "variable": "cb_ok"}],
     )
 
     # ---- endings before the negotiation
@@ -1311,6 +1344,8 @@ def build(spec: dict[str, Any], tools: dict[str, ToolDef]) -> tuple[dict[str, An
             "after_transfer",
             "transfer_pre",
             "after_transfer_pre",
+            "cb_book",
+            "after_cb",
         },
     )
     return wf, policy

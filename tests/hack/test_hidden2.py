@@ -471,3 +471,47 @@ def test_the_brief_line_wins():
     neg = to_generator(spec_with())["cfg"]["neg"]
     assert neg["lines"]["recorded"] == "You will receive a text message confirming this promise."
     assert neg["lines"]["paid"].endswith("Payments can take one business day to appear.")
+
+
+# ---------------------------------------------------------------- A. a 500 on a write
+def test_close_call_is_repeated_after_a_failure():
+    wf = workflow(spec_with())
+    close = next(t for t in wf["tools"] if t["function"]["name"] == "close_call")
+    assert close["config"]["maxRetries"] == 2
+    for node in ("record", "cb_book", "transfer"):
+        assert wf["nodes"][node]["pre_actions"][0]["config"]["maxRetries"] == 0
+
+
+def after_cb(wf, v):
+    exec(compile(code_of(wf, "after_cb"), "after_cb", "exec"), {"vars": v})
+    return v["cb_next"]
+
+
+def test_a_failed_callback_booking_is_tried_once_more():
+    from fb.validate import validate
+
+    wf, policy = build(to_generator(spec_with()), parse_openapi(OPENAPI))
+    assert validate(wf, parse_openapi(OPENAPI), policy).ok
+    v = {"cb_ok": "false", "cb_book_failure_count": "0"}
+    assert after_cb(wf, v) == "retry"
+    v.update(cb_ok="true")
+    assert after_cb(wf, v) == "done"
+    # a 500 (failure counter up, nothing mapped), twice: no callback
+    v = {"cb_book_failure_count": "1"}
+    assert after_cb(wf, v) == "retry"
+    v.update(cb_book_failure_count="2")
+    assert after_cb(wf, v) == "failed"
+    assert after_cb(wf, {"cb_ok": "True"}) == "done"
+
+
+def test_callback_without_ok_field_uses_the_error_field():
+    def no_ok(o):
+        ok200(o, "schedule_callback")["properties"].pop("ok")
+
+    o = api_with(no_ok)
+    wf = workflow(spec_with(), o)
+    assert wf["nodes"]["cb_book"]["response_mapping"] == [
+        {"path": "data.error", "variable": "cb_ok"}
+    ]
+    assert after_cb(wf, {"cb_ok": ""}) == "done"
+    assert after_cb(wf, {"cb_ok": "slot taken"}) == "retry"

@@ -104,8 +104,11 @@ def test_full_name_call_variable():
 def test_failed_callback_booking_is_not_reported_as_booked():
     wf, _ = build(SPEC_A, parse_openapi(OPENAPI))
     node = wf["nodes"]["cb_book"]
-    assert [t["target_node"] for t in node["transitions"]] == ["fin_no_callback", "fin_callback"]
+    # the outcome of the booking is decided by after_cb (one more try, then no callback)
+    assert [t["target_node"] for t in node["transitions"]] == ["after_cb"]
     assert node["response_mapping"] == [{"path": "data.ok", "variable": "cb_ok"}]
+    after = [t["target_node"] for t in wf["nodes"]["after_cb"]["transitions"]]
+    assert after == ["cb_book", "fin_callback", "fin_no_callback"]
 
 
 def test_digit_pieces_in_the_heard_order():
