@@ -63,7 +63,8 @@ def test_callback_window_on_saturday_has_no_today():
 def test_callback_window_late_in_the_day():
     f = facts("2026-10-14T18:30")
     assert f["callback_days"] == "2026-10-14,2026-10-15"
-    assert "from 18:30 to 19:00" in f["callback_window_text"]
+    # a callback must be later than now: today's first slot is the next minute (CAL-7)
+    assert "from 18:31 to 19:00" in f["callback_window_text"]
     f = facts("2026-10-14T19:30")
     assert f["callback_days"] == "2026-10-15"
 

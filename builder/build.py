@@ -1,10 +1,26 @@
-"""Build a Freya phone agent from one brief and its tool API file.
+"""Build a Freya phone agent from a bank's documents and its tool API.
 
-    python3 builder/build.py <brief_path> <tool_api_path>
+    python3 builder/build.py <case_folder | case.zip | brief.md> [<openapi.json> | <mock_url>]
+
+    python3 builder/build.py FreyaBank-Case/ https://my-mock.workers.dev   (the final's form)
+    python3 builder/build.py kit/briefs/brief-a.md kit/tools/openapi.json  (one brief, one file)
+
+A folder (or a zip of one) is read by fb.case_input: every Markdown, Word, Excel, PDF, CSV,
+JSON and YAML document, each given a role from README.md's description of the files (else its
+name or content). The spec extractor gets the policy documents (brief, analysis, flow,
+announcements with their dates, Q&A) and, apart and marked as illustrations, the example
+conversations; test customers stay out of it (trace only).
+
+The tool API, first found wins: an OpenAPI file given as the second argument or found in the
+folder; else GET <mock_url>/openapi.json (our own mock; one short request); else the service
+contract document turned into OpenAPI by one model call and checked against its text
+(fb.contract). With a mock_url every tool URL goes to the mock (its scheme and host, the
+contract's path prefix); without one the contract's server must be an absolute URL.
 
 Stdlib only. Steps: read -> spec (model) -> workflow (deterministic template) -> validate ->
-save on Freya (one slot per brief, updated in place) -> smoke test over chat -> export.
-Writes traces/<brief>.log and submission/<brief>.workflow.json. Needs FREYA_API_KEY and
+save on Freya (one slot per case, updated in place) -> smoke test over chat -> export. The
+slot is the folder's name (or the zip's / brief's without extension). Writes
+traces/<slot>.log and submission/<slot>.workflow.json. Needs FREYA_API_KEY and
 OPENROUTER_API_KEY in the environment (or in a .env / kit/env.sh file next to the repo).
 
 Once a workflow is saved, a submission file is always written: the platform export, or the
@@ -24,7 +40,9 @@ END line. None of these can stop or change the build.
 from __future__ import annotations
 
 import dataclasses
+import functools
 import hashlib
+import inspect
 import json
 import os
 import re
@@ -71,8 +89,17 @@ load_env()
 sys.path.insert(0, str(ROOT / "kit"))
 
 import freya  # noqa: E402
+from fb import contract  # noqa: E402
+from fb.case_input import (  # noqa: E402
+    decode_text,
+    is_openapi,
+    load_case,
+    load_json_or_yaml,
+    read_document,
+    slot_name,
+)
 from fb.generate import build  # noqa: E402
-from fb.openapi_tools import parse_openapi  # noqa: E402
+from fb.openapi_tools import KIT_TOOLS, ToolApiError, parse_openapi  # noqa: E402
 from fb.spec_extract import blocking, check, extract, to_generator, warnings  # noqa: E402
 from fb.trace import Trace, redact  # noqa: E402
 from fb.validate import Policy, validate  # noqa: E402
@@ -90,6 +117,31 @@ except Exception:  # pragma: no cover
     proof = run_selftest = None  # type: ignore[assignment]
     extract_observer = observe = None  # type: ignore[assignment]
     OBSERVER_RESERVE_S, OBSERVER_WAIT_MAX_S = 300.0, 120.0
+try:
+    from fb.langpack import norm_language
+except Exception:  # pragma: no cover
+
+    def norm_language(x: object) -> str:  # type: ignore[misc]
+        return str(x or "en").strip().lower()[:2] or "en"
+
+
+# GET <mock_url>/openapi.json: one request, this long at most (the mock is ours and close)
+MOCK_OPENAPI_TIMEOUT_S = 10
+# Policy + examples longer than this get a trace note (IC-11); about 50k tokens
+LONG_INPUT_CHARS = 200_000
+# The smoke test's first customer turn, in the call's language: the reply to "am I speaking
+# with <name>?". Language words only; a language without one here uses English.
+SMOKE_HELLO = {"en": "Hello?", "tr": "Alo, evet benim."}
+SMOKE_SAMPLE = {
+    "en": {"first_name": "Alex", "last_name": "Morgan", "title": "Ms"},
+    "tr": {"first_name": "Deniz", "last_name": "Kaya", "title": "Hanım"},
+}
+# Words the opening must not say before the identity check, per language; for Turkish they
+# are stems matched at a word's start (borç -> borcunuz, gecikme -> gecikmiş).
+SMOKE_WORDS = {
+    "en": {"debt", "collections", "past due", "overdue"},
+    "tr": {"borc", "gecikm", "tahsilat", "odenmemis", "odenmeyen"},
+}
 
 
 def git_commit() -> str:
@@ -109,8 +161,17 @@ def git_commit() -> str:
         return "unknown"
 
 
-def sha256(path: Path) -> str:
+def sha256(path: Path | None) -> str:
+    """The file's hash; for a folder, the hash of its files' names and hashes."""
+    if path is None:
+        return "-"
     try:
+        if path.is_dir():
+            h = hashlib.sha256()
+            for p in sorted(x for x in path.rglob("*") if x.is_file()):
+                rel = p.relative_to(path).as_posix()
+                h.update(f"{rel}\0{hashlib.sha256(p.read_bytes()).hexdigest()}\n".encode())
+            return h.hexdigest()
         return hashlib.sha256(path.read_bytes()).hexdigest()
     except OSError as e:
         return f"unreadable({type(e).__name__})"
@@ -225,31 +286,53 @@ def bounded_api(hard_deadline: float):
     return api
 
 
+def _fold(text: str) -> str:
+    """Turkish-aware lower case with the letters folded to ASCII (İ -> i, ç -> c)."""
+    return text.translate(str.maketrans("İIıŞşĞğÜüÖöÇç", "iiissgguuoocc")).lower()
+
+
+def _stem(word: str) -> str:
+    """A Turkish word's stem for matching its suffixed forms: folded, and a final p/ç/t/k
+    dropped (it softens before a vowel: borç -> borcu, kitap -> kitabı)."""
+    w = _fold(word.strip())
+    return w[:-1] if len(w) > 4 and w[-1] in "pctk" else w
+
+
 def smoke(
-    trace: Trace, wf_id: str, names: dict, forbidden: list | None = None, bank: str = ""
+    trace: Trace,
+    wf_id: str,
+    names: dict,
+    forbidden: list | None = None,
+    bank: str = "",
+    lang: str = "en",
 ) -> str:
-    """One chat turn: the workflow starts a call and says its opening. Returns "passed" or
-    "failed". The chat route can skip the first entry line, so a missing opening is not a
-    failure; an error, or a word that must wait for the identity check, is."""
+    """One chat turn in the call's language: the workflow starts a call, gets the customer's
+    first reply and answers. Returns "passed" or "failed": an error, an empty reply (LP-7:
+    the agent must say something to "hello, it's me") or a word that must wait for the
+    identity check fails it. A liveness check, not a dialogue test."""
+    lang = norm_language(lang)
+    names_tbl = SMOKE_SAMPLE.get(lang) or SMOKE_SAMPLE["en"]
     sample = {
         "customer_id": "c_smoke_test",
-        "first_name": "Alex",
-        "last_name": "Morgan",
-        "full_name": "Alex Morgan",
-        "title": "Ms",
+        "first_name": names_tbl["first_name"],
+        "last_name": names_tbl["last_name"],
+        "full_name": f"{names_tbl['first_name']} {names_tbl['last_name']}",
+        "title": names_tbl["title"],
         "now": time.strftime("%Y-%m-%dT%H:%M"),
     }
     cv = {
         str(names.get(role) or role): val for role, val in sample.items() if names.get(role, role)
     }
+    hello = SMOKE_HELLO.get(lang) or SMOKE_HELLO["en"]
     try:
         r = freya.api(
             "POST",
             "/api/v2/chat/message",
-            {"workflowId": wf_id, "message": "Hello?", "customerVariables": cv},
+            {"workflowId": wf_id, "message": hello, "customerVariables": cv},
         )
+        r = r if isinstance(r, dict) else {}
         said = str(r.get("response") or "")
-        trace.test(f"chat smoke: call started, agent said: {said[:160]!r}")
+        trace.test(f"chat smoke ({lang}): sent {hello!r}, agent said: {said[:160]!r}")
         if r.get("callId"):
             try:
                 freya.api("POST", "/api/v2/chat/end", {"callId": r["callId"]})
@@ -258,10 +341,23 @@ def smoke(
     except Exception as e:  # a smoke test never stops the export
         trace.test(f"chat smoke FAILED: {type(e).__name__}: {str(e)[:300]}")
         return "failed"
-    words = {"debt", "collections", "past due", "overdue"}
-    words |= {str(w).lower() for w in forbidden or [] if str(w).strip()}
-    text = said.lower().replace(bank.lower(), " ") if bank else said.lower()  # "X Loans"
-    leak = sorted(w for w in words if re.search(r"\b" + re.escape(w) + r"\b", text))
+    if r.get("error"):
+        trace.test(f"chat smoke FAILED: the chat answered an error: {str(r['error'])[:300]}")
+        return "failed"
+    if not said.strip():
+        trace.test("chat smoke FAILED: the agent said nothing to the customer's first reply")
+        return "failed"
+    extra = {str(w) for w in forbidden or [] if str(w).strip()}
+    if lang == "tr":
+        text = _fold(said)
+        if bank:
+            text = text.replace(_fold(bank), " ")
+        stems = SMOKE_WORDS["tr"] | {_stem(w) for w in extra}
+        leak = sorted(w for w in stems if re.search(r"(?<![\w])" + re.escape(w), text))
+    else:
+        words = (SMOKE_WORDS.get(lang) or SMOKE_WORDS["en"]) | {w.lower() for w in extra}
+        text = said.lower().replace(bank.lower(), " ") if bank else said.lower()  # "X Loans"
+        leak = sorted(w for w in words if re.search(r"\b" + re.escape(w) + r"\b", text))
     if leak:
         trace.test(f"chat smoke FAILED: words said before the identity check: {leak}")
         return "failed"
@@ -409,12 +505,40 @@ def log_selftest(trace: Trace, gen: dict, tools: dict, facts: dict) -> None:
         trace.note(f"engine selftest failed to run: {type(e).__name__}: {str(e)[:200]}")
 
 
-def start_observer(trace: Trace, brief: str, openapi: dict, tools: dict, deadline: float):
+def extract_spec(
+    brief: str,
+    openapi: dict,
+    tools: dict,
+    trace: Trace,
+    deadline: float | None = None,
+    examples: str = "",
+) -> dict:
+    """The spec extractor on the policy text, with the example conversations kept apart: as
+    its `examples=` keyword when it takes one, else appended after the policy under their own
+    "Example conversations (illustrations, not rules)" header (case_input.examples_text).
+    `extract` is looked up here at call time: a test's stand-in is used."""
+    fn = extract
+    if examples:
+        try:
+            takes = "examples" in inspect.signature(fn).parameters
+        except (TypeError, ValueError):
+            takes = False
+        if takes:
+            return fn(brief, openapi, tools, trace, deadline=deadline, examples=examples)
+        brief = brief.rstrip() + "\n\n" + examples
+    return fn(brief, openapi, tools, trace, deadline=deadline)
+
+
+def start_observer(
+    trace: Trace, brief: str, openapi: dict, tools: dict, deadline: float, examples: str = ""
+):
     try:
         if extract_observer is None:
             return None
-        # `extract` of this module: a test's stand-in reaches the cross-check too
-        return extract_observer(brief, openapi, tools, trace, deadline=deadline, extract_fn=extract)
+        # the same call as the main extraction (`extract` of this module, so a test's
+        # stand-in reaches the cross-check too)
+        fn = functools.partial(extract_spec, examples=examples)
+        return extract_observer(brief, openapi, tools, trace, deadline=deadline, extract_fn=fn)
     except Exception as e:
         trace.note(f"uncertainty: observer not started: {type(e).__name__}: {str(e)[:200]}")
         return None
@@ -435,12 +559,147 @@ def join_observer(
         return {"status": "error"}
 
 
+class Inputs:
+    """What the build works from: the policy text for the spec extractor, the example
+    conversations kept apart, the tool API and where it came from. (A plain class: tests load
+    this file as a module of no package, where a dataclass cannot find its module.)"""
+
+    def __init__(self, brief: str, examples: str = "", case: object | None = None) -> None:
+        self.brief = brief
+        self.examples = examples
+        self.case = case
+        self.openapi: dict | None = None
+        self.api_source = ""
+
+
+def parse_args(argv: list[str]) -> tuple[Path, Path | None, str | None] | None:
+    """(input, OpenAPI file or None, mock_url or None); None when the command is wrong. A
+    second argument starting with http:// or https:// is the mock's URL, else a file."""
+    if len(argv) not in (2, 3):
+        return None
+    api: Path | None = None
+    mock: str | None = None
+    if len(argv) == 3:
+        a = argv[2].strip()
+        if re.match(r"(?i)https?://", a):
+            mock = a
+        else:
+            api = Path(a)
+    return Path(argv[1]), api, mock
+
+
+def fetch_mock_openapi(trace: Trace, mock_url: str) -> dict | None:
+    """GET <mock_url>/openapi.json: one request with a short timeout (our own mock may serve
+    the contract it was written from). None, with a trace line, on any failure."""
+    url = mock_url.rstrip("/") + "/openapi.json"
+    try:
+        req = urllib.request.Request(url, headers={"Accept": "application/json"}, method="GET")
+        with urllib.request.urlopen(req, timeout=MOCK_OPENAPI_TIMEOUT_S) as r:
+            text, _ = decode_text(r.read())
+        doc = load_json_or_yaml(text)
+    except Exception as e:
+        trace.note(f"tool API: GET {url} -> {type(e).__name__}: {str(e)[:200]}")
+        return None
+    if not is_openapi(doc):
+        trace.note(f"tool API: GET {url} -> not an OpenAPI document")
+        return None
+    trace.note(f"tool API: GET {url} -> OpenAPI with {len(doc.get('paths') or {})} paths")
+    return doc
+
+
+def _read_text_file(path: Path) -> str:
+    """A text file as read_text would give it (universal newlines), any encoding."""
+    text, _ = decode_text(path.read_bytes())
+    return text.lstrip("﻿").replace("\r\n", "\n").replace("\r", "\n")
+
+
+def read_inputs(
+    trace: Trace,
+    brief_path: Path,
+    api_path: Path | None,
+    mock_url: str | None,
+    deadline: float | None,
+) -> Inputs:
+    """The policy text, the examples and the tool API (see the module docstring for the
+    order). Raises ToolApiError when no tool API can be found."""
+    p = Path(brief_path)
+    if p.is_dir() or p.suffix.lower() == ".zip":
+        case = load_case(p)
+        for line in case.trace_lines():
+            trace.note(line)
+        inp = Inputs(brief=case.policy_text, examples=case.examples_text, case=case)
+        if case.openapi is not None:
+            inp.openapi, inp.api_source = case.openapi, f"{case.openapi_source} in the case"
+    elif p.suffix.lower() in (".md", ".markdown", ".txt", ""):
+        inp = Inputs(brief=_read_text_file(p))
+    else:  # one brief as a Word / PDF / other document
+        doc = read_document(p.name, p.read_bytes())
+        if doc.error:
+            raise ValueError(f"{p}: {doc.error}")
+        trace.note(f"case: read {p.name} ({doc.size} bytes, reader {doc.reader})")
+        inp = Inputs(brief=doc.text)
+    if api_path is not None:
+        inp.openapi = load_json_or_yaml(_read_text_file(Path(api_path)))
+        inp.api_source = str(api_path)
+    if inp.openapi is None and mock_url:
+        inp.openapi = fetch_mock_openapi(trace, mock_url)
+        if inp.openapi is not None:
+            inp.api_source = mock_url.rstrip("/") + "/openapi.json"
+    contract_text = getattr(inp.case, "contract_text", "") if inp.case is not None else ""
+    if inp.openapi is None and contract_text:
+        trace.note(
+            f"tool API: no OpenAPI file; the service contract ({len(contract_text)} chars) "
+            "is turned into OpenAPI by the model and checked against its text"
+        )
+        doc, left = contract.contract_to_openapi(contract_text, trace, deadline=deadline)
+        if doc is not None:
+            inp.openapi, inp.api_source = doc, "the service contract (model-written, checked)"
+            trace.note("contract: " + contract.describe(doc))
+            if left:
+                trace.note(
+                    f"contract: {len(left)} check problems left after the repair round; "
+                    "building on them (see the lines above)"
+                )
+    if not is_openapi(inp.openapi) and not (
+        isinstance(inp.openapi, dict) and isinstance(inp.openapi.get("paths"), dict)
+    ):
+        raise ToolApiError(
+            "no tool API: give an OpenAPI file as the second argument or in the folder, a "
+            "mock_url that serves /openapi.json, or a service contract document the README "
+            "names"
+        )
+    return inp
+
+
+def log_tools(trace: Trace, tools: dict, source: str, mock_url: str | None) -> None:
+    """Where every tool goes, under which name, and what parse_openapi could not read."""
+    trace.note(
+        f"tool API: from {source or 'the given file'}"
+        + (f"; every tool URL on the mock {mock_url}" if mock_url else "")
+    )
+    for name, t in tools.items():
+        renamed = f" <- {t.api_name}" if t.api_name != name else ""
+        trace.note(f"tool: {name}{renamed} ({t.method} {t.url}), {len(t.fields)} fields")
+        if t.response_scale:
+            trace.note(
+                f"tool: {name} response amounts in minor units (x0.01): {sorted(t.response_scale)}"
+            )
+        if t.headers:
+            trace.note(f"tool: {name} sends headers {sorted(t.headers)}")
+        for w in t.warnings:
+            trace.note(f"tool warning: {name}: {w}")
+    missing = [r for r in KIT_TOOLS if r not in tools]
+    if missing:
+        trace.note(f"tool warning: no operation of the tool API plays {missing}")
+
+
 def main(argv: list[str]) -> int:
-    if len(argv) != 3:
+    args = parse_args(argv)
+    if args is None:
         print(__doc__, file=sys.stderr)
         return 2
-    brief_path, api_path = Path(argv[1]), Path(argv[2])
-    slot = brief_path.stem
+    brief_path, api_path, mock_url = args
+    slot = slot_name(brief_path)
     keep_previous_run(slot)
     trace = Trace(ROOT / "traces" / f"{slot}.log")
     # Every step shares one clock; the last EXPORT_RESERVE_S stay for save and export, and no
@@ -453,19 +712,22 @@ def main(argv: list[str]) -> int:
         "inputs": {
             "brief": str(brief_path),
             "brief_sha256": sha256(brief_path),
-            "tool_api": str(api_path),
+            "tool_api": str(api_path or mock_url or "-"),
             "tool_api_sha256": sha256(api_path),
         },
     }
+    if mock_url:
+        facts["inputs"]["mock_url"] = mock_url
     trace.start(
         brief=brief_path,
-        tool_api=api_path,
+        tool_api=api_path or "-",
+        **({"mock_url": mock_url} if mock_url else {}),
         commit=facts["commit"],
         brief_sha256=facts["inputs"]["brief_sha256"],
         tool_api_sha256=facts["inputs"]["tool_api_sha256"],
     )
     try:
-        return run(trace, brief_path, api_path, slot, deadline, facts)
+        return run(trace, brief_path, api_path, slot, deadline, facts, mock_url=mock_url)
     except Exception as e:  # the trace always gets its end line
         finish(trace, slot, facts, status=f"error: {type(e).__name__}: {str(e)[:300]}")
         return 1
@@ -474,10 +736,11 @@ def main(argv: list[str]) -> int:
 def run(
     trace: Trace,
     brief_path: Path,
-    api_path: Path,
+    api_path: Path | None,
     slot: str,
     deadline: float,
     facts: dict | None = None,
+    mock_url: str | None = None,
 ) -> int:
     if facts is None:
         facts = {
@@ -485,17 +748,37 @@ def run(
             "inputs": {
                 "brief": str(brief_path),
                 "brief_sha256": sha256(brief_path),
-                "tool_api": str(api_path),
+                "tool_api": str(api_path or mock_url or "-"),
                 "tool_api_sha256": sha256(api_path),
             },
         }
-    brief = brief_path.read_text(encoding="utf-8")
-    openapi = json.loads(api_path.read_text(encoding="utf-8"))
-    tools = parse_openapi(openapi)
-    trace.note(f"brief: {len(brief)} chars; tools: {', '.join(sorted(tools))}")
+    try:
+        inp = read_inputs(trace, brief_path, api_path, mock_url, deadline)
+        tools = parse_openapi(inp.openapi, base_url=mock_url)
+    except ToolApiError as e:
+        finish(trace, slot, facts, status=f"no usable tool API ({str(e)[:300]}), nothing published")
+        return 1
+    brief, examples, openapi = inp.brief, inp.examples, inp.openapi
+    facts["inputs"]["tool_api_source"] = inp.api_source or str(api_path)
+    if inp.case is not None:
+        facts["inputs"]["documents"] = {
+            d.name: (d.role if not d.error else f"unread: {d.error[:80]}")
+            for d in inp.case.documents  # type: ignore[attr-defined]
+        }
+    trace.note(
+        f"brief: {len(brief)} chars; tools: {', '.join(sorted(tools))}"
+        + (f"; example conversations: {len(examples)} chars, apart" if examples else "")
+    )
+    log_tools(trace, tools, inp.api_source, mock_url)
+    if len(brief) + len(examples) > LONG_INPUT_CHARS:
+        # nothing is cut (a cut rule is a wrong agent); the trace says why the call is slow
+        trace.note(
+            f"input: {len(brief) + len(examples)} chars for the spec model, more than "
+            f"{LONG_INPUT_CHARS}: the extraction call is long; nothing is cut"
+        )
 
-    observer = start_observer(trace, brief, openapi, tools, deadline)
-    spec = extract(brief, openapi, tools, trace, deadline=deadline)
+    observer = start_observer(trace, brief, openapi, tools, deadline, examples=examples)
+    spec = extract_spec(brief, openapi, tools, trace, deadline=deadline, examples=examples)
     facts["observer"] = join_observer(trace, observer, spec, brief, openapi, deadline)
     (ROOT / "submission").mkdir(exist_ok=True)
     (ROOT / "submission" / f"{slot}.spec.json").write_text(json.dumps(spec, indent=1))
@@ -631,6 +914,7 @@ def run(
                 gen.get("call_variables") or {},
                 gen.get("forbidden_before_verify") or [],
                 str(gen.get("bank_name") or ""),
+                str(gen.get("language") or spec.get("language") or "en"),
             )
         finally:
             freya.api = full_api
@@ -655,4 +939,11 @@ def run(
 
 
 if __name__ == "__main__":
+    # a console in cp1254/cp1252 cannot print every character of a Turkish document: such a
+    # character is replaced on screen, never a reason to stop (the trace file is UTF-8)
+    for stream in (sys.stdout, sys.stderr):
+        try:
+            stream.reconfigure(errors="replace")  # type: ignore[attr-defined]
+        except (AttributeError, ValueError):
+            pass
     sys.exit(main(sys.argv))

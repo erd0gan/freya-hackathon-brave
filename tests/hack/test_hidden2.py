@@ -439,9 +439,19 @@ def test_every_engine_line_is_set():
     keys |= {"transfer_" + w for w in ("restructuring", "human", "support")}
     body = (ROOT / "builder" / "fb" / "nodecode" / "bodies.py").read_text("utf-8")
     keys |= set(re.findall(r"get\('lines'\) or dict\(\)\)\.get\('(\w+)'\)", body))
-    assert keys - {"transfer_"} <= set(ENGINE_LINES), keys - set(ENGINE_LINES)
+    # a key built at run time ("sorry_" + n, "transfer_" + queue) is a prefix, not a key
+    keys = {k for k in keys if not k.endswith("_")}
+    assert keys <= set(ENGINE_LINES), keys - set(ENGINE_LINES)
     lines = to_generator(spec_with())["cfg"]["neg"]["lines"]
-    assert set(ENGINE_LINES) <= set(lines) and all(lines.values())
+    # the 24 keys whose engine default is Brief A's wording are always set; a key left out is
+    # one whose English line is the engine's own default (test_engine_tr checks they match),
+    # left out to keep the code nodes small
+    from fb.spec_extract import _LOCAL_ENGINE_LINES
+
+    assert set(_LOCAL_ENGINE_LINES) <= set(lines) and all(lines.values())
+    from fb.langpack import ENGINE_LINES as PACK
+
+    assert all(k in lines or ENGINE_LINES[k] == PACK["en"].get(k) for k in ENGINE_LINES)
 
 
 def silent(s):

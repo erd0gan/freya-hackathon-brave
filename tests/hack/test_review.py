@@ -362,6 +362,7 @@ def test_every_node_has_an_editor_position():
 
 def test_code_nodes_fit_a_long_call_and_only_big_ones_are_packed():
     from fb.nodecode.embed import CODE_BUDGET, CODE_HARD_CAP
+    from fb.validate import _packed_blobs, _unpack
 
     for wf in built_workflows():
         for k, n in wf["nodes"].items():
@@ -370,8 +371,12 @@ def test_code_nodes_fit_a_long_call_and_only_big_ones_are_packed():
                     continue
                 code = a["function"]["parameters"]["properties"]["code"]["default"]
                 assert len(code.encode()) <= CODE_HARD_CAP, k
-                # a packed node is packed because its readable form is over the budget; packed
-                # (docstrings and comments dropped) it is far under it
-                assert len(code.encode()) <= CODE_BUDGET, k
-                if k != "decide":
-                    assert "b64decode" not in code, k
+                blobs = _packed_blobs(code)
+                if not blobs:
+                    # readable (in full, or without comments and docstrings) within the budget
+                    assert len(code.encode()) <= CODE_BUDGET, k
+                    continue
+                # a packed node is packed because its readable form is over the budget (the
+                # engine's decide, 11 Oct: ~95 KB of library without comments)
+                inner = sum(len((_unpack(b) or "").encode()) for b in blobs)
+                assert inner > CODE_BUDGET, k

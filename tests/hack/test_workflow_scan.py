@@ -68,6 +68,8 @@ def test_person_requests_before_the_identity_check_count():
     v = {"products": [p], "now": "2026-10-14T11:00", "pre_human_count": "1"}
     exec(code("facts"), {"vars": v})
     v.update(reply_kind="human", system_conversation=[])
+    if "read" in WF["nodes"]:  # the engine's turn in two nodes (generate: over the hard cap)
+        exec(code("read"), {"vars": v})
     exec(code("decide"), {"vars": v})
     assert v["neg_action"] == "transfer", v.get("neg_say")
 

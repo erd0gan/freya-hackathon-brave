@@ -109,7 +109,8 @@ def test_failed_callback_booking_is_not_reported_as_booked():
     assert [t["target_node"] for t in node["transitions"]] == ["after_cb"]
     assert node["response_mapping"][0] == {"path": "data.ok", "variable": "cb_ok"}
     after = [t["target_node"] for t in wf["nodes"]["after_cb"]["transitions"]]
-    assert after == ["cb_book", "fin_callback", "fin_no_callback"]
+    # first the guard on the platform's call counters (LP-5), then the code's decision
+    assert after == ["fin_loop_error", "cb_book", "fin_callback", "fin_no_callback"]
 
 
 def test_digit_pieces_in_the_heard_order():
@@ -230,3 +231,86 @@ def test_engine_nodes_are_small():
     for name in ("facts", "decide", "after_record", "setup_id", "cb_check"):
         code = wf["nodes"][name]["pre_actions"][0]["function"]["parameters"]["properties"]["code"]
         assert len(code["default"].encode()) <= CODE_HARD_CAP, name
+
+
+def text_identity_hook():
+    spec = copy.deepcopy(SPEC_A)
+    spec["identity"]["questions"][1]["kind"] = "text"
+    return identity_tool(build(spec, parse_openapi(OPENAPI))[0])["pre_process_code"]
+
+
+# stress D-01 on Freya, 11 Oct: 'A-B-zero-seven' went to the bank as said, twice, and the
+# customer was locked out
+@pytest.mark.parametrize(
+    "said,sent",
+    [
+        ("A-B-zero-seven", "AB07"),
+        ("A-B-zero-seven, that's A as in apple, B as in bravo, zero, seven", "AB07"),
+        ("a b 0 7", "AB07"),
+        ("AB07", "AB07"),
+        ("SW1A 1AA", "SW1A 1AA"),
+        ("Mary Ann", "Mary Ann"),
+        ("A B A B", "ABAB"),
+        ("zero zero seven three", "0073"),  # C-01
+        ("zero zero seven three, that's 0-0-7-3", "0073"),
+        ("Zero zero seven three.", "0073"),  # C-03
+        ("My current postcode is ZX21, though I moved recently.", "ZX21"),  # R30
+        ("AB07 is all I can give you there, sorry.", "AB07"),  # R11
+        ("It is SW1A 1AA I think", "It is SW1A 1AA I think"),
+        ("My name is Mary Ann Smith", "My name is Mary Ann Smith"),
+    ],
+)
+def test_a_spelled_code_is_sent_as_the_code(said, sent):
+    body = {"customer_id": "c1", "field": "phone_last4", "answer": said}
+    assert run_hook(text_identity_hook(), body)["answer"] == sent
+
+
+def test_a_text_answer_is_never_asked_for_more():
+    wf, _ = build(copy.deepcopy(SPEC_A), parse_openapi(OPENAPI))
+    assert "is whole as the customer says it" in wf["nodes"]["identity"]["task_message"]
+
+
+def _ab_workflow(change=None):
+    from fb.spec_extract import to_generator
+
+    path = KIT.parent / "tests" / "hack" / "fixtures" / "spec_ab_extracted.json"
+    raw = json.loads(path.read_text())
+    if change:
+        change(raw)
+    return build(to_generator(raw), parse_openapi(OPENAPI))[0]
+
+
+def _reply_kind(wf):
+    schema = wf["nodes"]["negotiate"]["extraction_schema"]
+    return next(v for v in schema if v["name"] == "reply_kind")["description"]
+
+
+# stress G-05 / R28 on Freya, 11 Oct: two optional spec fields; empty, the A/B workflow is the
+# same byte for byte
+def test_restructure_also_and_answers_empty_change_nothing():
+    base = json.dumps(_ab_workflow(), sort_keys=True)
+
+    def empty(s):
+        s.setdefault("neg", {})["restructure_also"] = []
+        s["answers"] = []
+
+    assert json.dumps(_ab_workflow(empty), sort_keys=True) == base
+
+
+def test_restructure_also_reaches_the_reply_kind_and_not_the_engine():
+    def also(s):
+        s.setdefault("neg", {})["restructure_also"] = ["cancellation or renewal requests"]
+
+    wf = _ab_workflow(also)
+    assert "or makes one of these requests: cancellation or renewal requests" in _reply_kind(wf)
+    assert "restructure_also" not in json.dumps(wf["nodes"]["decide"])
+
+
+def test_answers_reach_the_negotiation_model():
+    def answers(s):
+        s["answers"] = [{"when": "whether the policy is renewed",
+                         "say": "A promise is not a renewal.", "source": "x"}]
+
+    task = _ab_workflow(answers)["nodes"]["negotiate"]["task_message"]
+    want = 'If the customer asks whether the policy is renewed: "A promise is not a renewal."'
+    assert want in task
