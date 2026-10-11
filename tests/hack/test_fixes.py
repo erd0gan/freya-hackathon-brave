@@ -1,6 +1,7 @@
 """Counter-examples from docs/COMPETITION_RESEARCH_2026-10-10.md (F03-F07, F10), as regressions."""
 
 import datetime
+import itertools
 
 from fb.harness.engine_sim import simulate
 from fb.nodecode import bodies
@@ -142,3 +143,39 @@ def test_offer_with_a_refusal_and_no_product_goes_to_the_current_product_only():
     first = {"kind": "offer", "date": "tomorrow", "text": said}
     r = simulate(CASES["PUB-12"], [first], CFG)
     assert not r.says[1].startswith("To confirm"), r.says[1]
+
+
+CUT = {"kind": "unclear", "text": "I've been so busy lately because my cousin"}
+
+
+# talkative: the whole read-back said again on every cut turn (12 and 67 times) read as a loop
+def test_unclear_at_the_read_back_gets_a_short_question():
+    r = simulate(CASES["PUB-01"], [Y, CUT, Y, BYE], CFG_A)
+    assert r.says[1].startswith("To confirm")
+    assert r.says[2] == "Sorry, I did not catch that. Do you confirm?"
+    assert r.ledger["promises"], r.says
+
+
+def test_reasks_do_not_repeat_word_for_word():
+    r = simulate(CASES["PUB-07"], [CUT, CUT, CUT, CUT], CFG_A)
+    reasks = r.says[1:]
+    assert all(a != b for a, b in itertools.pairwise(reasks)), reasks
+    assert any("cut off" in s for s in reasks), reasks
+    assert r.ledger["outcome"] in (None, "")
+
+
+def test_one_cut_turn_after_anything_else_is_asked_again():
+    r = simulate(CASES["PUB-01"], [Y, Y, CUT, BYE], CFG_A)
+    assert r.says[-2] == "Sorry, I did not catch that. Is there anything else I can help you with?"
+    assert r.ledger["outcome"] == "promise"
+
+
+def test_cut_turns_after_the_support_offer_do_not_close_it():
+    r = simulate(CASES["PUB-05"], [{"kind": "hardship"}, CUT, CUT, CUT, Y], CFG_A)
+    assert (r.ledger["outcome"], r.ledger["reason"]) == ("transferred", "support")
+
+
+def test_a_cut_stop_is_not_counted():
+    stop = {"kind": "stop", "text": "I really do not want to"}
+    r = simulate(CASES["PUB-01"], [stop, stop, stop, Y, Y, BYE], CFG_A)
+    assert r.ledger["promises"], r.says

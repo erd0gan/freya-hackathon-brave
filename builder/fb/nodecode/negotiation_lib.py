@@ -182,6 +182,19 @@ def _the(name):
     return "the " + n
 
 
+# A turn we could not use. Talkative customers' turns often arrive cut off, many in a row; the
+# same sentence said again and again annoyed the customer into hanging up, so it rotates.
+SORRY = ["Sorry, I did not catch that.", "Sorry, I missed the end of that.", "Take your time."]
+CUT_SORRY = "Sorry, I think you were cut off."
+
+
+def _sorry(st, r):
+    n = max(int(st.get("unclear_run") or 1) - 1, 0)
+    if r.get("cut") and n % 2 == 1:
+        return CUT_SORRY
+    return SORRY[n % len(SORRY)]
+
+
 def _short(st, neg):
     """A short re-ask without amounts or dates: repeating a whole offer reads as making it a
     second time (judge: 'minimum offered twice')."""
@@ -480,6 +493,7 @@ def step(st, r, neg, cal, now, cfg):
     st["action"] = "say"
     st["mode"] = "speak"
     kind = r.get("kind") or "unclear"
+    st["unclear_run"] = int(st.get("unclear_run") or 0) + 1 if kind == "unclear" else 0
     k = st["i"]
     # A product the customer names counts only while it is still open (extraction is noisy).
     if (
@@ -516,7 +530,11 @@ def step(st, r, neg, cal, now, cfg):
             kind = "offer" if named else kind
         elif kind in ("paid", "dispute"):
             phase = "offer"
-        elif kind in ("question", "unclear", "hardship", "evasive"):
+        elif kind == "unclear":
+            # a turn we could not use (often cut off) is no answer: keep the offer open, uncounted
+            st["say"] = _sorry(st, r) + " " + support_offer
+            return st
+        elif kind in ("question", "hardship", "evasive"):
             # a question is not an answer to the offer: answer it and keep the offer open
             st["hardship_repeats"] = int(st.get("hardship_repeats") or 0) + 1
             if st["hardship_repeats"] > 2:
@@ -609,6 +627,12 @@ def step(st, r, neg, cal, now, cfg):
                 + st["last_ask"]
             )
             return st
+        if kind == "unclear" and r.get("cut") and not st.get("closing_reasked"):
+            # one cut-off turn (it may hold a question) gets one more ask; a whole one ("thank
+            # you, goodbye") ends the call
+            st["closing_reasked"] = True
+            st["say"] = _sorry(st, r) + " " + st["last_ask"]
+            return st
         _finish(st, neg)
         return st
     if phase == "confirm":
@@ -655,6 +679,10 @@ def step(st, r, neg, cal, now, cfg):
                 st["last_ask"] = say
                 return st
             st["say"] = "Which promise would you like to change?"
+            return st
+        if kind == "unclear":
+            # the read-back was said; saying it whole again and again read as a loop
+            st["say"] = _sorry(st, r) + " " + _short(st, neg)
             return st
         st["say"] = _readback(st, neg)
         return st
@@ -742,7 +770,7 @@ def step(st, r, neg, cal, now, cfg):
             else:
                 st["phase"] = "offer"
     else:
-        st["say"] = "Sorry, I did not catch that. " + _short(st, neg)
+        st["say"] = _sorry(st, r) + " " + _short(st, neg)
         return st
     if say is None:
         if prefix:
@@ -868,6 +896,16 @@ ALL_WORDS = re.compile(r"\b(both|all of them|all (two|three|four|five|2|3|4|5)( 
 REFUSAL_WORDS = re.compile(r"\b(not|never|refuse|won't|can't|cannot|don't)\b|n't\b", re.I)
 
 
+END_MARK = re.compile(r"[.!?…\"')\]]\s*$")
+
+
+def is_cut(raw):
+    """The simulator often sends a customer turn cut off mid-sentence (no end mark), up to 13
+    in a row with a talkative customer; a turn with an end mark is whole."""
+    t = str(raw or "").strip()
+    return bool(t) and not END_MARK.search(t)
+
+
 def read_reply(v, today):
     kind = str(v.get("reply_kind") or "").strip().lower()
     if kind not in SEMANTIC_KINDS:
@@ -893,6 +931,10 @@ def read_reply(v, today):
     allp = str(v.get("all_products") or "").strip().lower() in ("yes", "true", "all")
     if raw and ALL_WORDS.search(raw):
         allp = True
+    cut = is_cut(raw)
+    if cut and kind in ("stop", "evasive") and not iso and amount is None:
+        # half a sentence is no wish to end the call and no non-answer: nothing is counted
+        kind = "unclear"
     return {
         "kind": kind,
         "amount": amount,
@@ -901,6 +943,7 @@ def read_reply(v, today):
         "all": allp,
         "product": pi,
         "mixed": bool(raw and REFUSAL_WORDS.search(raw)),
+        "cut": cut,
         "question": str(v.get("has_question") or "").strip().lower() in ("yes", "true"),
     }
 
