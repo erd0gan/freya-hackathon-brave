@@ -179,3 +179,9 @@ def test_a_cut_stop_is_not_counted():
     stop = {"kind": "stop", "text": "I really do not want to"}
     r = simulate(CASES["PUB-01"], [stop, stop, stop, Y, Y, BYE], CFG_A)
     assert r.ledger["promises"], r.says
+
+
+# judge (B PUB-12): "Can you pay all of them today?" counted as attempt 1 on every product
+def test_no_to_all_today_says_one_at_a_time():
+    r = simulate(CASES["PUB-13"], [N], CFG)
+    assert r.says[1].startswith("Let us go through them one at a time. Could you pay"), r.says[1]

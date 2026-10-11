@@ -709,11 +709,16 @@ def step(st, r, neg, cal, now, cfg):
         say = _advance(st, neg, cal)
     elif kind in ("no", "evasive"):
         # A30: a flat refusal or a non-answer to the payment question uses one attempt
+        first = phase == "ask_today" and multi
         say = _flat_refusal(st, k, neg, cal)
         if say is None:
             say = _advance(st, neg, cal)
         else:
             st["phase"] = "offer"
+        if first and say:
+            # B4: the question about all of them today is not an attempt on each product; said
+            # plainly, so the per-product attempts that follow do not read as second attempts
+            say = _line(neg, "one_by_one", "Let us go through them one at a time.") + " " + say
     elif kind == "offer" or (kind == "vague"):
         amount = r.get("amount")
         say = _apply_offer(
