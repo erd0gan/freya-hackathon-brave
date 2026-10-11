@@ -275,7 +275,7 @@ def product_facts(products, now, cfg):
         attempts = ""
         if band is not None and today is not None:
             deadline = deadline_for(today, band, cfg).isoformat()
-            attempts = str(band.get("attempts") or "")
+            attempts = str(band.get("attempts") if band.get("attempts") is not None else "")
         out[k + "_id"] = str(pf(p, "product_id") or "")
         out[k + "_name"] = spoken
         out[k + "_past_due"] = money(pf(p, "past_due"))

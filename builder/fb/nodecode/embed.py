@@ -27,6 +27,8 @@ LIB_CALENDAR = "\n\n".join(_SRC[f] for f in LIB_FILES[:2])
 # 66 KB of code; +39 KB over the next 29 turns). A snippet up to 30 KB leaves room for ~75
 # turns; the longest real calls had 45. Bigger snippets get their library part packed.
 CODE_BUDGET = 30_000
+# No node may go over this, packed or not: 36 KB leaves ~95 KB of data, ~70 turns.
+CODE_HARD_CAP = 36_000
 
 
 def namespace() -> dict[str, Any]:

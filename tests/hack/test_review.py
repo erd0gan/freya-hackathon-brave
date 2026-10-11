@@ -361,7 +361,7 @@ def test_every_node_has_an_editor_position():
 
 
 def test_code_nodes_fit_a_long_call_and_only_big_ones_are_packed():
-    from fb.nodecode.embed import CODE_BUDGET
+    from fb.nodecode.embed import CODE_BUDGET, CODE_HARD_CAP
 
     for wf in built_workflows():
         for k, n in wf["nodes"].items():
@@ -369,6 +369,8 @@ def test_code_nodes_fit_a_long_call_and_only_big_ones_are_packed():
                 if a.get("function", {}).get("name") != "code_exec":
                     continue
                 code = a["function"]["parameters"]["properties"]["code"]["default"]
-                assert len(code.encode()) <= CODE_BUDGET, k
+                assert len(code.encode()) <= CODE_HARD_CAP, k
+                if len(code.encode()) <= CODE_BUDGET:
+                    assert "b64decode" not in code, k
                 if k != "decide":
                     assert "b64decode" not in code, k

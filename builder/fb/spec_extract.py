@@ -1186,6 +1186,8 @@ def to_generator(spec: dict[str, Any]) -> dict[str, Any]:
             "business_days_only": cb.get("business_days_only") is not False,
         },
         "product_fields": {k: v for k, v in pf.items() if k != "list" and v},
+        # find_products' fallback reads the list name from the config (code nodes see CFG only)
+        "products_list": pf.get("list") or "products",
         "floor_field": s.get("floor_field") or {},
         "product_names": s.get("product_names") or {},
         "date_order": (s.get("identity") or {}).get("date_order") or "DMY",

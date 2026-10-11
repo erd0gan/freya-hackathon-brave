@@ -10,7 +10,7 @@ vars['final_say'] = ''
 """
 
 FACTS = """
-products = find_products(vars)
+products = find_products(vars, CFG)
 pf = product_facts(products, vars.get('now'), CFG)
 for k, val in pf.items():
     vars[k] = val

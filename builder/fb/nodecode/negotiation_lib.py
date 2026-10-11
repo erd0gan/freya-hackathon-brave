@@ -126,7 +126,8 @@ def new_state(pf, neg, now):
         except Exception:
             floor = full
         try:
-            att = int(pf.get(key + "_attempts") or 1)
+            a = str(pf.get(key + "_attempts") if pf.get(key + "_attempts") is not None else "")
+            att = int(a) if a.strip().isdigit() else 1  # 0 is a band with no persuasion
         except Exception:
             att = 1
         deadline = str(pf.get(key + "_deadline") or "")
@@ -654,7 +655,8 @@ def _finish(st, neg):
     left = [sem.get(q["status"], "refused") for q in by_account if q["status"] != "paid"]
     if not left:
         st["final_outcome"] = oc.get("paid", "paid")
-        st["final_reason"] = ""
+        # only a brief whose outcome table gives "already paid" a reason sets close_reasons.paid
+        st["final_reason"] = str((neg.get("close_reasons") or {}).get("paid") or "")
         return
     st["final_outcome"] = oc.get("no_promise", "no_promise")
     s = left[0]
@@ -906,6 +908,12 @@ def step(st, r, neg, cal, now, cfg):
             phase = "offer"
             st["phase"] = "offer"
     say = None
+    pk = st["p"][k]
+    if r.get("amount") is not None and r["amount"] < pk["floor"] - 0.005 and r.get("amount_text"):
+        # "three fifty" for a 420 debt with a 126 floor means 350, not 3.50
+        alt = parse_amount(r["amount_text"], pk["floor"], pk["full"])
+        if alt is not None:
+            r["amount"] = alt
     if _yes_to_offered_day(st["p"][k], r) and kind == "offer" and phase in ("offer", "confirm"):
         kind = "yes"  # "Yes, that Friday" names the day on the table
     if kind == "restructure":
@@ -1444,6 +1452,12 @@ ABOUT_WORDS = re.compile(
     r"\bwhy (do|would) you (need|want)\b|\bwho (is this|are you)\b",
     re.I,
 )
+# Words of a number in an amount text.
+AMOUNT_WORDS = re.compile(
+    r"\d|\b(one|two|three|four|five|six|seven|eight|nine|ten|eleven|twelve|twenty|thirty|"
+    r"forty|fifty|sixty|seventy|eighty|ninety|hundred|thousand|grand)\b",
+    re.I,
+)
 END_MARK = re.compile(r"[.!?…\"')\]]\s*$")
 
 
@@ -1459,8 +1473,11 @@ def read_reply(v, today):
     if kind not in SEMANTIC_KINDS:
         kind = "unclear"
     iso, dk = parse_spoken_date(v.get("said_date_text"), today)
-    amount = parse_amount(v.get("said_amount_text"))
-    if amount is None:
+    amount_text = str(v.get("said_amount_text") or "")
+    amount = parse_amount(amount_text)
+    if amount is None and AMOUNT_WORDS.search(amount_text):
+        pass  # a number we cannot read ('200 or maybe 300'): asked again, not the model's guess
+    elif amount is None:
         try:
             amount = (
                 float(v.get("said_amount")) if str(v.get("said_amount") or "").strip() else None
