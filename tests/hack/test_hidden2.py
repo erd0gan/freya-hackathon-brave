@@ -515,3 +515,40 @@ def test_callback_without_ok_field_uses_the_error_field():
     ]
     assert after_cb(wf, {"cb_ok": ""}) == "done"
     assert after_cb(wf, {"cb_ok": "slot taken"}) == "retry"
+
+
+# ---------------------------------------------------------------- B. callbacks on business days
+def weekend_cb(s):
+    s["callback"]["business_days_only"] = False
+
+
+def test_business_days_only_false_against_the_brief_is_flagged():
+    from fb.spec_extract import grounding
+
+    out = grounding(spec_with(weekend_cb), BRIEF)
+    assert any(p.startswith("callback.business_days_only is false") for p in out), out
+    weekend = "6. A callback can be today or the next business day, weekends included."
+    assert not any("business_days_only" in p for p in grounding(spec_with(weekend_cb), weekend))
+
+
+def test_business_days_only_defaults_to_true():
+    def unset(s):
+        s["callback"].pop("business_days_only")
+
+    assert to_generator(spec_with(unset))["cfg"]["callback"]["business_days_only"] is True
+    s = spec_with(lambda s: s["callback"].update(business_days_only="false"))
+    assert to_generator(s)["cfg"]["callback"]["business_days_only"] is True
+    from fb.spec_extract import structure
+
+    assert "callback.business_days_only must be true or false" in structure(s)
+
+
+def test_extract_overrides_a_weekend_reading_of_a_business_day_rule(monkeypatch):
+    import fb.spec_extract as se
+    from fb.trace import Trace
+
+    reply = json.dumps(spec_with(weekend_cb))
+    monkeypatch.setattr(se, "chat", lambda *a, **k: reply)
+    tools = parse_openapi(OPENAPI)
+    s = se.extract(BRIEF, OPENAPI, tools, Trace(None, echo=False))
+    assert s["callback"]["business_days_only"] is True

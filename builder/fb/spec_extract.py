@@ -108,7 +108,9 @@ SCHEMA = {
         "end": "HH:MM (both included)",
         "include_today": "bool",
         "business_days_ahead": "int (1 = up to the next business day)",
-        "business_days_only": "bool",
+        "business_days_only": "bool: true when the brief limits callbacks to business days, as "
+        "'today or the next business day' does; false only when the brief explicitly allows "
+        "callbacks on weekends or holidays",
         "reasks": "int: times to ask again after a time outside the window before giving up",
     },
     "calendar": {"holidays": ["YYYY-MM-DD"], "workdays": "[0..6], 0 = Monday"},
@@ -828,6 +830,9 @@ def structure(spec: dict[str, Any]) -> list[str]:
         bad.append("callback.start/end must be HH:MM with start before end")
     if "business_days_ahead" in cb and not _is_int(cb.get("business_days_ahead"), 0):
         bad.append("callback.business_days_ahead must be a whole number >= 0")
+    for k in ("include_today", "business_days_only"):
+        if k in cb and not isinstance(cb.get(k), bool):
+            bad.append(f"callback.{k} must be true or false")
     if "reasks" in cb and not _is_int(cb.get("reasks"), 0):
         bad.append("callback.reasks must be a whole number >= 0")
     a1 = spec.get("attempt1") or {}
@@ -948,6 +953,19 @@ def _date_in(iso: str, text: str) -> bool:
     return any(re.search(f, text) for f in forms)
 
 
+def _callback_business_days(text: str) -> bool:
+    """A sentence of the brief (lower case) about a callback says 'business day' and nothing
+    about weekends: callbacks are limited to business days."""
+    for sent in re.split(r"(?<=[.!?])\s+|\n", text):
+        if (
+            re.search(r"call\s*-?\s*back|callback", sent)
+            and "business day" in sent
+            and not re.search(r"weekend|saturday|sunday|holiday", sent)
+        ):
+            return True
+    return False
+
+
 def grounding(spec: dict[str, Any], brief: str) -> list[str]:
     """Values that score must come from the brief: dates, day counts, limits, close codes.
     A heuristic: a failure asks the model to look again; it does not stop the build."""
@@ -969,6 +987,12 @@ def grounding(spec: dict[str, Any], brief: str) -> list[str]:
             h12 = hh - 12 if hh > 12 else hh
             if not re.search(rf"\b0?({hh}|{h12})(:{mm}|\s*(am|pm|a\.m\.|p\.m\.|o'clock)|h)", text):
                 bad.append(f"callback {k} {v} is not found in the brief")
+    if cb.get("business_days_only") is False and _callback_business_days(text):
+        bad.append(
+            "callback.business_days_only is false but the brief's callback rule speaks of "
+            "business days ('today or the next business day' limits callbacks to business "
+            "days): set it to true unless the brief explicitly allows weekend callbacks"
+        )
     codes = set()
     for v in (spec.get("outcomes") or {}).values():
         if isinstance(v, list):
@@ -1018,6 +1042,16 @@ def extract(
         spec = _parse(reply)
         for w in grounding(spec, brief):
             trace.note("spec warning (kept, check the brief): " + w)
+    cb = spec.get("callback")
+    if (
+        isinstance(cb, dict)
+        and cb.get("business_days_only") is False
+        and _callback_business_days(brief.lower())
+    ):
+        # the brief's callback rule names business days and no weekend: a Saturday callback
+        # would break it whatever the model read
+        cb["business_days_only"] = True
+        trace.note("spec override: callback.business_days_only false -> true")
     for w in warnings(spec, brief) + [p for p, hard in bindings(spec, tools) if not hard]:
         trace.note("spec warning: " + w)
     for n in spec.get("notes") or []:
@@ -1147,7 +1181,9 @@ def to_generator(spec: dict[str, Any]) -> dict[str, Any]:
             "business_days_ahead": (
                 cb["business_days_ahead"] if _is_int(cb.get("business_days_ahead"), 0) else 1
             ),
-            "business_days_only": cb.get("business_days_only", True),
+            # only an explicit false allows weekend callbacks (a real extraction of Brief A,
+            # 'today or the next business day', gave false: a Saturday callback was offered)
+            "business_days_only": cb.get("business_days_only") is not False,
         },
         "product_fields": {k: v for k, v in pf.items() if k != "list" and v},
         "floor_field": s.get("floor_field") or {},
