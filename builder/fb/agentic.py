@@ -223,6 +223,10 @@ Time: you must be finished, with the final version saved, by {deadline_utc} UTC.
      real call does not). Read every FAIL reason and transcript, fix, save, run it again.
    Fix what fails, save again. Prefer a working, tested simpler agent to an untested big one.
    The last `python ft.py sim` must run on the saved version you finish with.
+   Do not stop early: use all your minutes. When every simulated caller passes, write new and
+   harder callers (other test customers, other wordings, the rules not yet covered), run them,
+   fix what fails, and repeat until the deadline. Save after every improvement, so the saved
+   version is always your best.
 6. Write `call_variables.json`: one example of the call variables (a real test customer) the
    builder uses for its own smoke test.
 
@@ -277,23 +281,53 @@ def _brief(block: dict) -> str:
     return name
 
 
+CONTINUE = ("There are still about {left} minutes before your deadline ({deadline} UTC). Do not "
+            "stop: keep improving the agent. Run `python ft.py sim` on the saved version, write "
+            "new and harder simulated callers for rules not yet covered, fix what fails, save "
+            "after each improvement. Keep the saved version your best.")
+
+
 def run_agent(trace, ws: Path, task: str, session_log: Path, seconds: float) -> int:
+    """Run the agent; when it ends with more than a few minutes left, resume the same session
+    and tell it to keep improving, until the clock runs out."""
+    t_end = time.monotonic() + seconds
+    rc, sid, prompt, resume = 0, None, task, None
+    with open(session_log, "w", encoding="utf-8"):
+        pass
+    while True:
+        left = t_end - time.monotonic()
+        if left < 60:
+            break
+        rc, sid = _run_once(trace, ws, prompt, session_log, left, resume)
+        left = t_end - time.monotonic()
+        if not sid or left < 240:
+            break
+        deadline = time.strftime("%H:%M", time.gmtime(time.time() + left - 60))
+        prompt = CONTINUE.format(left=int(left // 60), deadline=deadline)
+        resume = sid
+        trace.note(f"agent: ended with {left / 60:.0f} min left; resuming session {sid} to keep improving")
+    return rc
+
+
+def _run_once(trace, ws: Path, task: str, session_log: Path, seconds: float,
+              resume: str | None) -> tuple[int, str | None]:
     """Run the coding agent in the work folder until it ends or the clock runs out. Every
     event goes to session_log; the trace gets the model, each tool use and the cost."""
     # Scoped permissions: the agent edits files in its work folder and runs only the build's
     # Freya helper; any other shell command, web access or tool is refused (no prompt in -p).
+    sid = resume
     cmd = [_claude(), "-p", task, "--output-format", "stream-json", "--verbose",
            "--model", AGENT_MODEL, "--permission-mode", "acceptEdits",
            "--allowedTools", "Read", "Write", "Edit", "Glob", "Grep", "Bash(python ft.py:*)",
            "Agent", "Task",
            "--disallowedTools", "WebFetch", "WebSearch",
-           "--add-dir", str(ws)]
+           "--add-dir", str(ws)] + (["--resume", resume] if resume else [])
     trace.model(f"claude-code/{AGENT_MODEL}",
                 "coding agent: read the case documents, write workflow.json, dry-run, save, "
                 "chat-test against the mock, fix")
     session_log.parent.mkdir(parents=True, exist_ok=True)
     t_end = time.monotonic() + seconds
-    with open(session_log, "w", encoding="utf-8") as log:
+    with open(session_log, "a", encoding="utf-8") as log:
         p = subprocess.Popen(cmd, cwd=str(ws), stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
                              text=True, encoding="utf-8", errors="replace")
         assert p.stdout is not None
@@ -306,6 +340,7 @@ def run_agent(trace, ws: Path, task: str, session_log: Path, seconds: float) -> 
                 trace.note("agent: " + line.strip()[:200])
                 continue
             if ev.get("type") == "system" and ev.get("subtype") == "init":
+                sid = ev.get("session_id") or sid
                 trace.note(f"agent session {ev.get('session_id')} model={ev.get('model')}")
             elif ev.get("type") == "assistant":
                 for b in (ev.get("message") or {}).get("content") or []:
@@ -323,4 +358,4 @@ def run_agent(trace, ws: Path, task: str, session_log: Path, seconds: float) -> 
                 p.kill()
                 break
         p.wait()
-    return p.returncode or 0
+    return (p.returncode or 0), sid
