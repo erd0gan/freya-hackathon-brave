@@ -319,7 +319,12 @@ def identity_hooks(
         # pieces: a year said in two parts ('19' ... '75'); a lone century is not an answer
         # yet. Sent unreadable on purpose: the bank does not count that as a wrong answer.
         + "            _ld = digits_from_speech(vars.get('id_last'))\n"
-        + "            if _ld in ('19', '20') or (len(_ld) == 3 and _ld[:2] in ('19', '20')):\n"
+        # 'the 20th' is a day, not a lone century: only words with no month and no ordinal
+        + "            _lt = str(vars.get('id_last') or '').lower()\n"
+        + "            _dayish = re.search(r'\\d(st|nd|rd|th)\\b|(first|second|third|th)\\b|"
+        + "jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec', _lt)\n"
+        + "            if not _dayish and (_ld in ('19', '20') or "
+        + "(len(_ld) == 3 and _ld[:2] in ('19', '20'))):\n"
         + "                _b["
         + repr(f_answer)
         + "] = 'incomplete'\n"
@@ -340,6 +345,9 @@ def identity_hooks(
         + repr(f_answer)
         + "] = str(_a or '').strip()\n"
         + "        vars['id_last_field'] = _f\n"
+        # used once: a later answer must not be sent with this one's words (stale id_heard)
+        + "        vars['id_heard'] = ''\n"
+        + "        vars['id_last'] = ''\n"
         + "except Exception:\n"
         + "    pass\n"
     )
@@ -455,7 +463,23 @@ CLOSE_PRE = (
     "            if rec or any(isinstance(q, dict) and q.get('status') == 'recorded' for q in ps):\n"
     "                b[F_OUT], b[F_REASON] = HANGUP['promise'], ''\n"
     "            elif isinstance(st, dict):\n"
-    "                b[F_OUT], b[F_REASON] = HANGUP['no_promise']\n"
+    # a hang-up mid-call: the reason from the products' states, as negotiation_lib._finish
+    # does (a failed record is service_error, hardship, dispute; all paid is paid)
+    "                sem = dict(failed='service_error', hardship='hardship', dispute='dispute',\n"
+    "                           paid='paid')\n"
+    "                ps = sorted([q for q in ps if isinstance(q, dict)],\n"
+    "                            key=lambda q: q.get('n', 0))\n"
+    "                left = [sem.get(q.get('status'), 'refused') for q in ps\n"
+    "                        if q.get('status') != 'paid']\n"
+    "                if st.get('phase') == 'hardship_offer' or st.get('hardship'):\n"
+    "                    left = ['hardship' if x == 'refused' else x for x in left]\n"
+    "                if ps and not left:\n"
+    "                    b[F_OUT], b[F_REASON] = HANGUP['paid'], HANGUP['paid_reason']\n"
+    "                else:\n"
+    "                    s = left[0] if left else 'refused'\n"
+    "                    s = next((x for x in HANGUP['priority'] if x in left), s)\n"
+    "                    b[F_OUT] = HANGUP['no_promise'][0]\n"
+    "                    b[F_REASON] = HANGUP['reasons'].get(s) or HANGUP['no_promise'][1]\n"
     "            else:\n"
     "                b[F_OUT], b[F_REASON] = HANGUP['unreached']\n"
     "        r = str(b.get(F_REASON) or '').strip()\n"
@@ -695,6 +719,18 @@ def build(spec: dict[str, Any], tools: dict[str, ToolDef]) -> tuple[dict[str, An
             or "refused",
         ],
         "unreached": list((oc.get("unclear") or ["not_reached", "unclear"])[:2]),
+        # what negotiation_lib.close_reason / _finish would send for each semantic reason
+        "reasons": {
+            k: str(
+                (neg.get("close_reasons") or {}).get(k) or (neg.get("reasons") or {}).get(k) or k
+            )
+            for k in ("refused", "hardship", "dispute", "service_error")
+        },
+        "paid": neg_oc.get("paid") or "paid",
+        "paid_reason": str((neg.get("close_reasons") or {}).get("paid") or ""),
+        "priority": list(neg.get("reason_priority") or [])
+        if neg.get("no_promise_reason") == "priority"
+        else [],
     }
     f_out = role_field(t_close, "outcome", "result", "status") or "outcome"
     f_reason = role_field(t_close, "reason", "code", "detail") or "reason"
@@ -1040,9 +1076,16 @@ def build(spec: dict[str, Any], tools: dict[str, ToolDef]) -> tuple[dict[str, An
         "pre_human_back",
         "c = vars.get('pre_human_count') or '0'\n"
         "vars['pre_human_count'] = str(int(c) + 1) if str(c).isdigit() else '1'\n"
+        # back to where the request came from: after a refusal (identity2) a second refusal
+        # must still close the call (A15)
+        "vars['pre_human_from'] = 'identity2' if vars.get('id2') == 'wants_human' "
+        "else 'identity'\n"
         # enum variables are cleared to one of their values ('' is rejected by the platform)
         "vars['id1'] = 'unclear'\nvars['id2'] = 'unclear'\nvars['hum1'] = 'continues'\n",
-        [tr("identity", "always")],
+        [
+            tr("identity2", "the request came after a refusal", eq("pre_human_from", "identity2")),
+            tr("identity", "always"),
+        ],
     )
     nodes["pre_human_more"] = code_node(
         "pre_human_more",

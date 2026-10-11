@@ -70,3 +70,60 @@ def test_person_requests_before_the_identity_check_count():
     v.update(reply_kind="human", system_conversation=[])
     exec(code("decide"), {"vars": v})
     assert v["neg_action"] == "transfer", v.get("neg_say")
+
+
+def close(state):
+    cfg = {"body": {"customer_id": "c1", "outcome": "", "reason": ""}}
+    v = {"neg_state": json.dumps(state)}
+    exec(WF["tools"][0]["pre_process_code"], {"vars": v, "config": cfg})
+    return cfg["body"].get("outcome"), cfg["body"].get("reason")
+
+
+# a hang-up mid-call closes with the reason the products' states give (rules 37, 32, 40, 39)
+def test_hang_up_outcome_follows_the_state():
+    p = {"id": "p1", "n": 0}
+    assert close({"p": [dict(p, status="failed")], "phase": "closing"}) == (
+        "no_promise",
+        "service_error",
+    )
+    assert close({"p": [dict(p, status="open")], "phase": "hardship_offer"}) == (
+        "no_promise",
+        "hardship",
+    )
+    assert close({"p": [dict(p, status="dispute")]}) == ("no_promise", "dispute")
+    assert close({"p": [dict(p, status="paid")]}) == ("paid", None)
+    assert close({"p": [dict(p, status="open")], "phase": "offer"}) == ("no_promise", "refused")
+    assert close({"p": [dict(p, status="recorded")], "recorded": ["p1"]}) == ("promise", None)
+
+
+VT = next(t for t in WF["nodes"]["identity"]["tools"] if t["function"]["name"] == "verify_identity")
+
+
+def pre(answer, field="date_of_birth", v=None):
+    cfg = {"body": {"customer_id": "c1", "field": field, "answer": answer}}
+    v = {} if v is None else v
+    exec(VT["pre_process_code"], {"vars": v, "config": cfg})
+    return cfg["body"]["answer"], v
+
+
+def test_a_day_number_is_not_a_lone_century():
+    sent, _ = pre("1988-03-20", v={"id_last": "the 20th of March 1988"})
+    assert sent == "1988-03-20"
+    sent, _ = pre("1988-03-20", v={"id_last": "nineteen"})
+    assert sent == "incomplete"  # the year in two parts: '19' ... '88'
+
+
+def test_heard_words_are_used_once():
+    _, v = pre("4410", "phone_last4", {"id_heard": "four four one zero", "id_last": "x"})
+    assert v["id_heard"] == "" and v["id_last"] == ""
+    sent, _ = pre("4410", "phone_last4", dict(v))
+    assert sent == "4410"
+
+
+# A15: after a refusal and a detour to 'a person', a second refusal still closes the call
+def test_back_from_a_person_goes_to_where_the_request_came_from():
+    src = WF["nodes"]["pre_human_back"]["pre_actions"][0]["function"]["parameters"]
+    v = {"id2": "wants_human"}
+    exec(src["properties"]["code"]["default"], {"vars": v})
+    assert v["pre_human_from"] == "identity2"
+    assert WF["nodes"]["pre_human_back"]["transitions"][0]["target_node"] == "identity2"
