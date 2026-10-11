@@ -1,9 +1,8 @@
-"""OpenRouter and Anthropic side by side: a failed attempt goes to the other provider, and the
-extraction cross-check runs on the other provider than the main extraction."""
+"""A Claude model goes to Anthropic's API first; a failed attempt goes to OpenRouter. Without an
+Anthropic key (or for a model that is not Claude) everything goes to OpenRouter."""
 
 import io
 import json
-import threading
 import urllib.error
 
 from fb import llm
@@ -45,7 +44,6 @@ def keys(monkeypatch, openrouter=True, anthropic=True):
     if anthropic:
         monkeypatch.setenv("ANTHROPIC_API_KEY", "sk-ant-test-key-123456")
     monkeypatch.setattr(llm.time, "sleep", lambda s: None)
-    llm.prefer(None)
 
 
 MSGS = [{"role": "system", "content": "be brief"}, {"role": "user", "content": "hi"}]
@@ -76,19 +74,35 @@ def test_anthropic_request_shape_and_trace(monkeypatch, tmp_path):
     assert "anthropic:claude-opus-5-5" in log and "cost=$0.0060" in log
 
 
-def test_a_failed_attempt_goes_to_the_other_provider(monkeypatch, tmp_path):
+def test_a_claude_model_goes_to_anthropic_first(monkeypatch, tmp_path):
     keys(monkeypatch)
     seen = []
-    monkeypatch.setattr(llm.urllib.request, "urlopen", fake([503, AN_OK], seen))
+    monkeypatch.setattr(llm.urllib.request, "urlopen", fake([AN_OK], seen))
     assert llm.chat(Trace(tmp_path / "t.log", echo=False), "p", MSGS) == "from anthropic"
-    assert "openrouter" in seen[0].full_url and "anthropic.com" in seen[1].full_url
+    assert len(seen) == 1 and "anthropic.com" in seen[0].full_url
+
+
+def test_a_failed_anthropic_attempt_goes_to_openrouter(monkeypatch, tmp_path):
+    keys(monkeypatch)
+    seen = []
+    monkeypatch.setattr(llm.urllib.request, "urlopen", fake([503, OR_OK], seen))
+    assert llm.chat(Trace(tmp_path / "t.log", echo=False), "p", MSGS) == "from openrouter"
+    assert "anthropic.com" in seen[0].full_url and "openrouter" in seen[1].full_url
+
+
+def test_a_model_that_is_not_claude_goes_to_openrouter(monkeypatch, tmp_path):
+    keys(monkeypatch)
+    seen = []
+    monkeypatch.setattr(llm.urllib.request, "urlopen", fake([OR_OK], seen))
+    tr = Trace(tmp_path / "t.log", echo=False)
+    assert llm.chat(tr, "p", MSGS, model="google/gemini-3-pro") == "from openrouter"
+    assert llm.configured("google/gemini-3-pro") == ["openrouter"]
 
 
 def test_an_error_body_goes_to_the_other_provider(monkeypatch, tmp_path):
     keys(monkeypatch)
     seen = []
     err = {"type": "error", "error": {"type": "overloaded_error"}}
-    monkeypatch.setenv("BUILDER_PROVIDER", "anthropic")
     monkeypatch.setattr(llm.urllib.request, "urlopen", fake([err, OR_OK], seen))
     assert llm.chat(Trace(tmp_path / "t.log", echo=False), "p", MSGS) == "from openrouter"
 
@@ -110,23 +124,11 @@ def test_a_model_without_sampling_settings_is_asked_again_without_them(monkeypat
     assert "temperature" in seen[0] and "temperature" not in seen[1]
 
 
-def test_the_cross_check_thread_prefers_the_other_provider(monkeypatch, tmp_path):
+def test_builder_provider_can_put_openrouter_first(monkeypatch):
     keys(monkeypatch)
-    assert llm.other_provider() == "anthropic"
-    seen = []
-    monkeypatch.setattr(llm.urllib.request, "urlopen", fake([AN_OK, OR_OK], seen))
-    tr = Trace(tmp_path / "t.log", echo=False)
-    got = {}
-
-    def observer():
-        llm.prefer(llm.other_provider())
-        got["obs"] = llm.chat(tr, "cross-check", MSGS)
-
-    t = threading.Thread(target=observer)
-    t.start()
-    t.join()
-    got["main"] = llm.chat(tr, "main", MSGS)  # this thread keeps the default order
-    assert got == {"obs": "from anthropic", "main": "from openrouter"}
+    assert llm.configured() == ["anthropic", "openrouter"]
+    monkeypatch.setenv("BUILDER_PROVIDER", "openrouter")
+    assert llm.configured() == ["openrouter", "anthropic"]
 
 
 def test_no_key_is_an_error(monkeypatch, tmp_path):

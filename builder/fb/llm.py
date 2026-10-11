@@ -2,17 +2,15 @@
 Anthropic's Messages API, side by side. Every call is written to the trace with its model,
 provider, purpose, tokens and cost.
 
-Two providers: a call goes to the preferred one and a failed attempt (a timeout, a gateway error,
-an error body) is tried again on the other one, so one provider being down does not stop a build.
-The extraction cross-check runs on the other provider than the main extraction (`prefer()` in its
-thread), so the two run at the same time on both."""
+A Claude model goes to Anthropic's API first (when ANTHROPIC_API_KEY is set); a failed attempt (a
+timeout, a gateway error, an error body) is tried again on OpenRouter, so one provider being down
+does not stop a build. Without an Anthropic key everything goes to OpenRouter."""
 
 from __future__ import annotations
 
 import json
 import os
 import re
-import threading
 import time
 import urllib.error
 import urllib.request
@@ -31,8 +29,6 @@ PRICES = {
 PROVIDERS = ("openrouter", "anthropic")
 ANTHROPIC_VERSION = "2023-06-01"
 
-_local = threading.local()
-
 
 class LLMError(RuntimeError):
     pass
@@ -49,35 +45,23 @@ def anthropic_model(model: str) -> str:
     return name.replace(".", "-")
 
 
-def configured() -> list[str]:
-    """Providers with a key, in the order of preference: BUILDER_PROVIDER first (default
-    openrouter), then the other."""
+def is_claude(model: str) -> bool:
+    return model.startswith(("anthropic/", "claude-"))
+
+
+def configured(model: str = DEFAULT_MODEL) -> list[str]:
+    """Providers with a key for `model`, in the order they are tried. A Claude model goes to
+    Anthropic's own API first and to OpenRouter only when that fails; any other model goes to
+    OpenRouter alone. BUILDER_PROVIDER=openrouter puts OpenRouter first."""
     have = {
         "openrouter": bool(os.environ.get("OPENROUTER_API_KEY")),
-        "anthropic": bool(os.environ.get("ANTHROPIC_API_KEY")),
+        "anthropic": bool(os.environ.get("ANTHROPIC_API_KEY")) and is_claude(model),
     }
-    first = str(os.environ.get("BUILDER_PROVIDER") or "openrouter").strip().lower()
+    first = str(os.environ.get("BUILDER_PROVIDER") or "").strip().lower()
+    if first not in PROVIDERS:
+        first = "anthropic"
     order = [first] + [p for p in PROVIDERS if p != first]
     return [p for p in order if have.get(p)]
-
-
-def prefer(provider: str | None) -> None:
-    """This thread's calls go to `provider` first (when it has a key); None = the default."""
-    _local.provider = provider
-
-
-def other_provider() -> str | None:
-    """The configured provider that is not the first one (for the cross-check), if any."""
-    ps = configured()
-    return ps[1] if len(ps) > 1 else None
-
-
-def _order() -> list[str]:
-    ps = configured()
-    want = getattr(_local, "provider", None)
-    if want in ps:
-        ps = [want] + [p for p in ps if p != want]
-    return ps
 
 
 def _request(
@@ -165,9 +149,9 @@ def chat(
 ) -> str:
     """`deadline`: time.monotonic() value by which the call (with its retries) must be over.
     Attempt n goes to provider n mod (number of providers with a key), starting with the
-    preferred one: a failed attempt is tried again on the other provider."""
+    first one (configured()): a failed attempt is tried again on the other provider."""
     model = model or model_for("builder")
-    order = _order()
+    order = configured(model)
     if not order:
         raise LLMError("no model provider key is set (OPENROUTER_API_KEY or ANTHROPIC_API_KEY)")
     last = ""

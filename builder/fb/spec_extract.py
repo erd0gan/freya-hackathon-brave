@@ -1556,19 +1556,10 @@ def extract_observer(
     if str(os.environ.get("BUILDER_OBSERVER", "1")).strip() == "0":
         trace.note("uncertainty: observer disabled (BUILDER_OBSERVER=0)")
         return None
-    from fb import llm
-
     fn = extract_fn or extract
     proxy = _ObserverTrace(trace)
-    # with two provider keys the cross-check runs on the other provider, at the same time
-    other = llm.other_provider()
-
-    def run() -> Any:
-        llm.prefer(other)
-        return fn(brief, openapi, tools, proxy, deadline=deadline)
-
     try:
-        return ExtractionObserver(run)
+        return ExtractionObserver(lambda: fn(brief, openapi, tools, proxy, deadline=deadline))
     except Exception as e:
         trace.note(f"uncertainty: observer not started: {type(e).__name__}: {str(e)[:200]}")
         return None
