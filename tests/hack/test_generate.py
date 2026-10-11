@@ -190,3 +190,12 @@ def test_a_set_outcome_is_kept():
     wf, _ = build(copy.deepcopy(SPEC_A), parse_openapi(OPENAPI))
     body = run_hook(close_hook(wf), {"customer_id": "c1", "outcome": "paid", "reason": ""}, {})
     assert body == {"customer_id": "c1", "outcome": "paid"}
+
+
+# talkative: an 80-turn call went over code_exec's 131072-byte limit (code + vars) with the
+# plain 63 KB lib in every engine node; the packed lib leaves room for the conversation
+def test_engine_nodes_are_small():
+    wf, _ = build(copy.deepcopy(SPEC_A), parse_openapi(OPENAPI))
+    for name in ("facts", "decide", "after_record", "setup_id", "cb_check"):
+        code = wf["nodes"][name]["pre_actions"][0]["function"]["parameters"]["properties"]["code"]
+        assert len(code["default"].encode()) < 32000, name

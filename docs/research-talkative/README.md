@@ -111,6 +111,7 @@ read as `confirms`); negotiation turn caps (every turn goes to `decide`).
 | L1 | Can a code node read the conversation? | **Yes.** `vars['system.conversation']` is a list of `{"role", "content"}` up to and including the customer's last message, word for word with its punctuation ("I have been so busy today because my") |
 | L2 | Is `{{system.conversation.last-1}}` filled inside code_exec source? | No (left as is) |
 | L3 | Is it filled in a tts line? | Yes ("1. USER: I have been so busy today because my") |
+| L4 | Can a code node unpack its library (zlib + base64 + exec into `globals()`)? | **Yes.** The engine library goes from 63 KB to 22 KB per node; lib functions, `CFG` and `json` work after unpacking |
 
 So a code node can tell a cut message from a whole one without asking the model, and can check
 a refusal against the customer's own words.
