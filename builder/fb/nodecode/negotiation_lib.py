@@ -493,6 +493,34 @@ def _close_hardship(st, neg):
     _finish(st, neg)
 
 
+# A day number: digits or a spoken ordinal ("the twenty-seventh").
+DAY_NUMBER = re.compile(
+    r"\d|first|second|third|fourth|fifth|sixth|seventh|eighth|ninth|tenth|eleventh|twelfth|"
+    r"teenth|tieth",
+    re.I,
+)
+
+
+def _yes_to_offered_day(p, r):
+    """'Yes, that Tuesday works' to our 'Tuesday 27 October': the weekday alone was read as the
+    nearest Tuesday (20 Oct) and read back wrong (talkative A PUB-07). A yes that names only the
+    offered day's weekday means the offered day."""
+    o = p.get("offer") or {}
+    if not (r.get("said_yes") and o.get("date") and r.get("date")) or r["date"] == o["date"]:
+        return
+    if DAY_NUMBER.search(str(r.get("date_text") or "")):
+        return
+    try:
+        same = (
+            datetime.date.fromisoformat(r["date"]).weekday()
+            == datetime.date.fromisoformat(o["date"]).weekday()
+        )
+    except Exception:
+        return
+    if same:
+        r["date"] = o["date"]
+
+
 def step(st, r, neg, cal, now, cfg):
     """r: {kind, amount, date, date_kind, all, product}. Mutates and returns st."""
     st["action"] = "say"
@@ -509,6 +537,7 @@ def step(st, r, neg, cal, now, cfg):
         k = r["product"]
     say = None
     phase = st["phase"]
+    _yes_to_offered_day(st["p"][k], r)
     if kind == "restructure":
         _transfer(st, "restructuring", neg)
         return st
@@ -930,6 +959,7 @@ def read_reply(v, today):
             )
         except Exception:
             amount = None
+    said_yes = kind == "yes"
     if kind in ("yes", "no", "too_much", "evasive") and (iso or amount is not None):
         kind = "offer"  # a date or an amount the customer names is never a refusal
     if kind == "offer" and not iso and amount is None and dk == "vague":
@@ -956,6 +986,8 @@ def read_reply(v, today):
         "mixed": bool(raw and REFUSAL_WORDS.search(raw)),
         "cut": cut,
         "question": str(v.get("has_question") or "").strip().lower() in ("yes", "true"),
+        "said_yes": said_yes,
+        "date_text": str(v.get("said_date_text") or ""),
     }
 
 

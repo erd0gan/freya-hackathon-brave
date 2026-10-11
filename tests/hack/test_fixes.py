@@ -232,3 +232,20 @@ def test_reply_clear_values_are_enum_values():
             assert val in enums[k], (k, val, enums[k])
     assert {"reply_kind", "has_question", "all_products", "about_product"} <= set(enums)
     assert "other" in enums["tp_reply"]
+
+
+# talkative A PUB-07: "Yes, that Tuesday works for me." to "Tuesday 27 October" was read as the
+# nearest Tuesday (20 Oct); a yes naming only the offered weekday takes the offered day
+def test_yes_with_the_offered_weekday_keeps_the_offered_day():
+    seq = [
+        N,
+        {"kind": "vague", "date": "the week after next"},
+        {"kind": "offer", "date": "Monday the twenty-sixth"},
+        {"kind": "yes", "date": "that Tuesday"},
+        Y,
+        BYE,
+    ]
+    r = simulate(CASES["PUB-07"], seq, CFG_A)
+    rb = next(s for s in r.says if s.startswith("To confirm"))
+    assert "27 October" in rb, r.says
+    assert r.score["pass"], (r.score["failed"], r.says)
