@@ -91,7 +91,6 @@ _VAGUE = [
     "later this month",
     "next month",
     "in a few days",
-    "in two weeks",
     "couple of weeks",
     "a few weeks",
     "sometime",
@@ -174,11 +173,26 @@ def _words_to_number_tokens(s):
     return " ".join(out)
 
 
-def _norm_text(text):
+# A clock time inside a day text ('Friday at 3', 'the 20th, 2pm', 'half past ten'); a number
+# marked as an ordinal ('at the 3rd', '23th' after the words are read) is a day, not a time.
+_TIMES = [
+    r"\b(?:at|around|about)\s+\d{1,2}(?:[:.]\d{2}|\s+\d{2})?(?!\d|th)"
+    r"(?:\s*(?:am|pm|a m|p m|o'?clock))?",
+    r"\b\d{1,2}(?:[:.]\d{2})?\s*(?:am|pm|a m|p m|o'?clock)\b",
+    r"\b\d{1,2}:\d{2}\b",
+    r"\b(?:half|quarter|\d{1,2})\s+(?:past|to)\s+\d{1,2}(?!\d|th)",
+    r"\bhalf\s+\d{1,2}(?!\d|th)",
+]
+
+
+def _norm_text(text, drop_times=False):
     s = str(text or "").lower()
     s = s.replace(",", " ").replace("’", "'")
-    s = re.sub(r"(\d)(st|nd|rd|th)\b", r"\1", s)
+    s = re.sub(r"(\d)(st|nd|rd|th)\b", r"\1th", s)
     s = _words_to_number_tokens(s)
+    if drop_times:
+        for rx in _TIMES:
+            s = re.sub(rx, " ", s)
     s = re.sub(r"(\d+)(st|nd|rd|th)\b", r"\1", s)
     return re.sub(r"\s+", " ", s).strip()
 
@@ -214,6 +228,44 @@ def _safe_date(y, m, d):
         return None
 
 
+_DAY_NAMES = "|".join(_WDAYS + _MONTHS)
+# 'not Monday', 'I can't do Monday', 'no to Monday' / 'Monday is no good', 'Monday doesn't work'
+_REFUSED_BEFORE = re.compile(
+    r"(?:\bnot|\bno(?:\s+to)?|\bnever|\bexcept|\bcan'?t\s+(?:do|make|manage|pay)"
+    r"|\bcannot\s+(?:do|make|manage|pay)|\bcan\s+not\s+(?:do|make|pay)"
+    r"|\bwon'?t\s+(?:be\s+able\s+to\s+)?(?:do|make|pay))\s+(?:(?:on|it|this|next)\s+)*$"
+)
+_REFUSED_AFTER = re.compile(
+    r"^(?:'s|\s+is)?\s+(?:no good|not good|bad|out|impossible|not possible|not ok)\b"
+    r"|^\s+(?:doesn'?t|does not|won'?t|will not|isn'?t|is not)\s+(?:work|suit|good|possible|ok)"
+)
+
+
+def _refused(s, start, end):
+    return bool(_REFUSED_BEFORE.search(s[:start]) or _REFUSED_AFTER.search(s[end:]))
+
+
+def _relative_days(s):
+    """Days from today for 'in a week', 'a week from today', 'in 2 weeks', 'a fortnight',
+    'in 10 days'; None when the text says none of these. 'In two weeks' is a day (14 days),
+    'in a couple of weeks' stays vague."""
+    if re.search(r"\b(?:in\s+(?:a|1)\s+week|(?:a|1)\s+week\s+(?:from\s+)?(?:today|now))\b", s):
+        return 7
+    if re.search(r"\bthis\s+time\s+next\s+week\b", s):
+        return 7
+    if re.search(r"\b(?:in\s+)?(?:a|1)\s+fortnight\b", s):
+        return 14
+    m = re.search(r"\b(?:in\s+(\d)\s+weeks?|(\d)\s+weeks?\s+(?:from\s+)?(?:today|now))\b", s)
+    if m:
+        return 7 * int(m.group(1) or m.group(2))
+    m = re.search(
+        r"\b(?:in\s+(\d{1,2})\s+days?|(\d{1,2})\s+days?\s+(?:from\s+)?(?:today|now))\b", s
+    )
+    if m:
+        return int(m.group(1) or m.group(2))
+    return None
+
+
 def parse_spoken_date(text, today):
     """-> (iso or '', 'vague' | 'date' | 'none'). `today` is a datetime.date."""
     # a correction ('..., sorry I mean tomorrow', 'the 21st, no, the 20th') wins over
@@ -227,13 +279,19 @@ def parse_spoken_date(text, today):
     raw = _norm_text(text)
     if not raw:
         return "", "none"
-    s = _norm_text(seg)
+    s = _norm_text(seg, drop_times=True)
+    rel = _relative_days(s)
+    if rel is not None:
+        return (today + datetime.timedelta(days=rel)).isoformat(), "date"
     if "day after tomorrow" in s:
         return (today + datetime.timedelta(days=2)).isoformat(), "date"
     if "tomorrow" in s:
         return (today + datetime.timedelta(days=1)).isoformat(), "date"
     if re.search(r"\btoday\b|\bright now\b|\bnow\b", s) and not re.search(r"\d", s):
         return today.isoformat(), "date"
+    # 'after the 20th', 'before Friday': a period, not a day (rule: ask once for the day)
+    if re.search(r"\b(?:after|before)\s+(?:the\s+)?(?:\d|(?:" + _DAY_NAMES + r")\b)", s):
+        return "", "vague"
     # day + month name, either order
     toks = s.split()
     day = None
@@ -256,6 +314,10 @@ def parse_spoken_date(text, today):
                 day = int(toks[i - 2])
             elif i + 1 < len(toks) and re.fullmatch(r"\d{1,2}", toks[i + 1]):
                 day = int(toks[i + 1])
+            elif (
+                i + 2 < len(toks) and toks[i + 1] == "the" and re.fullmatch(r"\d{1,2}", toks[i + 2])
+            ):
+                day = int(toks[i + 2])  # 'December the third'
             if i + 1 < len(toks) and re.fullmatch(r"\d{4}", toks[-1]):
                 year = int(toks[-1])
     m = re.search(r"\b(\d{1,2})[/.](\d{1,2})(?:[/.](\d{2,4}))?\b", s)
@@ -269,28 +331,51 @@ def parse_spoken_date(text, today):
         if d and not year and d < today:
             d = _safe_date(y + 1, month, day)
         return (d.isoformat(), "date") if d else ("", "none")
-    # weekday, with this / next
-    for i, w in enumerate(_WDAYS):
-        if re.search(r"\b" + w + r"\b", s):
-            monday = today - datetime.timedelta(days=today.weekday())
-            this_day = monday + datetime.timedelta(days=i)
-            if re.search(r"\bnext\s+" + w, s) or "following" in s:
-                d = this_day + datetime.timedelta(days=7)
-            elif re.search(r"\bthis\s+" + w, s) or re.search(r"\bthis coming\s+" + w, s):
-                d = this_day
-            else:
-                d = this_day if this_day >= today else this_day + datetime.timedelta(days=7)
-            num = re.search(r"\b(\d{1,2})\b", s)
-            if num:
-                # 'Monday the 26th': trust the number, it is more specific
-                n = int(num.group(1))
-                dd = _safe_date(today.year, today.month, n) if 1 <= n <= 31 else None
-                if dd and dd < today:
-                    nm = today.month % 12 + 1
-                    dd = _safe_date(today.year + (1 if nm == 1 else 0), nm, n)
-                if dd:
-                    return dd.isoformat(), "date"
-            return d.isoformat(), "date"
+    # weekday, with this / next / a week on / after next
+    hits = sorted(
+        (m.start(), m.end(), i)
+        for i, w in enumerate(_WDAYS)
+        for m in re.finditer(r"\b" + w + r"\b", s)
+    )
+    if hits:
+        # 'not Monday, Friday', 'I can't do Monday but Friday works': a refused day is no
+        # answer; when one was refused the last day left wins, else the first one named
+        ok = [h for h in hits if not _refused(s, h[0], h[1])]
+        if not ok:
+            return "", "none"
+        _start, _end, i = ok[-1] if len(ok) < len(hits) else ok[0]
+        w = _WDAYS[i]
+        monday = today - datetime.timedelta(days=today.weekday())
+        this_day = monday + datetime.timedelta(days=i)
+        coming = this_day if this_day >= today else this_day + datetime.timedelta(days=7)
+        week = datetime.timedelta(days=7)
+        if re.search(r"\b" + w + r"\s+after\s+next\b|\bweek\s+after\s+next\b", s):
+            d = this_day + 2 * week  # 'the Friday after next'
+        elif (
+            re.search(r"\bnext\s+(?:week\s+(?:on\s+)?)?" + w, s)
+            or re.search(r"\b" + w + r"\s+(?:of\s+)?next\s+week\b", s)
+            or "following" in s
+        ):
+            d = this_day + week  # rule 22: next <weekday> is in the following calendar week
+        elif re.search(r"\bweek\s+(?:on|from)\s+" + w + r"|\b" + w + r"\s+week\b", s):
+            d = coming + week  # 'a week on Friday', 'Friday week' (British)
+        elif re.search(r"\bcoming\s+" + w, s):
+            d = this_day if this_day > today else this_day + week  # 'this coming Monday'
+        elif re.search(r"\bthis\s+" + w, s):
+            d = this_day
+        else:
+            d = coming
+        num = re.search(r"\b(\d{1,2})\b", s)
+        if num:
+            # 'Monday the 26th': trust the number, it is more specific
+            n = int(num.group(1))
+            dd = _safe_date(today.year, today.month, n) if 1 <= n <= 31 else None
+            if dd and dd < today:
+                nm = today.month % 12 + 1
+                dd = _safe_date(today.year + (1 if nm == 1 else 0), nm, n)
+            if dd:
+                return dd.isoformat(), "date"
+        return d.isoformat(), "date"
     # 'the 26th' alone
     m = re.search(r"\b(?:the\s+)?(\d{1,2})\b", s)
     if (m and any(v in raw for v in ("the ",))) or (
