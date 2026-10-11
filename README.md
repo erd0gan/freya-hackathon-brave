@@ -106,6 +106,14 @@ honesty must all pass):
   every customer 3/3 runs ([`docs/baseline-2026-10-10`](docs/baseline-2026-10-10/README.md)).
 - Talkative customers (about half the messages arrive cut off): Brief A from 7/10 to 10/10,
   Brief B from 0/3 to 3/3 on three runs ([`docs/research-talkative`](docs/research-talkative/README.md)).
+- 11 Oct, commit `f3d74fa`, while the platform's agent model was slow: Brief B 3/3; Brief A
+  5/10, then 3 of the 5 failures passed when run again. Every call that reached its end passed.
+  Each failure was the simulated customer hanging up after about 60 s of silence. The model
+  steps were slow, not wrong: reading "Yes, this is Owen Park" took 4–6 minutes in some calls
+  and 2–4 s in others, on the same node with the same input. In the calls that ran slow but
+  did not stall, each step took 10–20 s instead of 1–2 s. Removing model steps from the
+  identity turn would make it faster, but it would lose answers that come in pieces, so the
+  flow is unchanged.
 
 ## Developer tools
 
