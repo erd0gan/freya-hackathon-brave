@@ -80,12 +80,22 @@ def chat(
         except (urllib.error.URLError, TimeoutError, json.JSONDecodeError) as e:
             detail = e.read().decode()[:300] if isinstance(e, urllib.error.HTTPError) else ""
             last = f"{type(e).__name__}: {e} {detail}"
-            trace.note(f"model call failed ({purpose}), attempt {attempt + 1}: {last[:200]}")
+            trace.model_failed(model, f"{purpose} (attempt {attempt + 1})", time.time() - t0, last)
             time.sleep(3 * (attempt + 1))
             continue
+        except Exception as e:  # not retried, as before; traced before it propagates
+            trace.model_failed(
+                model,
+                f"{purpose} (attempt {attempt + 1})",
+                time.time() - t0,
+                f"{type(e).__name__}: {e}",
+            )
+            raise
         if "error" in out and not out.get("choices"):
             last = json.dumps(out["error"])[:300]
-            trace.note(f"model call error ({purpose}): {last}")
+            trace.model_failed(
+                model, f"{purpose} (attempt {attempt + 1})", time.time() - t0, "error body: " + last
+            )
             time.sleep(3 * (attempt + 1))
             continue
         usage = out.get("usage") or {}

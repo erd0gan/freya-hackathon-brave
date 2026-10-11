@@ -31,6 +31,7 @@ class Trace:
         self.path = path
         self.echo = echo
         self.model_calls = 0
+        self.model_failures = 0
         self.cost_usd = 0.0
         if path:
             path.parent.mkdir(parents=True, exist_ok=True)
@@ -52,6 +53,15 @@ class Trace:
         self.cost_usd += cost_usd
         self.line("MODEL", f"{model}  purpose: {purpose}  tokens={tokens} cost=${cost_usd:.4f}")
 
+    def model_failed(self, model: str, purpose: str, seconds: float, error: str) -> None:
+        """A model call that returned no answer (HTTP error, timeout, error body)."""
+        self.model_failures += 1
+        self.line(
+            "MODEL",
+            f"{model}  purpose: {purpose}  FAILED after {seconds:.1f}s: "
+            + " ".join(str(error).split())[:300],
+        )
+
     def freya(self, msg: str) -> None:
         self.line("FREYA", msg)
 
@@ -71,5 +81,6 @@ class Trace:
             "END",
             f"end {_utc(t1)} duration={int(dur // 60)}m{int(dur % 60):02d}s "
             f"model_calls={self.model_calls} model_cost=${self.cost_usd:.2f} "
+            + (f"model_failures={self.model_failures} " if self.model_failures else "")
             + " ".join(f"{k}={v}" for k, v in info.items()),
         )
