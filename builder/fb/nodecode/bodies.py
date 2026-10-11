@@ -2,6 +2,7 @@
 `CFG` and a try/except are around it). `CFG["neg"]` holds the negotiation config."""
 
 SETUP = """
+CFG = prepare_cfg(CFG, vars.get('now'))
 for k, val in calendar_facts(vars.get('now'), CFG).items():
     vars[k] = val
 vars['final_outcome'] = ''
@@ -56,6 +57,7 @@ def held_expr(var: str) -> str:
 # counts (A42 'ask once'); id_started tells a failed transfer before verification which ending
 # applies; id_down counts verify_identity service failures in a row.
 SETUP_ID = """
+CFG = prepare_cfg(CFG, vars.get('now'))
 c = str(vars.get('pre_human_count') or '0')
 vars['pre_human_count'] = c if c.isdigit() else '0'
 vars['pre_human_from'] = ''
@@ -64,8 +66,10 @@ vars['id_down'] = '0'
 """
 
 FACTS = """
+CFG = prepare_cfg(CFG, vars.get('now'))
 products = find_products(vars, CFG)
-pf = product_facts(products, vars.get('now'), CFG)
+# amounts in major units, a band and a name for every product (account_products, engine_facts)
+pf = engine_facts(products, vars.get('now'), CFG)
 for k, val in pf.items():
     vars[k] = val
 st = new_state(pf, CFG.get('neg') or dict(), vars.get('now'))
@@ -77,9 +81,10 @@ clear_reply(vars)
 """
 
 DECIDE = """
+CFG = prepare_cfg(CFG, vars.get('now'))
 neg = CFG.get('neg') or dict()
 now = vars.get('now')
-cal = calendar_facts(now, CFG)
+cal = engine_cal(now, CFG)
 today = parse_now(now).date()
 st = load_state(vars)
 r = read_reply(vars, today)
@@ -100,6 +105,7 @@ vars['neg_errors'] = '0'
 # a sentence that says so. With notes on, every product without a promise gets its note
 # (one still being talked about: service_error), as negotiation_lib._finish would write them.
 NEG_ERROR = """
+CFG = prepare_cfg(CFG, vars.get('now'))
 n = str(vars.get('neg_errors') or '0')
 n = int(n) + 1 if n.isdigit() else 1
 vars['neg_errors'] = str(n)
@@ -109,8 +115,7 @@ clear_reply(vars)
 if n >= 2 or was == 'record':
     vars['neg_action'], vars['neg_say'], vars['note_count'] = 'finish', '', '0'
     neg = CFG.get('neg') or dict()
-    ln = neg.get('lines') or dict()
-    bye = str(ln.get('goodbye') or 'Goodbye.')
+    bye = _line(neg, 'goodbye', 'Goodbye.')
     st = load_state(vars) or dict()
     ps = sorted([q for q in st.get('p') or [] if isinstance(q, dict)], key=lambda q: q.get('n', 0))
     held = set(st.get('recorded') or [])
@@ -121,17 +126,19 @@ if n >= 2 or was == 'record':
     vars['final_outcome'] = (neg.get('outcomes') or dict()).get(k, k)
     vars['final_reason'] = '' if held else close_reason(neg, 'service_error')
     vars['final_say'] = bye if held else (
-        str(ln.get('service_error') or 'I am sorry, we have a technical problem.') + ' ' + bye)
+        _line(neg, 'service_error', 'I am sorry, we have a technical problem.') + ' ' + bye)
     end_notes(vars, st, neg, held)
 else:
     vars['neg_action'] = 'say'
-    vars['neg_say'] = 'Sorry, could you say that again?'
+    neg = CFG.get('neg') or dict()
+    vars['neg_say'] = _line(neg, 'say_again', 'Sorry, could you say that again?')
 """
 
 AFTER_RECORD = (
     """
+CFG = prepare_cfg(CFG, vars.get('now'))
 neg = CFG.get('neg') or dict()
-cal = calendar_facts(vars.get('now'), CFG)
+cal = engine_cal(vars.get('now'), CFG)
 st = load_state(vars)
 ok = call_ok(vars.get('rec_ok'), CFG.get('rec_mode') or 'flag')
 # a retry after a lost answer: "already recorded" means the bank holds the promise
@@ -148,18 +155,20 @@ publish(vars, st, neg)
 )
 
 AFTER_NOTE = """
+CFG = prepare_cfg(CFG, vars.get('now'))
 pop_note(vars, bool(CFG.get('note_check')))
 """
 
 # FACTS failed (an account answer we cannot read): no negotiation, a service error close.
 FACTS_ERROR = """
+CFG = prepare_cfg(CFG, vars.get('now'))
 neg = CFG.get('neg') or dict()
 vars['neg_action'] = 'finish'
 vars['neg_say'] = ''
 vars['final_outcome'] = (neg.get('outcomes') or dict()).get('no_promise', 'no_promise')
 vars['final_reason'] = close_reason(neg, 'service_error')
 vars['note_count'] = '0'
-vars['final_say'] = str((neg.get('lines') or dict()).get('goodbye') or 'Goodbye.')
+vars['final_say'] = _line(neg, 'goodbye', 'Goodbye.')
 """
 
 # After transfer_to_agent: a failed transfer is not closed as `transferred`. One more try, then
@@ -168,6 +177,7 @@ vars['final_say'] = str((neg.get('lines') or dict()).get('goodbye') or 'Goodbye.
 # wrap node routes to the note node on note_count).
 AFTER_TRANSFER = (
     """
+CFG = prepare_cfg(CFG, vars.get('now'))
 err = str(vars.get('transfer_err') or '').lower()
 vars['transfer_err'] = ''
 ok = str(vars.get('transfer_ok') or '').strip().lower() == 'true'
@@ -195,12 +205,12 @@ else:
         vars['final_outcome'] = (neg.get('outcomes') or dict()).get('promise', 'promise')
         vars['final_reason'] = ''
     else:
-        vars['final_outcome'] = (neg.get('outcomes') or dict()).get('no_promise', 'no_promise')
-        vars['final_reason'] = close_reason(neg, 'service_error')
+        # SM-12: the closing rule over the products' own ends (dispute, hardship, ...); a
+        # product still being talked about is ours: service_error
+        vars['final_outcome'], vars['final_reason'] = end_close(st, neg)
     vars['final_say'] = (
-        str((neg.get('lines') or dict()).get('transfer_failed') or
-            'I am sorry, I could not connect you.')
-        + ' ' + str((neg.get('lines') or dict()).get('goodbye') or 'Goodbye.'))
+        _line(neg, 'transfer_failed', 'I am sorry, I could not connect you.')
+        + ' ' + _line(neg, 'goodbye', 'Goodbye.'))
 """
 )
 
@@ -210,6 +220,7 @@ else:
 # Its own try counter.
 AFTER_TRANSFER_PRE = (
     """
+CFG = prepare_cfg(CFG, vars.get('now'))
 err = str(vars.get('transfer_err') or '').lower()
 vars['transfer_err'] = ''
 ok = str(vars.get('transfer_ok') or '').strip().lower() == 'true'
@@ -232,9 +243,8 @@ else:
     vars['final_outcome'] = str(o[0])
     vars['final_reason'] = str(o[1] if len(o) > 1 else '')
     vars['final_say'] = (
-        str((neg.get('lines') or dict()).get('transfer_failed') or
-            'I am sorry, I could not connect you.')
-        + ' ' + str((neg.get('lines') or dict()).get('goodbye') or 'Goodbye.'))
+        _line(neg, 'transfer_failed', 'I am sorry, I could not connect you.')
+        + ' ' + _line(neg, 'goodbye', 'Goodbye.'))
 """
 )
 
@@ -254,10 +264,14 @@ vars['cb_turns'] = '0'
 # Third party: what the person said about a day and a time -> a callback inside the window,
 # a re-ask, or no callback. CFG["callback"]: start, end ("HH:MM", both included), reasks.
 CB_CHECK = """
+CFG = prepare_cfg(CFG, vars.get('now'))
+# matched on fold(text): English, and Turkish folded to ASCII ('yarın' -> 'yarin')
 CB_DAY_WORDS = re.compile(
     r'\\b(today|tomorrow|monday|tuesday|wednesday|thursday|friday|saturday|sunday|january|'
     r'february|april|june|july|august|september|october|november|december)\\b|'
-    r'\\b\\d{1,2}(st|nd|rd|th)\\b', re.I)
+    r'\\b\\d{1,2}(st|nd|rd|th)\\b|'
+    r'\\b(bugun|yarin|obur gun|haftaya|pazartesi|sali|carsamba|persembe|cuma|cumartesi|'
+    r'pazar|ocak|subat|mart|nisan|mayis|haziran|temmuz|agustos|eylul|ekim|kasim|aralik)', re.I)
 CB_MAX_TURNS = 6
 dt = parse_now(vars.get('now'))
 txt_day = str(vars.get('cb_day_text') or '')
@@ -269,12 +283,14 @@ cb = CFG.get('callback') or dict()
 start = str(cb.get('start') or '10:00')
 end = str(cb.get('end') or '19:00')
 days = [d for d in str(vars.get('callback_days') or '').split(',') if d]
-now16 = str(vars.get('now') or '')[:16].replace(' ', 'T')
+# from the parsed clock, not the raw text: '2026-10-14T9:30' or a leading space rejected
+# every time today (CAL-5)
+now16 = dt.strftime('%Y-%m-%dT%H:%M') if dt else ''
 iso = ''
 kind = 'none'
 if dt is not None and txt_day.strip():
     iso, kind = parse_spoken_date(txt_day, dt.date())
-elif dt is not None and CB_DAY_WORDS.search(txt_time):
+elif dt is not None and CB_DAY_WORDS.search(fold(txt_time)):
     # 'tomorrow morning around eleven' all in the time words: the day is in there too
     iso, kind = parse_spoken_date(txt_time, dt.date())
 said_time = parse_spoken_time(txt_time) or parse_spoken_time(txt_day)
@@ -348,12 +364,11 @@ def finish_pre(outcome: str, reason: str, say: str) -> str:
 
 def decline_check(var: str) -> str:
     """Code node after the model labelled a security answer `declines`: it counts only when the
-    customer's own words are whole and refuse, end the talk or ask what the call is about."""
+    customer's own words refuse, end the talk or ask what the call is about, or are a whole
+    short answer, in the call's language (negotiation_lib.decline_real)."""
     return (
-        "raw = last_customer_text(vars)\n"
-        # a clear refusal or wish to stop is whole without a full stop ("I won't give you that")
-        "real = (not raw) or bool(STOP_WORDS.search(raw) or REFUSE_ANSWER.search(raw)) "
-        "or (not is_cut(raw) and bool(REFUSAL_WORDS.search(raw) or ABOUT_WORDS.search(raw)))\n"
+        "CFG = prepare_cfg(CFG, vars.get('now'))\n"
+        "real = decline_real(last_customer_text(vars))\n"
         "vars['decline_real'] = 'yes' if real else 'no'\n"
         f"if not real:\n    vars[{var!r}] = 'unclear'\n"
     )

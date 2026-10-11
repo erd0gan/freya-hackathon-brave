@@ -297,9 +297,32 @@ def _day_n(today, n, nxt=False):
     return _safe_date(y, mo, n)
 
 
-def parse_spoken_date(text, today):
+def _lang(lang=None):
+    # `lang`, else the call's language (LOCALE, from CFG), else English
+    return str(lang or _locale("lang", "en") or "en").strip().lower()[:2]
+
+
+def _locale(key, default=None):
+    try:
+        v = LOCALE.get(key)  # noqa: F821  (collections_lib, same code node)
+        return default if v is None else v
+    except Exception:
+        return default
+
+
+def _rewrite(text, mode, lang=None):
+    # another language in the English forms the readers take, by its rules (LOCALE["rules"],
+    # Turkish: _tr; a node embeds them only in a call of that language, see LANG_HOOKS)
+    lg = _lang(lang)
+    fn = (_locale("rules") or dict()).get(lg) if lg != "en" else None
+    return fn(text, mode) if fn else text
+
+
+def parse_spoken_date(text, today, lang=None):
     """-> (iso or '', 'vague' | 'date' | 'unclear' | 'none'). `today` is a datetime.date.
-    'unclear' ('Friday the 20th' on a Tuesday, 'the 31st' in November) is asked again."""
+    'unclear' ('Friday the 20th' on a Tuesday, 'the 31st' in November) is asked again.
+    `lang` "tr" reads Turkish ('haftaya salı', 'ayın 15'i'); None: the call's language."""
+    text = _rewrite(text, "date", lang)
     # a correction ('..., sorry I mean tomorrow', 'the 21st, no, the 20th') wins over
     # everything said before it; split before the commas are dropped (', no,' is the mark)
     text = _abbr(str(text or "").lower().replace("’", "'"))
@@ -309,6 +332,10 @@ def parse_spoken_date(text, today):
         y, mo, dd = iso[-1]
         d = _safe_date(int(y), int(mo), int(dd))
         return (d.isoformat(), "date") if d else ("", "none")
+    dmy = re.findall(r"\b(\d{1,2})-(\d{1,2})-(\d{4})\b", seg)  # '20-10-2026', day first
+    if dmy:
+        d = _safe_date(int(dmy[-1][2]), int(dmy[-1][1]), int(dmy[-1][0]))
+        return (d.isoformat(), "date") if d else ("", "unclear")
     raw = _norm_text(text)
     if not raw:
         return "", "none"
@@ -341,6 +368,21 @@ def parse_spoken_date(text, today):
     rel = _relative_days(s)
     if rel is not None and not hits:
         return (today + datetime.timedelta(days=rel)).isoformat(), "date"
+    # 'in 3 business days', 'three working days from now': counted on the call's calendar
+    bd = re.search(
+        r"\b(?:in\s+(\d{1,2}|a)\s+(?:business|working)\s+days?"
+        r"|(\d{1,2}|a)\s+(?:business|working)\s+days?\s+(?:from\s+)?(?:today|now))\b",
+        s,
+    )
+    if bd and not hits:
+        n = int((bd.group(1) or bd.group(2)).replace("a", "1"))
+        cal = _locale("cal") or dict()
+        return nth_business_day_after(today, n, cal).isoformat(), "date"  # noqa: F821
+    wk = re.search(r"\b(a|\d)\s+weeks?\s+from\s+tomorrow\b", s)
+    if wk and not hits:
+        return (
+            today + datetime.timedelta(days=1 + 7 * int(wk.group(1).replace("a", "1")))
+        ).isoformat(), "date"
     if "day after tomorrow" in s:
         return (today + datetime.timedelta(days=2)).isoformat(), "date"
     if "tomorrow" in s:
@@ -405,8 +447,10 @@ def parse_spoken_date(text, today):
             return "", "unclear"  # 'Thursday or Friday'
         i = wd
         w = _WDAYS[i]
-        monday = today - datetime.timedelta(days=today.weekday())
-        this_day = monday + datetime.timedelta(days=i)
+        # the week starts on the call's week_start (a Sunday-Thursday week on Sunday)
+        ws = int(_locale("week_start", 0) or 0) % 7
+        first = today - datetime.timedelta(days=(today.weekday() - ws) % 7)
+        this_day = first + datetime.timedelta(days=(i - ws) % 7)
         coming = this_day if this_day >= today else this_day + datetime.timedelta(days=7)
         week = datetime.timedelta(days=7)
         wk = re.search(r"\b(\d|a)\s+weeks?\b", s)
@@ -515,7 +559,7 @@ def _thousands(m):
     return str(int(v)) if v == int(v) else str(v)
 
 
-def parse_amount(text, lo=None, hi=None):
+def parse_amount(text, lo=None, hi=None, lang=None):
     """'637.50', '637,50', 'six hundred and thirty-seven fifty', 'two thousand one hundred
     twenty-five pounds and ten pence', 'two hundred point zero five', 'two grand' -> float, or
     None. Separate numbers are never glued together: after a correction ('400, no, 450') the
@@ -529,7 +573,12 @@ def parse_amount(text, lo=None, hi=None):
     'three fifty' or 'one twenty six', reads as 3.50 / 1.26 as said; when that is below `lo`
     and the hundreds reading (350 / 126) lies in [lo, hi], the hundreds reading is taken.
     Without `lo` the amount is read as said. A share ('50%', '20 percent') and a European
-    '1.250,50' are None."""
+    '1.250,50' are None.
+
+    `lang` "tr" (None: the call's language) reads Turkish: '1.250' is 1250, '1.250,50' and
+    '1250,5' have a decimal comma, 'bin iki yüz elli lira', 'yüz elli lira kırk kuruş',
+    'iki bin buçuk'; 'yarısı' and 'yüzde elli' are None (amount_like says they name one)."""
+    text = _rewrite(text, "amount", lang)
     raw = str(text or "").lower().replace("’", "'")
     if re.search(r"%|\bper\s*cent|\d\.\d{3},\d", raw):
         return None
@@ -553,7 +602,7 @@ def parse_amount(text, lo=None, hi=None):
         # ('point zero five' is .05, not .5); only when a number stands on both sides
         left, right = re.split(r"\bpoint\b", s, maxsplit=1)
         digits = _point_digits(re.sub(r"\b(pounds?|euros?|dollars?|eur|gbp|usd)\b", " ", right))
-        whole = parse_amount(left) if digits else None
+        whole = parse_amount(left, lang="en") if digits else None  # already rewritten
         if whole is not None:
             try:
                 return round(whole + float("0." + digits), len(digits))
@@ -598,13 +647,28 @@ def parse_amount(text, lo=None, hi=None):
         return None
 
 
-def parse_spoken_time(text, day_start=10, day_end=19):
+def _hour_of(x, default):
+    try:
+        return int(str(x).strip().split(":")[0])
+    except Exception:
+        return default
+
+
+def parse_spoken_time(text, day_start=None, day_end=None, lang=None):
     """'around eleven', '11am', 'half past two', '14:30', 'two thirty in the afternoon',
     'ten to five', 'twenty past ten', 'half five' (half past five) -> 'HH:MM', or ''. A bare
-    hour that cannot be a working hour as said (1 to 7) is read as afternoon; 'morning' /
-    'afternoon' / 'evening' / am / pm decide when given. A day of the month is no time ('the
-    15th', '15 October'): the callback check also reads the day text for a time. A range or a
-    bound ('between 2 and 4', '11 or 12', 'after 5', '2-4pm') is no time: '' (asked again)."""
+    hour before the window that fits it in the afternoon is afternoon ('three' 15:00 for
+    10-19, 'eight' 20:00 for 13-21; window: `day_start` / `day_end`, else the call's callback
+    window, else 10-19); 'morning' / 'afternoon' / 'evening' / am / pm decide when given. A day
+    of the month is no time ('the 15th', '15 October'): the callback check also reads the day
+    text for a time. A range or a bound ('between 2 and 4', '11 or 12', 'after 5', '2-4pm') is
+    no time: '' (asked again)."""
+    if day_start is None or day_end is None:
+        cb = (_locale("cal") or dict()).get("callback") or dict()
+        day_start = cb.get("start") if day_start is None else day_start
+        day_end = cb.get("end") if day_end is None else day_end
+    ds, de = _hour_of(day_start, 10), _hour_of(day_end, 19)
+    text = _rewrite(text, "time", lang)
     raw = str(text or "").lower()
     if not raw.strip() or re.search(r"\d\s*-\s*\d", raw):
         return ""
@@ -653,16 +717,18 @@ def parse_spoken_time(text, day_start=10, day_end=19):
                 hour = int(m.group(1))
     if hour is None or hour > 23:
         return ""
-    if (pm and hour < 12) or (not am and 1 <= hour <= 7):
+    if (pm and hour < 12) or (not am and 1 <= hour < min(ds, 12) and hour + 12 <= de):
         hour += 12
     elif am and hour == 12:
         hour = 0
     return "%02d:%02d" % (hour, minute)
 
 
-def digits_from_speech(text):
+def digits_from_speech(text, lang=None):
     """'four four seven one', '44 71', 'forty-four seventy-one' -> '4471'; 'two thousand and
-    five' -> '2005', 'four hundred' -> '400' (a number with hundred / thousand is read whole)."""
+    five' -> '2005', 'four hundred' -> '400' (a number with hundred / thousand is read whole).
+    `lang` "tr": 'sıfır sıfır yedi üç' -> '0073', 'kırk dört yetmiş bir' -> '4471'."""
+    text = _rewrite(text, "digits", lang)
     raw = str(text or "").lower().replace("-", " ")
     s = _last_segment(raw)
     if re.search(r"\b(?:hundred|thousand)\b", s):
@@ -702,3 +768,372 @@ def digits_from_speech(text):
         res.append(x)
         i += 1
     return "".join(r for r in res if r.isdigit())
+
+
+# ---- Turkish ------------------------------------------------------------------------------
+# In a Turkish call (CFG["lang"] "tr") what the customer said is folded to ASCII and rewritten
+# into the English forms the readers above take ('haftaya salı' -> 'next week tuesday', 'ayın
+# on beşi' -> 'the 15th', 'bin iki yüz elli lira' -> '1250 pounds'), so one tested reading
+# serves both languages. Language only here: month, weekday and number words, suffixes, idioms.
+_TRK_FOLD = str.maketrans("İIıŞşĞğÜüÖöÇçÂâÎîÛû’‘`´", "iiissgguuooccaaiiuu''''")
+
+
+def fold(text):
+    """Turkish-aware lower case folded to ASCII: 'İ' and 'I' -> 'i', 'ş' -> 's', 'ğ' -> 'g'
+    ('KREDİ KARTI' -> 'kredi karti'); the combining marks of decomposed text are dropped. The
+    sandbox has no unicodedata, so the table is explicit. Compare folded text with folded
+    words: word boundaries and [a-z] then work on Turkish too."""
+    return re.sub("[̀-ͯ]", "", str(text or "").translate(_TRK_FOLD).lower())
+
+
+_TRK_MONTHS = [
+    "ocak",
+    "subat",
+    "mart",
+    "nisan",
+    "mayis",
+    "haziran",
+    "temmuz",
+    "agustos",
+    "eylul",
+    "ekim",
+    "kasim",
+    "aralik",
+]
+_TRK_WDAYS = ["pazartesi", "sali", "carsamba", "persembe", "cuma", "cumartesi", "pazar"]
+_TRK_NUM = dict(
+    sifir=0,
+    bir=1,
+    iki=2,
+    uc=3,
+    dort=4,
+    dord=4,  # 'dördü', 'dörde', 'dördüncü'
+    bes=5,
+    alti=6,
+    yedi=7,
+    sekiz=8,
+    dokuz=9,
+    on=10,
+    yirmi=20,
+    otuz=30,
+    kirk=40,
+    elli=50,
+    altmis=60,
+    yetmis=70,
+    seksen=80,
+    doksan=90,
+    yuz=100,
+    bin=1000,
+    milyon=1000000,
+)
+_TRK_NUMRX = "|".join(sorted(_TRK_NUM, key=len, reverse=True))
+# What may follow a word, folded: ordinal (-inci), possessive (-i, -si), case (-de, -den, -e,
+# -i, -in), '-ki' ('yarınki'). 'önce' is not 'on' + a suffix, nor is 'onay'.
+_TRK_SFX = r"(?:[iu]?nc[iu])?(?:[sy]?[iu])?(?:n?[iu]n|n?[dt][ae]n?|[ny]?[ae]|k[iu]|[ny][iu])?"
+_TRK_WORDS = sorted(
+    [(m, _MONTHS[i]) for i, m in enumerate(_TRK_MONTHS)]
+    + [("ocag", "january"), ("aralig", "december")]  # 'ocağın', 'aralığa'
+    + [(w, _WDAYS[i]) for i, w in enumerate(_TRK_WDAYS)]
+    + [("yarin", "tomorrow"), ("bugun", "today"), ("lira", "pounds"), ("tl", "pounds")]
+    + [("try", "pounds"), ("kurus", "pence"), ("cift", "double"), ("ceyrek", "quarter")]
+    + [("yarim", "half"), ("yari", "half")],
+    key=lambda x: -len(x[0]),
+)
+_TRK_DAYS_EN = "|".join(_WDAYS)
+_TRK_MONTHS_EN = "|".join(_MONTHS)
+# Idioms first, on the folded text (order matters: 'yarından sonra' before 'yarın').
+_TRK_PHRASES = [
+    (r"\byuzde\b|%", " per cent "),
+    (r"\b(?:bu |o )?yuz(?:un)?den\b", " "),  # 'bu yüzden': 'that is why', no hundred
+    (r"\byarindan sonra\w*|\bobur ?gun\w*|\bobursu ?gun\w*", " day after tomorrow "),
+    (r"\bhafta ?sonu\w*", " weekend "),
+    (r"\bay(?:in)? ?sonu\w*|\bay bit\w*", " end of the month "),
+    (r"\bay(?:in)? ?basi\w*", " beginning of the month "),
+    (r"\bay(?:in)? ?ortasi\w*", " middle of the month "),
+    (r"\bmaas\w*(?: (?:yat|gel|al|gun|cik)\w*)?", " payday "),
+    (r"\bbir ?kac (?:gun|hafta)\w*", " a few days "),
+    (r"\byakinda\b|\ben kisa (?:zamanda|surede)\b", " soon "),
+    (r"\b(?:bir ara|ileride|ilerde|param ol\w*|elime para gec\w*)", " sometime "),
+    (r"\b(?:gelecek|onumuzdeki|bir sonraki|sonraki|haftaya) ay(?:in|a|da)?\b", " next month "),
+    (r"\b(?:bu )?hafta ?ic(?:i|inde)\b", " sometime this week "),
+    (r"\bobur hafta\w*", " week after next "),
+    (
+        r"\b(?:gelecek|onumuzdeki|bir sonraki|sonraki) hafta(?:ya|nin)?\b|\bhaftaya\b",
+        " next week ",
+    ),
+    (r"\bbu hafta(?:nin)?\b", " this week "),
+    (r"\b(?:gelecek|onumuzdeki|bir sonraki|sonraki)\b", " next "),
+    (r"\bbu (?=(?:pazar|sali|carsamba|persembe|cuma|aksam|sabah|ogle|gece))", " this "),
+    (r"\bogleden sonra\b|\bikindi\w*", " afternoon "),
+    (r"\bogleden once\b|\bsabah\w*", " morning "),
+    (r"\bogle\w*", " midday "),
+    # 'geçe' (past, in 'üçü çeyrek geçe') folds to 'gece' (night): after a number it is 'past'
+    (r"\b(ceyrek|\d+|(?:" + _TRK_NUMRX + r")\w*) gece\b", r"\1 xgecex"),
+    (r"\baksam\w*|\bgece(?:leyin|si)?\b", " evening "),
+    (r"\bsaat\b", " at "),
+    (r"\b(?:civari\w*|sularinda|gibi|falan|filan)\b", " around "),
+    (r"\bis gun\w*", " business days "),
+    (r"\bgunu\b", " "),  # 'cuma günü' is Friday
+    # a refused day ('yarın değil', 'cuma olmaz', 'bugün ödeyemem') is dropped after the rewrite
+    (
+        r"\b(?:uygun degil\w*|musait degil\w*|degil(?! mi)|olmaz|olmuyor|uymaz|uymuyor|yapamam"
+        r"|odeyemem|odeyemiyorum|veremem)\b",
+        " xnotx ",
+    ),
+    (r"\bdegil mi\b", " "),
+    (
+        r"\b(?:yok|pardon|aslinda|daha dogrusu|ozur dilerim|affedersin\w*|kusura bakma\w*"
+        r"|yanlis soyledim|duzelt\w*)\b",
+        " sorry ",
+    ),
+    (r"\bhayir\b", " no "),
+    (r"\b(?:ya da|veya|yahut)\b", " or "),  # 'salı ya da çarşamba': asked again
+]
+# Words of an amount that is no number (amount_like reads them).
+_TRK_AMOUNT = [
+    (r"\b(?:asgari|en az|en dusuk)\w*", " minimum "),
+    (r"\b(?:tamami\w*|tam (?:tutar|borc|miktar)\w*|hepsi\w*|tumu\w*|butun\w*)", " full "),
+    (r"\b(?:biraz|bir kism\w*|kismen|kismi)\b", " some "),
+]
+# A number word with a suffix ('onu', 'biri', 'ikisi', 'beşte') is a number only where one is
+# expected: after these words, inside a longer number, or as an ordinal.
+_TRK_MARK = ("at", "morning", "evening", "afternoon", "midday", "month")
+
+
+def _tr_marks(s):
+    """Turkish number marks: '.' before exactly three digits groups thousands ('1.250',
+    '12.500'), ',' is the decimal mark ('1.250,50', '1250,5'). '1,250.50' stays English."""
+    s = str(s or "").replace("₺", " ")
+    if re.search(r"\d,\d{3}\.\d", s):
+        return s
+    s = re.sub(
+        r"(?<![\d.])(\d{1,3})((?:\.\d{3})+)(?![\d.])",
+        lambda m: m.group(1) + m.group(2).replace(".", ""),
+        s,
+    )
+    return re.sub(r"(\d),(\d{1,2})(?!\d)", r"\1.\2", s)
+
+
+def _tr_groups(atoms):
+    """[(value, suffix, is_digits, word)] -> numbers: dicts with val, suf, n (atoms), src
+    (words), last (the last atom's value). Turkish numbers add up left to right ('bin iki yüz
+    elli' 1250, 'on iki yüz' 1200); a unit after a unit or a tens after a tens starts a new
+    number ('kırk dört yetmiş bir' is 44 and 71, 'dört elli' 4 and 50); 'sıfır' stands alone;
+    a suffix ends a number."""
+    out = []
+    g = None
+    for v, suf, dig, word in atoms:
+        if g is not None:
+            cur, tot = g["cur"], g["tot"]
+            fits = not (dig and g["dig"]) and v != 0 and g["last"] != 0
+            if v < 10:
+                fits = fits and cur % 10 == 0
+            elif v < 100:
+                fits = fits and cur % 100 == 0
+            elif v == 100:
+                fits = fits and cur < 100
+            elif v == 1000:
+                fits = fits and tot % 1000000 == 0
+            elif v == 1000000:
+                fits = fits and tot == 0
+            else:
+                fits = fits and cur == 0 and tot > 0  # '2 bin 500'
+            if word == "on" and suf and g["dig"]:
+                fits = False  # '500 onu cuma': 'onu' is 'it' there, judged alone
+            if not fits:
+                out.append(g)
+                g = None
+        if g is None:
+            g = dict(cur=0, tot=0, n=0, src=[], dig=False, last=None, suf="")
+        if v == 100:
+            g["cur"] = max(g["cur"], 1) * 100
+        elif v == 1000 and not dig:
+            g["tot"] += max(g["cur"], 1) * 1000
+            g["cur"] = 0
+        elif v == 1000000 and not dig:
+            g["tot"] = (g["tot"] + max(g["cur"], 1)) * 1000000
+            g["cur"] = 0
+        else:
+            g["cur"] += v
+        g["n"] += 1
+        g["src"].append(word)
+        g["dig"] = dig
+        g["last"] = v
+        g["suf"] = suf
+        g["val"] = g["tot"] + g["cur"]
+        if suf or v == 0 or (dig and v >= 1000):
+            out.append(g)
+            g = None
+    if g is not None:
+        out.append(g)
+    return out
+
+
+def _tr_word(w):
+    """A folded Turkish word that is no number: its English form, or the word itself."""
+    for stem, en in _TRK_WORDS:
+        if w.startswith(stem) and re.fullmatch(_TRK_SFX, w[len(stem) :]):
+            return en
+    return w
+
+
+def _tr_num(g, prev, nxt, nxt2, mode):
+    """One number as the English readers take it, or its words when it is no number here."""
+    suf, v, src = g["suf"], g["val"], g["src"]
+    if isinstance(v, str):
+        return v
+    # digits as written ('0073' keeps its zeros)
+    plain = src[0] if g["n"] == 1 and g["dig"] else str(v)
+    ordinal = bool(re.match(r"[iu]?nc[iu]", suf))
+    if suf and g["n"] == 1 and not g["dig"] and not ordinal and prev not in _TRK_MARK:
+        small = v in (2, 3, 4, 5, 6, 7, 8, 9, 20, 30) and mode in ("date", "time", "dob")
+        big = mode == "amount" and ((v >= 20 and src[0] != "yuz") or v == 1000)
+        month = mode != "amount" and re.fullmatch(_TRK_MONTHS_EN, prev)  # 'kasımın biri'
+        if not (small or big or month or prev.startswith("ayin")):
+            return " ".join(src) + suf  # the word as said ('onu', 'ikisini')
+    if mode == "digits":
+        return plain
+    if g.get("half"):
+        if mode == "amount":
+            v += 500 if g["last"] == 1000 else 500000 if g["last"] == 1000000 else 0.5
+            return ("%.2f" % v).rstrip("0").rstrip(".")
+        return "%d:30" % v
+    if src == ["bir"] and not suf:
+        return "1" if re.fullmatch(_TRK_MONTHS_EN, nxt) else "a"  # 'bir hafta': a week
+    if mode == "dob" and not g["dig"] and g["last"] == 100 and v >= 1000:
+        return str(v // 100)  # 'bin dokuz yüz', the rest not said yet: '19', incomplete
+    months = re.fullmatch(_TRK_MONTHS_EN, prev) or re.fullmatch(_TRK_MONTHS_EN, nxt)
+    clock = nxt in ("quarter", "xgecex", "var") or nxt2 in ("xgecex", "var") or prev == "at"
+    poss = re.match(r"s?[iu](?:n|$)", suf)
+    day = 1 <= v <= 31 and not months and not clock
+    if day and (prev.startswith("ayin") or ordinal or (poss and mode != "amount")):
+        return ("on the %dth" if mode == "amount" else "the %dth") % v
+    if ordinal:
+        return "%dth" % v
+    return plain
+
+
+def _tr(text, mode="date"):
+    """Turkish speech rewritten into the English forms the readers above take. `mode`: "date",
+    "time", "amount", "digits" or "dob" (a number with a suffix is a day in a date, an hour in
+    a time, nothing special in an amount)."""
+    s = " " + fold(_tr_marks(text) if mode == "amount" else text) + " "
+    if mode == "amount":
+        for rx, rep in _TRK_AMOUNT:
+            s = re.sub(rx, rep, s)
+    if mode == "time":
+        s = re.sub(r"\b(?:saat )?yarim(?:da)?\b", " 12:30 ", s)  # 'yarımda': half past twelve
+    for rx, rep in _TRK_PHRASES:
+        s = re.sub(rx, rep, s)
+    toks = re.findall(r"\d+(?:[-.,:/]\d+)*(?:'?[a-z]+)?|[a-z]+(?:'[a-z]+)*|[^\sa-z\d]", s)
+    items = []
+    atoms = []
+
+    def flush():
+        for g in _tr_groups(atoms):
+            items.append(["n", g])
+        del atoms[:]
+
+    for t in toks:
+        m = re.fullmatch(r"(\d+(?:[-.,:/]\d+)*)'?([a-z]*)", t)
+        if m:
+            if re.fullmatch(r"\d+", m.group(1)):
+                atoms.append((int(m.group(1)), m.group(2), True, m.group(1)))
+            else:  # '11:30', '1250.50', '14.03.1988' as written
+                flush()
+                items.append(["n", dict(val=m.group(1), suf="", n=1, src=[t], dig=True)])
+            if m.group(2):
+                flush()
+            continue
+        w = t.replace("'", "")
+        m = re.fullmatch("((?:" + _TRK_NUMRX + ")+)(" + _TRK_SFX + ")", w)
+        if m:
+            ws = re.findall(_TRK_NUMRX, m.group(1))
+            for k, x in enumerate(ws):
+                atoms.append((_TRK_NUM[x], m.group(2) if k == len(ws) - 1 else "", False, x))
+            if m.group(2):
+                flush()
+            continue
+        flush()
+        if w.startswith("bucuk") and items and items[-1][0] == "n":
+            items[-1][1]["half"] = True  # 'on bir buçuk', 'iki bin buçuk'
+            continue
+        items.append(["w", _tr_word(w)])
+    flush()
+    out = []
+    for k, (kind, x) in enumerate(items):
+        if kind == "w":
+            out.append(x)
+            continue
+        near = [
+            items[j][1] if 0 <= j < len(items) and items[j][0] == "w" else ""
+            for j in (k - 1, k + 1, k + 2)
+        ]
+        out.append(_tr_num(x, near[0], near[1], near[2], mode))
+    r = " " + " ".join(out) + " "
+    # Turkish order to English: 'üçü çeyrek geçe' (quarter past three), 'üçe on var' (ten to
+    # three), 'iki gün sonra' (in two days), 'cumadan sonra' (after Friday)
+    r = re.sub(r"\b(\d{1,2}) (quarter|\d{1,2}) xgecex", r"\2 past \1", r)
+    r = re.sub(r"\b(\d{1,2}) (quarter|\d{1,2}) var\b", r"\2 to \1", r)
+    r = re.sub(r"\ba (gun|business days)", r"1 \1", r)
+    unit = dict(gun="days", hafta="weeks", ay="months")
+    r = re.sub(
+        r"\b(\d+|a) (gun|hafta|ay|business days)\w* sonra\w*",
+        lambda m: "in " + m.group(1) + " " + unit.get(m.group(2), m.group(2)),
+        r,
+    )
+    r = re.sub(r"\bin a (week|month)s\b", r"in a \1", r)  # 'bir hafta sonra': in a week
+    day = r"(?:" + _TRK_DAYS_EN + r"|tomorrow|the \d+th)"
+    r = re.sub(r"\b(" + day + r") once\w*", r"before \1", r)
+    r = re.sub(r"\b(" + day + r") sonra\w*", r"after \1", r)
+    r = re.sub(r"\b(" + _TRK_MONTHS_EN + r") ay\w*", r"\1", r)  # 'ekim ayının 20'si'
+    refused = (
+        r"(?:day after tomorrow|tomorrow|today|(?:(?:this|next) (?:week )?)?(?:"
+        + _TRK_DAYS_EN
+        + r")|(?:on )?the \d+th|\d+ (?:"
+        + _TRK_MONTHS_EN
+        + r")(?: \d{4})?|(?:"
+        + _TRK_MONTHS_EN
+        + r") \d+)\s*xnotx"
+    )
+    r = re.sub(refused, " , ", r)
+    r = re.sub(r"\d+(?:\.\d+)?(?: pounds| pence)?\s*xnotx", " sorry ", r)
+    r = re.sub(r"\b(?:xnotx|xgecex|ayin\w*|kadar|dek)\b", " ", r)
+    return re.sub(r"\s+", " ", r).strip()
+
+
+# Words of a number or a share in an amount text: one that cannot be read is asked again
+# (negotiation_lib.AMOUNT_WORDS, in the call's language).
+_AMOUNT_EN = re.compile(
+    r"\d|\b(one|two|three|four|five|six|seven|eight|nine|ten|eleven|twelve|twenty|thirty|"
+    r"forty|fifty|sixty|seventy|eighty|ninety|hundred|thousand|grand|half|quarter|third|"
+    r"percent|minimum|lowest|least|full|whole)\b",
+    re.I,
+)
+
+
+def amount_like(text, lang=None):
+    """Does an amount text name an amount, read or not ('half of it', '50%', 'the minimum';
+    Turkish 'yarısı', 'yüzde elli', 'dört yüz')? With parse_amount None it is an amount that
+    could not be read: asked again ('Which amount do you mean?'), never the full amount."""
+    s = str(text or "")
+    if _AMOUNT_EN.search(s) or "%" in s:
+        return True
+    r = _rewrite(s, "amount", lang)
+    return r != s and bool(re.search(r"\d|\b(?:per cent|half|quarter|minimum|full|some)\b", r))
+
+
+def _rules(lang, fn):
+    """Register a language's rewrite for the readers (LOCALE["rules"])."""
+    try:  # noqa: SIM105  (no contextlib in the sandbox)
+        LOCALE.setdefault("rules", dict())[lang] = fn  # noqa: F821  (collections_lib)
+    except Exception:
+        pass
+    return fn
+
+
+# Run where the whole library runs (tests, identity hooks); a code node built from a subset of
+# the library gets this line from embed for a call in that language (an unused name: the
+# subset never pulls the Turkish rules into an English node).
+_TRK_HOOK = _rules("tr", _tr)
+LANG_HOOKS = dict(tr="_rules('tr', _tr)")

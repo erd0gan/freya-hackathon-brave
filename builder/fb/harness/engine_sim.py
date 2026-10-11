@@ -39,6 +39,7 @@ def reply_vars(r: dict[str, Any]) -> dict[str, str]:
         "said_amount_text": r.get("amount", ""),
         "all_products": "yes" if r.get("all") else "",
         "about_product": r.get("product", ""),
+        "has_question": r.get("question", ""),
     }
 
 
