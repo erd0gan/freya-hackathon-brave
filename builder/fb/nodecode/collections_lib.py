@@ -212,8 +212,9 @@ def calendar_facts(now, cfg):
     return out
 
 
-def load_products(raw):
-    """get_account products arrive as a list, a JSON string or a python repr string."""
+def load_products(raw, key="products"):
+    """get_account products arrive as a list, a JSON string or a python repr string (or an
+    object holding the list under `key`)."""
     if isinstance(raw, list):
         return [p for p in raw if isinstance(p, dict)]
     if isinstance(raw, str) and raw.strip():
@@ -230,8 +231,8 @@ def load_products(raw):
                 v = loader(raw)
                 if isinstance(v, list):
                     return [p for p in v if isinstance(p, dict)]
-                if isinstance(v, dict) and isinstance(v.get("products"), list):
-                    return [p for p in v["products"] if isinstance(p, dict)]
+                if isinstance(v, dict) and isinstance(v.get(key), list):
+                    return [p for p in v[key] if isinstance(p, dict)]
             except Exception:
                 pass
     return []
@@ -431,22 +432,39 @@ def normalize_dob(text, order="DMY"):
         return s
 
 
-def find_products(v):
+def find_products(v, cfg=None):
     """get_account products, wherever the platform put them: the mapped variable, a
-    flattened `<x>.data.products` key, or one flattened key per field."""
-    for key in ["products"] + [k for k in v if str(k).endswith(".data.products")]:
-        got = load_products(v.get(key))
+    flattened `<x>.data.<list>` key, or one flattened key per field. The list name and the
+    number fields come from the config (`products_list` or `product_fields.list`;
+    `product_fields`, `floor_field`), Brief A's names when it has none. Without `cfg` the
+    code node's CFG is used."""
+    if cfg is None:
+        try:
+            cfg = CFG  # noqa: F821  (defined by the code node around this library)
+        except Exception:
+            cfg = dict()
+    if not isinstance(cfg, dict):
+        cfg = dict()
+    fmap = cfg.get("product_fields") or dict()
+    lst = str(cfg.get("products_list") or fmap.get("list") or "products")
+    tail = ".data." + lst
+    for key in ["products"] + [k for k in v if str(k).endswith(tail)]:
+        got = load_products(v.get(key), lst.split(".")[-1])
         if got:
             return got
     rows = {}
+    rx = re.escape(tail) + r"[.\[](\d+)\]?\.(\w+)$"
     for k in list(v):
-        m = re.search(r"\.data\.products[.\[](\d+)\]?\.(\w+)$", str(k))
+        m = re.search(rx, str(k))
         if m:
             rows.setdefault(int(m.group(1)), {})[m.group(2)] = v[k]
+    money_fields = ["minimum_payment", "instalment_amount"]
+    money_fields += [str(fmap.get(r) or r) for r in ("past_due", "days_late")]
+    money_fields += [str(f) for f in (cfg.get("floor_field") or dict()).values() if f]
     out = []
     for i in sorted(rows):
         p = rows[i]
-        for f in ("past_due", "days_late", "minimum_payment", "instalment_amount"):
+        for f in money_fields:
             if f in p:
                 try:  # noqa: SIM105  (the sandbox's module list is not documented)
                     p[f] = float(p[f])

@@ -280,3 +280,53 @@ def test_identity_hook_reads_a_spoken_date_of_birth():
         env["vars"] = {"id_last": last}
         exec(pre, env)
         assert env["config"]["body"]["answer"] == want, said
+
+
+# ---- 6. find_products: the list and field names of the brief, not Brief A's
+RENAMED = {
+    "products_list": "accounts",
+    "product_fields": {"past_due": "amount_overdue", "days_late": "overdue_days"},
+    "floor_field": {"loan": "min_pay"},
+}
+FLAT = {
+    "get_account_response.data.accounts[0].product_id": "L-1",
+    "get_account_response.data.accounts[0].amount_overdue": "420.50",
+    "get_account_response.data.accounts[0].overdue_days": "12",
+    "get_account_response.data.accounts[0].min_pay": "200",
+    "get_account_response.data.accounts[1].product_id": "L-2",
+    "get_account_response.data.accounts[1].amount_overdue": "99",
+}
+
+
+def test_find_products_flattened_fields_with_renamed_names():
+    got = NS["find_products"](FLAT, RENAMED)
+    assert got == [
+        {"product_id": "L-1", "amount_overdue": 420.5, "overdue_days": 12.0, "min_pay": 200.0},
+        {"product_id": "L-2", "amount_overdue": 99.0},
+    ]
+    # the list name may also sit in product_fields
+    assert NS["find_products"](FLAT, {"product_fields": {"list": "accounts"}})[0]["product_id"]
+    # Brief A names stay the default
+    assert NS["find_products"](FLAT, {}) == []
+    brief_a = {"x.data.products[0].past_due": "5", "x.data.products[0].days_late": "3"}
+    assert NS["find_products"](brief_a, {}) == [{"past_due": 5.0, "days_late": 3.0}]
+
+
+def test_find_products_flattened_list_and_object_with_renamed_name():
+    rows = [{"product_id": "L-1", "amount_overdue": 420.5}]
+    v = {"get_account_response.data.accounts": repr(rows)}
+    assert NS["find_products"](v, RENAMED) == rows
+    v = {"products": '{"accounts": [{"product_id": "L-1"}]}'}
+    assert NS["find_products"](v, RENAMED) == [{"product_id": "L-1"}]
+
+
+def test_find_products_uses_the_code_node_cfg():
+    from fb.nodecode.embed import snippet
+
+    src = snippet("vars['found'] = repr(find_products(vars))", RENAMED)
+    env = {"vars": dict(FLAT)}
+    exec(src, env)
+    assert "'L-2'" in env["vars"]["found"] and "code_error" not in env["vars"]
+    env = {"vars": {"products": [{"product_id": "P"}]}}
+    exec(snippet("vars['found'] = repr(find_products(vars))", {}), env)
+    assert env["vars"]["found"] == "[{'product_id': 'P'}]"
