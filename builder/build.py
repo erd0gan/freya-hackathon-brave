@@ -46,6 +46,8 @@ EXPORT_RESERVE_S = 3 * 60
 SMOKE_RESERVE_S = 60
 # The smoke test's whole time, retries included.
 SMOKE_MAX_S = 150
+# The offline engine selftest's time (fb.harness.selftest).
+SELFTEST_S = 6.0
 # Kept back from the budget for the trace's last lines and a local copy of the workflow.
 END_MARGIN_S = 20
 # The kit client's own timeout per HTTP call.
@@ -77,6 +79,7 @@ from fb.validate import Policy, validate  # noqa: E402
 
 try:  # the cross-check and the proof map only add trace lines: never a reason not to build
     from fb import proof
+    from fb.harness.selftest import run_selftest
     from fb.spec_extract import (
         OBSERVER_RESERVE_S,
         OBSERVER_WAIT_MAX_S,
@@ -84,7 +87,7 @@ try:  # the cross-check and the proof map only add trace lines: never a reason n
         observe,
     )
 except Exception:  # pragma: no cover
-    proof = None  # type: ignore[assignment]
+    proof = run_selftest = None  # type: ignore[assignment]
     extract_observer = observe = None  # type: ignore[assignment]
     OBSERVER_RESERVE_S, OBSERVER_WAIT_MAX_S = 300.0, 120.0
 
@@ -333,6 +336,7 @@ def write_manifest(trace: Trace, slot: str, facts: dict, end: dict) -> str:
             "observer": facts.get("observer") or {},
             "validator": facts.get("validator") or {},
             "proof_map": facts.get("proof_map") or {},
+            "selftest": facts.get("selftest") or {},
             "workflow_sha256": facts.get("workflow_sha256"),
             "export": {
                 "mode": end.get("export") or facts.get("export_mode") or "none",
@@ -381,6 +385,28 @@ def log_proof(trace: Trace, brief: str, spec: dict, gen: dict, wf: dict, facts: 
         facts["proof_map"] = proof.summary(units)
     except Exception as e:
         trace.note(f"proof map failed: {type(e).__name__}: {str(e)[:200]}")
+
+
+def log_selftest(trace: Trace, gen: dict, tools: dict, facts: dict) -> None:
+    """The engine run offline on cases worked out from this spec (fb.harness.selftest): every
+    band edge, date and amount edge, callback window, random calls with tool faults. A few
+    seconds; lines only, never a reason not to publish."""
+    try:
+        if run_selftest is None:
+            return
+        out = run_selftest(gen, tools, budget_s=SELFTEST_S)
+        fails = list(out.get("failures") or [])
+        state = "skipped" if out.get("skipped") else ("passed" if not fails else "failed")
+        trace.test(
+            f"engine selftest: {state}, {out.get('cells', 0)} cases in "
+            f"{float(out.get('seconds') or 0):.1f} s, {len(fails)} failures"
+            + (" (time budget reached)" if out.get("budget_hit") else "")
+        )
+        for f in fails[:20]:
+            trace.test(f"engine selftest FAILED: {str(f)[:300]}")
+        facts["selftest"] = {"state": state, "cases": out.get("cells", 0), "failures": len(fails)}
+    except Exception as e:
+        trace.note(f"engine selftest failed to run: {type(e).__name__}: {str(e)[:200]}")
 
 
 def start_observer(trace: Trace, brief: str, openapi: dict, tools: dict, deadline: float):
@@ -528,6 +554,7 @@ def run(
     except Exception as e:
         trace.note(f"manifest facts: {type(e).__name__}: {str(e)[:200]}")
     log_proof(trace, brief, spec, gen, wf, facts)
+    log_selftest(trace, gen, tools, facts)
     if not rep.ok:
         finish(trace, slot, facts, status="invalid workflow, nothing published")
         return 1

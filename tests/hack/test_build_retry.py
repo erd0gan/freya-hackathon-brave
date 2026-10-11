@@ -100,3 +100,26 @@ def test_export_comes_before_the_smoke_test_and_the_smoke_test_has_its_own_clock
     rc, _, out = run_build(monkeypatch, tmp_path, before_run=patch)
     assert rc == 0 and order == ["export", "smoke"] and out.exists()
     assert clocks and max(clocks) <= build.SMOKE_MAX_S + 1
+
+
+def test_build_runs_the_engine_selftest_and_logs_it(monkeypatch, tmp_path):
+    from test_invariants_guard import run_build
+
+    rc, log, _ = run_build(monkeypatch, tmp_path)
+    line = next(x for x in log.splitlines() if "engine selftest:" in x)
+    assert rc == 0 and "engine selftest: passed" in line, line
+    manifest = json.loads((tmp_path / "submission" / "x.manifest.json").read_text())
+    assert manifest["selftest"]["state"] == "passed" and manifest["selftest"]["cases"] > 100
+
+
+def test_a_crashing_selftest_is_only_a_note(monkeypatch, tmp_path):
+    from test_invariants_guard import run_build
+
+    def patch(b):
+        def boom(*a, **k):
+            raise ValueError("x")
+
+        monkeypatch.setattr(b, "run_selftest", boom)
+
+    rc, log, _ = run_build(monkeypatch, tmp_path, before_run=patch)
+    assert rc == 0 and "engine selftest failed to run: ValueError" in log
