@@ -49,6 +49,11 @@ ALWAYS = {"operator": "always"}
 WRITE_TIMEOUT_MS = 25000
 # close_call is the exception: see build().
 CLOSE_RETRIES = 2
+# verify_identity is tried once more when the request itself fails (the bank answered an HTML
+# error page, 11 Oct): the model then asked the customer for the date of birth again and the
+# judge failed 'the date of birth is not asked again' (B PUB-12, three styles). The bank sees
+# the same as before, when the model called again with the same answer after asking.
+VERIFY_RETRIES = 1
 # Turn cap of the identity steps. At 16 a talkative customer whose turns kept arriving cut off was
 # closed as declined (B PUB-11, 15 small-talk fragments, none a refusal).
 ID_MAX_TURNS = 60
@@ -477,6 +482,22 @@ def paid_close_reason(neg: dict[str, Any], outcomes: dict[str, Any]) -> str:
     return ""
 
 
+NUM_WORDS = {"two": 2, "three": 3, "four": 4, "five": 5, "six": 6, "seven": 7, "eight": 8}
+
+
+def digit_count(question: dict[str, Any]) -> int:
+    """How many digits a digits question asks for ('phone_last4', 'the last four digits'); 0
+    when neither its field nor its words say."""
+    m = re.search(r"(\d+)\D*$", str(question.get("field") or ""))
+    if m and 2 <= int(m.group(1)) <= 12:
+        return int(m.group(1))
+    words = str(question.get("ask") or "").lower()
+    m = re.search(r"\b(\d+|" + "|".join(NUM_WORDS) + r")\s+digits?\b", words)
+    if m:
+        return int(m.group(1)) if m.group(1).isdigit() else NUM_WORDS[m.group(1)]
+    return 0
+
+
 def q(s: str) -> str:
     return s.replace('"', "'")
 
@@ -503,6 +524,7 @@ def identity_hooks(
     ident = spec.get("identity") or {}
     qs = ident.get("questions") or []
     kinds = {x["field"]: x.get("kind", "text") for x in qs}
+    lens = {x["field"]: digit_count(x) for x in qs if kinds.get(x["field"]) == "digits"}
     order = [x["field"] for x in qs]
     asks = {x["field"]: x.get("ask", "") for x in qs}
     swap_hint = str(ident.get("swap_hint") or "day_month_swapped")
@@ -514,6 +536,9 @@ def identity_hooks(
         + "\n\ntry:\n"
         + "    _kinds = "
         + _lit(kinds)
+        + "\n"
+        + "    _lens = "
+        + _lit(lens)
         + "\n"
         + "    _b = config.get('body')\n"
         + "    if isinstance(_b, dict):\n"
@@ -556,6 +581,12 @@ def identity_hooks(
         + "            _l = digits_from_speech(vars.get('id_last'))\n"
         + "            if _d and _h and _h != _d and _l != _d and sorted(_h) == sorted(_d):\n"
         + "                _d = _h\n"
+        # pieces joined with a whole answer said again ('66' cut, then '6604': sent as 666604,
+        # three wrong answers, B corrects PUB-13): a last message with all the digits wins, its
+        # last ones ('the last four digits are 6604' reads 46604)
+        + "            _n = int(_lens.get(_f) or 0)\n"
+        + "            if _n and len(_d) > _n and len(_l) >= _n:\n"
+        + "                _d = _l[-_n:]\n"
         + "            _b["
         + repr(f_answer)
         + "] = _d or str(_a or '').strip()\n"
@@ -1124,6 +1155,7 @@ def build(spec: dict[str, Any], tools: dict[str, ToolDef]) -> tuple[dict[str, An
     # A 500 on close_call left the call with no outcome at all. The tool API says nothing was
     # recorded and the call may be repeated; a repeat after a success only gets "already closed".
     close_fn["config"]["maxRetries"] = CLOSE_RETRIES
+    verify_fn["config"]["maxRetries"] = VERIFY_RETRIES
 
     # ---- extraction schemas
     who_values = [
@@ -1326,7 +1358,9 @@ def build(spec: dict[str, Any], tools: dict[str, ToolDef]) -> tuple[dict[str, An
         "fewer digits than asked for), do not repeat the question and do not call the tool "
         "yet: ask only for the missing part, for example 'And the year?' or 'And the "
         "remaining digits?'. Then call verify_identity once with all the parts together, in "
-        "the order the customer said them. A date with a day, a month and a year is complete "
+        "the order the customer said them. If verify_identity fails (an error, no result), "
+        "call it once more with the same field and answer; never ask the customer again "
+        "because of an error. A date with a day, a month and a year is complete "
         "in any words ('twenty one July nineteen ninety' has its year): never ask for its "
         "year. After "
         "every tool result, follow its what_to_do_next. Never say why you are calling and "

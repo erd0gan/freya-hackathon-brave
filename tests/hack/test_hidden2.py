@@ -484,6 +484,17 @@ def test_close_call_is_repeated_after_a_failure():
         assert wf["nodes"][node]["pre_actions"][0]["config"]["maxRetries"] == 0
 
 
+def test_a_failed_identity_check_is_tried_again_without_asking():
+    """B PUB-12, 11 Oct: the bank answered an HTML error page and the model asked for the date
+    of birth again ('the date of birth is not asked again' failed)."""
+    wf = workflow(spec_with())
+    tools = [t for n in wf["nodes"].values() for t in n.get("tools") or []]
+    verify = [t for t in tools if t["function"]["name"] == "verify_identity"]
+    assert verify and all(t["config"]["maxRetries"] == 1 for t in verify)
+    task = wf["nodes"]["identity"]["task_message"]
+    assert "never ask the customer again because of an error" in task
+
+
 def after_cb(wf, v):
     exec(compile(code_of(wf, "after_cb"), "after_cb", "exec"), {"vars": v})
     return v["cb_next"]

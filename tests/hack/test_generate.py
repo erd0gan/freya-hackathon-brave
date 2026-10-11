@@ -4,7 +4,8 @@
 import copy
 import json
 
-from fb.generate import build
+import pytest
+from fb.generate import build, digit_count
 from fb.openapi_tools import parse_openapi
 from fb.validate import validate
 from spec_fixtures import SPEC_A
@@ -125,6 +126,28 @@ def test_a_new_full_answer_is_not_reordered():
     body = {"customer_id": "c1", "field": "phone_last4", "answer": "4410"}
     heard = {"id_heard": "four four zero one", "id_last": "four four one zero"}
     assert run_hook(src, dict(body), heard)["answer"] == "4410"
+
+
+@pytest.mark.parametrize(
+    "sent,last,want",
+    [
+        ("666604", "The last four digits are 6604.", "6604"),  # B corrects PUB-13, 11 Oct
+        ("6606604", "6604", "6604"),
+        ("9904", "zero-four", "9904"),  # pieces still joined
+        ("44010", "four four zero", "44010"),  # last message not whole: left as it is
+    ],
+)
+def test_a_whole_answer_said_again_is_not_joined_to_the_pieces(sent, last, want):
+    src = identity_tool(build(SPEC_A, parse_openapi(OPENAPI))[0])["pre_process_code"]
+    body = {"customer_id": "c1", "field": "phone_last4", "answer": sent}
+    v = {"id_heard": "66 " + last, "id_last": last}
+    assert run_hook(src, dict(body), v)["answer"] == want
+
+
+def test_digit_count_of_a_question():
+    assert digit_count({"field": "phone_last4"}) == 4
+    assert digit_count({"field": "pin", "ask": "What are the last six digits of it?"}) == 6
+    assert digit_count({"field": "code", "ask": "What is your code?"}) == 0
 
 
 def test_lone_century_is_not_sent_as_a_year():
