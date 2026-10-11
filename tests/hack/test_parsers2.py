@@ -181,7 +181,7 @@ def test_amount_price_style_with_a_range(text, lo, hi, want):
         ("at 11", "11:00"),
         ("11 am", "11:00"),
         ("eleven o'clock", "11:00"),
-        ("from 2 to 4", "14:00"),
+        ("from 2 to 4", ""),  # a range, like 'between 2 and 4': asked again, not its start
         # unchanged
         ("nine am", "09:00"),
         ("eight pm", "20:00"),
