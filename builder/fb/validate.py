@@ -17,6 +17,7 @@ import re
 import sys
 import zlib
 from dataclasses import dataclass, field
+from functools import lru_cache
 from pathlib import Path
 from typing import Any
 from urllib.parse import urlparse
@@ -235,6 +236,102 @@ def _unpack(blob: str) -> str | None:
 
 def placeholders(text: Any) -> set[str]:
     return set(PLACEHOLDER.findall(text)) if isinstance(text, str) else set()
+
+
+# Tools that change the bank's records or the call: what they send must come from code (or the
+# call's own variables), never straight from what a model heard.
+WRITE_TOOLS = {
+    "create_promise",
+    "add_note",
+    "schedule_callback",
+    "transfer_to_agent",
+    "close_call",
+    "verify_identity",
+}
+# Variables whose literal values in code are checked against the OpenAPI enum of the request
+# field they fill (close_call outcome / reason, transfer queue).
+ENUM_VARS = {"final_outcome", "final_reason", "transfer_queue"}
+
+
+def _key_of(node: ast.AST, consts: dict[str, str]) -> str | None:
+    """The string key of `x['key']` or `x[NAME]` with NAME = 'key' in the same code."""
+    if isinstance(node, ast.Constant) and isinstance(node.value, str):
+        return node.value
+    if isinstance(node, ast.Name):
+        return consts.get(node.id)
+    return None
+
+
+def _targets(node: ast.AST) -> list[ast.AST]:
+    if isinstance(node, (ast.Tuple, ast.List)):
+        return [x for e in node.elts for x in _targets(e)]
+    return [node]
+
+
+def _trees(src: str, depth: int = 0) -> list[ast.AST]:
+    """The code and every packed part of it (embed.packed), parsed; what does not parse is
+    left out."""
+    try:
+        tree = ast.parse(src)
+    except (SyntaxError, ValueError):
+        return []
+    out: list[ast.AST] = [tree]
+    if depth < 3:
+        for blob in _packed_blobs(src):
+            inner = _unpack(blob)
+            if inner:
+                out += _trees(inner, depth + 1)
+    return out
+
+
+@lru_cache(maxsize=256)
+def code_writes(src: str) -> tuple[frozenset[str], tuple[tuple[str, str], ...]]:
+    """(keys the code assigns by subscript, `x['k'] = ...`, packed parts included, plus keys of
+    `.update({...})` / `.update(k=...)` / `.setdefault('k', ...)`; the (key, string literal)
+    pairs of those assignments). Generous on purpose: anything that may write a variable."""
+    keys: set[str] = set()
+    lits: list[tuple[str, str]] = []
+    for tree in _trees(src):
+        consts: dict[str, str] = {}
+        for x in ast.walk(tree):
+            if (
+                isinstance(x, ast.Assign)
+                and len(x.targets) == 1
+                and isinstance(x.targets[0], ast.Name)
+                and isinstance(x.value, ast.Constant)
+                and isinstance(x.value.value, str)
+            ):
+                consts[x.targets[0].id] = x.value.value
+        for x in ast.walk(tree):
+            if isinstance(x, (ast.Assign, ast.AugAssign, ast.AnnAssign)):
+                tgts = x.targets if isinstance(x, ast.Assign) else [x.target]
+                value = x.value
+                for tgt in tgts:
+                    flat = _targets(tgt)
+                    vals: list[ast.AST | None] = [value] * len(flat)
+                    if len(flat) > 1:
+                        elts = value.elts if isinstance(value, (ast.Tuple, ast.List)) else []
+                        vals = list(elts) if len(elts) == len(flat) else [None] * len(flat)
+                    for t, v in zip(flat, vals, strict=True):
+                        if not isinstance(t, ast.Subscript):
+                            continue
+                        k = _key_of(t.slice, consts)
+                        if k is None:
+                            continue
+                        keys.add(k)
+                        if isinstance(v, ast.Constant) and isinstance(v.value, str):
+                            lits.append((k, v.value))
+            elif isinstance(x, ast.Call) and isinstance(x.func, ast.Attribute):
+                if x.func.attr == "setdefault" and x.args:
+                    k = _key_of(x.args[0], consts)
+                    if k is not None:
+                        keys.add(k)
+                elif x.func.attr == "update":
+                    keys |= {kw.arg for kw in x.keywords if kw.arg}
+                    for a in x.args:
+                        if isinstance(a, ast.Dict):
+                            keys |= {k for k in (_key_of(e, consts) for e in a.keys if e) if k}
+    return frozenset(keys), tuple(lits)
 
 
 class _V:
@@ -940,6 +1037,129 @@ class _V:
             if not known(var):
                 self.warn("undefined_var", "system_prompt", f"{{{{{var}}}}} is never set")
 
+    # ---------------------------------------------------------------- write provenance
+    def tool_runs(self) -> list[tuple[dict[str, Any], bool, str]]:
+        """(tool, called by the model, where) for every tool the workflow holds: node tools
+        are called by the model; pre_actions and lifecycle tools run without it."""
+        out: list[tuple[dict[str, Any], bool, str]] = []
+        for kind, nodes in (("nodes", self.nodes), ("global_nodes", self.globals)):
+            for k, n in nodes.items():
+                if not isinstance(n, dict):
+                    continue
+                for i, t in enumerate(n.get("tools") or []):
+                    out.append((t, True, f"{kind}.{k}.tools[{i}]"))
+                for i, t in enumerate(n.get("pre_actions") or []):
+                    out.append((t, False, f"{kind}.{k}.pre_actions[{i}]"))
+        for i, t in enumerate(self.wf.get("tools") or []):
+            out.append((t, False, f"tools[{i}]"))
+        return [(t, m, w) for t, m, w in out if isinstance(t, dict)]
+
+    @staticmethod
+    def sources(t: dict[str, Any]) -> list[str]:
+        fn = t.get("function") or {}
+        props = (fn.get("parameters") or {}).get("properties") or {}
+        code = (props.get("code") or {}).get("default") if isinstance(props, dict) else None
+        srcs = [t.get("pre_process_code"), t.get("post_process_code"), code]
+        return [s for s in srcs if isinstance(s, str) and s.strip()]
+
+    def provenance(self) -> None:
+        """Where each value a write tool sends comes from. A body leaf `{{v}}` where v is set
+        only by an extraction (what a model heard, never checked by code) is an error; a
+        model-called tool's argument no code rewrites, and a required field nothing fills on
+        an engine-run tool, are warnings. String literals the code puts in final_outcome /
+        final_reason / transfer_queue must be values of the field's OpenAPI enum (warning)."""
+        runs = self.tool_runs()
+        llm: set[str] = set()
+        for nodes in (self.nodes, self.globals):
+            for n in nodes.values():
+                if isinstance(n, dict):
+                    llm |= {
+                        str(x.get("name"))
+                        for x in n.get("extraction_schema") or []
+                        if isinstance(x, dict) and x.get("name")
+                    }
+        coded = set(self.p.call_vars) | set(self.wf.get("test_variables") or {})
+        lits: list[tuple[str, str]] = []
+        for t, _, _ in runs:
+            for src in self.sources(t):
+                keys, pairs = code_writes(src)
+                coded |= keys
+                lits += pairs
+            coded |= {
+                str(m["variable"])
+                for m in t.get("response_mapping") or []
+                if isinstance(m, dict) and m.get("variable")
+            }
+        for nodes in (self.nodes, self.globals):
+            for n in nodes.values():
+                if isinstance(n, dict):
+                    coded |= {
+                        str(m["variable"])
+                        for m in n.get("response_mapping") or []
+                        if isinstance(m, dict) and m.get("variable")
+                    }
+        _, auto = self.set_by_workflow()
+        platform = auto | {"system", "call", "extractor"}
+
+        def from_code(var: str) -> bool:
+            return var in coded or var.split(".")[0] in coded or var.split(".")[0] in platform
+
+        enums: dict[str, set[str]] = {}
+        for t, model_called, where in runs:
+            fn = t.get("function") or {}
+            name = fn.get("name")
+            if name not in WRITE_TOOLS:
+                continue
+            body = ((fn.get("parameters") or {}).get("properties") or {}).get("body") or {}
+            leaves = body.get("properties") if isinstance(body, dict) else None
+            if not isinstance(leaves, dict):
+                continue
+            pre = t.get("pre_process_code")
+            hooked_keys = code_writes(pre)[0] if isinstance(pre, str) and pre.strip() else set()
+            api = self.api.get(str(name))
+            for f, leaf in leaves.items():
+                if not isinstance(leaf, dict):
+                    continue
+                fd = api.field(f) if api else None
+                vs = sorted(placeholders(leaf.get("default")))
+                if fd and fd.enum:
+                    for v in vs:
+                        if v in ENUM_VARS:
+                            enums.setdefault(v, set()).update(str(e) for e in fd.enum)
+                hooked = bool(leaf.get("enum")) or f in hooked_keys
+                for v in vs:
+                    if from_code(v):
+                        continue
+                    at = f"{where}.{name}.{f}"
+                    if v in llm and not hooked:
+                        self.err(
+                            "llm_write_arg",
+                            at,
+                            f"{{{{{v}}}}} is set only by an extraction (what the model "
+                            "heard); a write tool must send a value code has checked",
+                        )
+                    elif model_called and not hooked and v not in llm:
+                        self.warn(
+                            "model_write_arg",
+                            at,
+                            f"{{{{{v}}}}} is filled by the agent model and no pre_process "
+                            f"hook rewrites {f!r}",
+                        )
+                    elif not model_called and v not in llm and fd is not None and fd.required:
+                        self.warn(
+                            "unfilled_required",
+                            at,
+                            f"required field: {{{{{v}}}}} is set by nothing in the workflow",
+                        )
+        for var, allowed in sorted(enums.items()):
+            bad = sorted({lit for k, lit in lits if k == var and lit and lit not in allowed})
+            for lit in bad:
+                self.warn(
+                    "enum_literal",
+                    "code",
+                    f"{var} = {lit!r} in code is not a value of the OpenAPI enum {sorted(allowed)}",
+                )
+
     def run(self) -> Report:
         self.nulls(self.wf, "")
         self.top()
@@ -953,6 +1173,7 @@ class _V:
                 self.node(k, n, is_global=True)
         self.graph()
         self.guarded("workflow", self.variables)
+        self.guarded("workflow", self.provenance)
         return self.r
 
 

@@ -1212,3 +1212,302 @@ def quotes_found(spec: dict[str, Any], brief: str) -> list[str]:
     quoted = set(re.findall(r'"([^"]{12,160})"', brief))
     used = " ".join(str(v) for v in (spec.get("lines") or {}).values())
     return [q for q in quoted if q not in used and not q.startswith("{")]
+
+
+# ---------------------------------------------------------------- extraction observer
+# A second extraction of the same brief, run beside the main one, to show where the model is
+# unsure (the two readings differ). Logged only; the one value it changes is
+# forbidden_before_verify (the union of both: saying less before the identity check is safe).
+OBSERVER_PURPOSE = "extraction cross-check"
+OBSERVER_WAIT_MAX_S = 120.0
+OBSERVER_RESERVE_S = 300.0
+
+
+class _ObserverTrace:
+    """The trace the observer's extract() writes to: its model calls (and failed calls) go to
+    the run's trace with the purpose 'extraction cross-check: ...', so every model call and its
+    cost is in the trace; its notes stay here (the main extraction's notes are the run's)."""
+
+    def __init__(self, trace: Trace) -> None:
+        import threading
+
+        self.trace = trace
+        self.lock = threading.Lock()
+        self.notes: list[str] = []
+
+    def model(self, model: str, purpose: str, cost_usd: float = 0.0, tokens: int = 0) -> None:
+        with self.lock:
+            self.trace.model(model, f"{OBSERVER_PURPOSE}: {purpose}", cost_usd, tokens)
+
+    def model_failed(self, model: str, purpose: str, seconds: float, error: str) -> None:
+        with self.lock:
+            self.trace.model_failed(model, f"{OBSERVER_PURPOSE}: {purpose}", seconds, error)
+
+    def note(self, msg: str) -> None:
+        self.notes.append(str(msg))
+
+    test = freya = note
+
+    def line(self, kind: str, msg: str) -> None:
+        self.notes.append(f"{kind} {msg}")
+
+
+class ExtractionObserver:
+    """A second extract() of the same inputs in a daemon thread. Nothing it does can reach the
+    build: every exception is kept as text, and `wait` never raises."""
+
+    def __init__(self, run: Any) -> None:
+        import threading
+        import time
+
+        self.spec: dict[str, Any] | None = None
+        self.error = ""
+        self.started = time.monotonic()
+        self.thread = threading.Thread(
+            target=self._run, args=(run,), name="extraction-observer", daemon=True
+        )
+        self.thread.start()
+
+    def _run(self, run: Any) -> None:
+        try:
+            out = run()
+            if isinstance(out, dict):
+                self.spec = out
+            else:
+                self.error = f"the observer's extraction returned {type(out).__name__}"
+        except BaseException as e:
+            self.error = f"{type(e).__name__}: {str(e)[:300]}"
+
+    def wait(self, timeout: float) -> str:
+        """'done', 'failed' or 'running' (not finished within `timeout` seconds)."""
+        try:
+            self.thread.join(max(0.0, float(timeout)))
+        except Exception as e:
+            self.error = self.error or f"{type(e).__name__}: {e}"
+            return "failed"
+        if self.thread.is_alive():
+            return "running"
+        return "done" if self.spec is not None else "failed"
+
+
+def extract_observer(
+    brief: str,
+    openapi: dict[str, Any],
+    tools: dict[str, ToolDef],
+    trace: Trace,
+    deadline: float | None = None,
+    extract_fn: Any = None,
+) -> ExtractionObserver | None:
+    """Start the cross-check extraction (same inputs, same deadline) in the background, right
+    when the main extraction starts. None when BUILDER_OBSERVER=0 or it could not start."""
+    import os
+
+    if str(os.environ.get("BUILDER_OBSERVER", "1")).strip() == "0":
+        trace.note("uncertainty: observer disabled (BUILDER_OBSERVER=0)")
+        return None
+    fn = extract_fn or extract
+    proxy = _ObserverTrace(trace)
+    try:
+        return ExtractionObserver(lambda: fn(brief, openapi, tools, proxy, deadline=deadline))
+    except Exception as e:
+        trace.note(f"uncertainty: observer not started: {type(e).__name__}: {str(e)[:200]}")
+        return None
+
+
+# Values of the spec that are the builder's own vocabulary, not the brief's: never grounded.
+_OWN_WORDS = {
+    *(v for vals in ENUMS.values() for v in vals),
+    *CLOSE_REASON_KEYS,
+    "paid",
+    "current",
+    "full",
+    "floor",
+    "attempt1",
+    "deadline",
+    "business",
+    "calendar",
+    "last_business_day_of_week",
+    "nth_business_day",
+    "date",
+    "digits",
+    "year",
+    "text",
+    "DMY",
+    "MDY",
+}
+
+
+def _clean(x: Any) -> Any:
+    if isinstance(x, dict):
+        return {str(k): _clean(v) for k, v in sorted(x.items()) if k != "_"}
+    if isinstance(x, list):
+        return [_clean(v) for v in x]
+    return x.strip() if isinstance(x, str) else x
+
+
+def policy_fields(spec: Any) -> dict[str, Any]:
+    """The policy of a spec as {field: value}, without its wording (notes, lines, how the
+    identity questions are asked)."""
+    s = spec if isinstance(spec, dict) else {}
+    out: dict[str, Any] = {}
+    bands = [
+        {
+            k: b.get(k)
+            for k in (
+                "min_days_late",
+                "max_days_late",
+                "deadline_days",
+                "deadline_unit",
+                "attempts",
+            )
+        }
+        for b in s.get("bands") or []
+        if isinstance(b, dict)
+    ]
+    out["bands"] = sorted(bands, key=lambda b: json.dumps(b.get("min_days_late")).rjust(8))
+    cal = s.get("calendar") if isinstance(s.get("calendar"), dict) else {}
+    out["calendar.holidays"] = sorted({str(h) for h in cal.get("holidays") or []})
+    wd = cal.get("workdays")
+    out["calendar.workdays"] = sorted(wd, key=str) if isinstance(wd, list) else wd
+    for key in ("callback", "outcomes"):
+        d = s.get(key) if isinstance(s.get(key), dict) else {}
+        for k, v in d.items():
+            if k != "_":
+                out[f"{key}.{k}"] = _clean(v)
+    out["attempt1"] = _clean(s.get("attempt1"))
+    out["attempt_plan"] = _clean(s.get("attempt_plan"))
+    neg = s.get("neg") if isinstance(s.get("neg"), dict) else {}
+    for k, v in neg.items():
+        if k in ("_", "lines"):
+            continue
+        if isinstance(v, dict):
+            for k2, v2 in v.items():
+                if k2 != "_":
+                    out[f"neg.{k}.{k2}"] = _clean(v2)
+        else:
+            out[f"neg.{k}"] = _clean(v)
+    tf = s.get("tool_fields") if isinstance(s.get("tool_fields"), dict) else {}
+    for k, v in tf.items():
+        if k != "_":
+            out[f"tool_fields.{k}"] = _clean(v)
+    out["product_fields"] = _clean(s.get("product_fields"))
+    out["floor_field"] = _clean(s.get("floor_field"))
+    ident = s.get("identity") if isinstance(s.get("identity"), dict) else {}
+    out["identity.factors"] = sorted(
+        f"{q.get('field')}:{q.get('kind')}"
+        for q in ident.get("questions") or []
+        if isinstance(q, dict)
+    )
+    out["identity.date_order"] = _clean(ident.get("date_order"))
+    out["identity.swap_hint"] = _clean(ident.get("swap_hint"))
+    out["forbidden_before_verify"] = sorted(
+        {str(w).strip().lower() for w in s.get("forbidden_before_verify") or [] if str(w).strip()}
+    )
+    return out
+
+
+def _grounded(value: Any, brief: str, api_text: str) -> str:
+    """'y' when every value of `value` the brief (or, for a field name, the tool API) can show
+    is there, 'n' when one is not, '-' when nothing can be checked (flags, own vocabulary)."""
+    leaves: list[Any] = []
+
+    def walk(x: Any) -> None:
+        if isinstance(x, dict):
+            for v in x.values():
+                walk(v)
+        elif isinstance(x, list):
+            for v in x:
+                walk(v)
+        else:
+            leaves.append(x)
+
+    walk(value)
+    text = brief.lower()
+    seen = False
+    for x in leaves:
+        if x is None or isinstance(x, bool) or x == "" or x in _OWN_WORDS:
+            continue
+        seen = True
+        if isinstance(x, int | float):
+            ok = _number_in(int(x), text)
+        elif re.fullmatch(r"\d{4}-\d{2}-\d{2}", str(x)):
+            ok = _date_in(str(x), text)
+        elif _hhmm(x):
+            hh, mm = int(str(x)[:2]), str(x)[3:]
+            h12 = hh - 12 if hh > 12 else hh
+            ok = bool(re.search(rf"\b0?({hh}|{h12})(:{mm}|\s*(am|pm|o'clock)|h)", text))
+        else:
+            sx = str(x).split(":")[0].lower()
+            pat = r"(?<![a-z0-9_])" + re.escape(sx) + r"(?![a-z0-9_])"
+            ok = bool(re.search(pat, text) or re.search(pat, api_text))
+        if not ok:
+            return "n"
+    return "y" if seen else "-"
+
+
+def _short(v: Any) -> str:
+    return json.dumps(v, sort_keys=True, ensure_ascii=False)[:160]
+
+
+def observe(
+    trace: Trace,
+    observer: ExtractionObserver | None,
+    spec: dict[str, Any],
+    brief: str,
+    openapi: dict[str, Any] | None,
+    wait_s: float,
+) -> dict[str, Any]:
+    """Wait up to `wait_s` for the observer, log where its reading differs from the main spec
+    and apply the one merge: forbidden_before_verify := union of both (main order first).
+    Everything else stays the main spec's. Never raises; returns a summary for the manifest."""
+    info: dict[str, Any] = {"status": "off"}
+    if observer is None:
+        return info
+    try:
+        state = observer.wait(wait_s)
+        info["status"] = state
+        if state == "running":
+            trace.note(
+                f"uncertainty: observer not finished after {max(0.0, wait_s):.0f}s; "
+                "building with the main spec"
+            )
+            return info
+        if state != "done" or not isinstance(observer.spec, dict):
+            trace.note(f"uncertainty: observer failed ({observer.error or 'no spec'}); ignored")
+            return info
+        other = observer.spec
+        api_text = json.dumps(openapi or {}).lower()
+        a, b = policy_fields(spec), policy_fields(other)
+        disputed = []
+        for k in sorted(set(a) | set(b)):
+            va, vb = a.get(k), b.get(k)
+            if json.dumps(va, sort_keys=True) == json.dumps(vb, sort_keys=True):
+                continue
+            disputed.append(k)
+            trace.note(
+                f"uncertainty: {k} | main={_short(va)} other={_short(vb)} | grounded "
+                f"main={_grounded(va, brief, api_text)} other={_grounded(vb, brief, api_text)}"
+            )
+        mine = spec.get("forbidden_before_verify")
+        theirs = other.get("forbidden_before_verify")
+        main_words = [str(w) for w in mine if str(w).strip()] if isinstance(mine, list) else []
+        have = {w.strip().lower() for w in main_words}
+        added = []
+        mergeable = isinstance(theirs, list) and (mine is None or isinstance(mine, list))
+        for w in theirs if mergeable else []:
+            w = str(w).strip()
+            if w and w.lower() not in have:
+                have.add(w.lower())
+                added.append(w)
+        if added:
+            spec["forbidden_before_verify"] = main_words + added
+        trace.note(
+            f"uncertainty: {len(disputed)} of {len(set(a) | set(b))} policy fields disputed "
+            f"(the main spec is kept); forbidden_before_verify: union applied, {len(added)} "
+            f"added from the observer {added[:10]}"
+        )
+        info.update(disputed=disputed, forbidden_added=added)
+    except Exception as e:
+        trace.note(f"uncertainty: comparison failed: {type(e).__name__}: {str(e)[:200]}")
+        info["status"] = "error"
+    return info
