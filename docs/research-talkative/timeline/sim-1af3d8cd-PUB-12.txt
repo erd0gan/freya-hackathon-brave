@@ -1,0 +1,197 @@
+# sim-1af3d8cd-PUB-12 pass=True ended=assistant-ended-call duration=54s call=5618b145-2880-4d50-a4b4-99eb0e587d6a
+# judge: {"success": true, "reason": "All criteria were met. The assistant asked for the date of birth once (Message 2) and repeated the phone number question exactly once (Message 6) after the user provided an incorrect answer. One promise was created for the credit card (p1) as evidenced by the system events and Message 11/27. Two separate attempts were made to collect the personal loan (p2, late band) in Messages 12 and 16, and one attempt was made for the car loan (p3, early band) in Message 18. Additionally, the assistant correctly added 'refused' notes for the personal loan and car loan after the user declined to pay them. The call ended properly via the assistant ending the call after the confirmation process.", "relevantMessages": {"2": "Assistant asks for the date of birth for the first and only time.", "4": "Assistant asks for the last four digits of the phone number.", "6": "Assistant repeats the phone number question because the previous answer was incorrect.", "11": "User promises to pay the credit card but refuses the other two loans.", "12": "First attempt to collect on the personal loan.", "16": "Second attempt to collect on the personal loan (offering a different amount/da…
+
+   0.0   > enter opening (from None)
+   0.0 AGENT    [opening] Hello, this is Freya Bank's digital assistant calling, and we are recording this call. Am I speaking with Mr Bell?
+   1.9 CUSTOMER [opening] Yes, this is Marcus. I have had such  [CUT]
+   2.2   = who1=confirms conf=1.0 src=extraction@opening
+   2.2   ? route opening matched=True -> setup_id [who1 == 'confirms']
+   2.2   > enter setup_id (from opening)
+   2.2   * function_call_start {"function": "code_exec", "args": {"timeout_ms": 20000, "code": "import base64\nimport json\nimport zlib\nexec(zlib.decompress(base64.b64decode('eNq9Pe2S2zaS/+cpcPSlRGZkRdKM7UQb2+VNnI33zvZW7L3UlmZOpkRoRI9IKiQ1M9ooVfca93r3JNcfAAjwQ5pJrs5bawsg0N1oNBrdjQbySPy0TQvx5t2HN9+/Fj/kcheKRRZJkcJfhfDx90zeyYUowjSaZ3cT8bnI0r7IZV9EYSnLOJGBgG8iTsU6W4RrUcqiLAYnjwD0GmAss1yUqxh+xGs5EUUZreO5yNL1ri9SeSNzkYdxIUWZQTMpAM…
+   2.4   * function_call_complete {"function": "code_exec", "result": {"status": "success", "data": null, "message": "Code executed successfully", "status_code": 200}}
+   2.4   ? route setup_id matched=True -> identity [always]
+   2.4   > enter identity (from setup_id)
+   2.4 AGENT    [identity] Before we continue, I need to ask you two security questions. What is your date of birth?
+   4.0 CUSTOMER [identity] I've been stuck in traffic for nearly an hour and it's just been a nightmare getting home today. My date of birth is the nineteenth of October nineteen eighty-three.
+   4.3   = id1=answers conf=1.0 src=extraction@identity
+   4.6   = id_heard=the nineteenth of October nineteen eighty-three conf=0.9794888554036294 src=extraction@identity
+   4.6   = id_last=the nineteenth of October nineteen eighty-three conf=1.0 src=extraction@identity
+   4.6   ? route identity matched=False -> None []
+   5.9   * function_call_start {"function": "verify_identity", "args": {"url": "https://freya-bank-mock.freyavoice.workers.dev/v1/verify_identity", "method": "POST", "headers": {"Content-Type": "application/json"}, "body": {"field": "date_of_birth", "answer": "1983-10-19", "customer_id": "c_c1cb6b35-3d8"}}}
+   6.4   * function_call_complete {"function": "verify_identity", "result": {"status": "success", "data": {"ok": true, "verified": true, "wrong_answers_left": 3, "all_verified": false, "what_to_do_next": "Correct. Now ask: What are the last four digits of the phone number we have on file?"}, "message": "Successfully executed POST request", "status_code": 200}}
+   6.4   ? route identity matched=False -> None []
+   6.4 AGENT    [identity] Thank you. What are the last four digits of the phone number we have on file?
+   8.2 CUSTOMER [identity] Work has been so incredibly busy lately that I feel like I barely have a moment to breathe. The last four digits are four four zero one.
+   8.6   = id1=answers conf=1.0 src=extraction@identity
+   8.7   = id_heard=four four zero one conf=1.0 src=extraction@identity
+   8.7   = id_last=four four zero one conf=1.0 src=extraction@identity
+   8.7   ? route identity matched=False -> None []
+   9.3   * function_call_start {"function": "verify_identity", "args": {"url": "https://freya-bank-mock.freyavoice.workers.dev/v1/verify_identity", "method": "POST", "headers": {"Content-Type": "application/json"}, "body": {"field": "phone_last4", "answer": "4401", "customer_id": "c_c1cb6b35-3d8"}}}
+   9.6   * function_call_complete {"function": "verify_identity", "result": {"status": "success", "data": {"ok": true, "verified": false, "wrong_answers_left": 2, "all_verified": false, "what_to_do_next": "That answer is not correct. Ask the same question again."}, "message": "Successfully executed POST request", "status_code": 200}}
+   9.6   ? route identity matched=False -> None []
+   9.6 AGENT    [identity] I'm sorry, that is not correct. What are the last four digits of the phone number we have on file?
+  13.1 CUSTOMER [identity] My cousin's wedding is on the thirtieth and there's just so much to organize for it. The last four digits are four four one zero.
+  13.3   = id1=answers conf=1.0 src=extraction@identity
+  13.5   = id_heard=four four one zero conf=0.991356864475957 src=extraction@identity
+  13.5   = id_last=four four one zero conf=1.0 src=extraction@identity
+  13.5   ? route identity matched=False -> None []
+  15.5   * function_call_start {"function": "verify_identity", "args": {"url": "https://freya-bank-mock.freyavoice.workers.dev/v1/verify_identity", "method": "POST", "headers": {"Content-Type": "application/json"}, "body": {"field": "phone_last4", "answer": "4410", "customer_id": "c_c1cb6b35-3d8"}}}
+  16.1   * function_call_complete {"function": "verify_identity", "result": {"status": "success", "data": {"ok": true, "verified": true, "wrong_answers_left": 2, "all_verified": true, "what_to_do_next": "Both answers are correct. Thank the customer in a few words."}, "message": "Successfully executed POST request", "status_code": 200}}
+  16.1   ? route identity matched=True -> account [(verify_identity_response.data.all_verified == 'true' OR verify_identity_response.data.all_verified == 'True')]
+  16.1   > enter account (from identity)
+  16.1   * function_call_start {"function": "api_call", "args": {"url": "https://freya-bank-mock.freyavoice.workers.dev/v1/get_account", "method": "POST", "headers": {"Content-Type": "application/json"}, "body": {"customer_id": "c_c1cb6b35-3d8"}}}
+  16.3   * function_call_complete {"function": "api_call", "result": {"status": "success", "data": {"ok": true, "products": [{"product_id": "p1", "type": "credit_card", "card_last4": "9015", "past_due": 510, "days_late": 16, "minimum_payment": 153}, {"product_id": "p2", "type": "personal_loan", "past_due": 1320, "days_late": 16, "instalment_amount": 440}, {"product_id": "p3", "type": "car_loan", "past_due": 140, "days_late": 7, "…
+  16.3   ? route account matched=True -> facts [always]
+  16.3   > enter facts (from account)
+  16.3   * function_call_start {"function": "code_exec", "args": {"timeout_ms": 20000, "code": "import base64\nimport json\nimport zlib\nexec(zlib.decompress(base64.b64decode('eNq9fe1y20aW6H89BQbelIiYpknZTiZ0ZJeTODOeiZ1U7NlUSualIQIUYZEADYCSOVGq9jXuC9wH2ye556O/u0FSTnYzNTIB9HefPt/n9J3o503ZRC9evX7x3fPo+zrfptGsyvKohD9N1MPf0/xjPouatMzOq4/j6H1Tlf2ozvtRlrZ5W6zyJIJvUVFGy2qWLqM2b9pmcHQHml5CG/OqjtpFAT+KZT6OmjZbFudRVS63/ajMr/I6qtOiyaO2gm…
+  16.6   * function_call_complete {"function": "code_exec", "result": {"status": "success", "data": null, "message": "Code executed successfully", "status_code": 200, "validation_errors": ["variable 'reply_kind' rejected by schema validation", "variable 'all_products' rejected by schema validation", "variable 'about_product' rejected by schema validation", "variable 'has_question' rejected by schema validation"]}}
+  16.6   ? route facts matched=True -> negotiate_say [always]
+  16.6   > enter negotiate_say (from facts)
+  16.6 AGENT    [negotiate_say] I am calling from the collections team about a late payment. Your credit card ending 9015 has 510.00 past due and is 16 days late. Your personal loan has 1320.00 past due and is 16 days late. Your car loan has 140.00 past due and is 7 days late. Can you make all of these payments today?
+  18.9 CUSTOMER [negotiate_say] *   "I’ve just been running around  [CUT]
+  19.5   = reply_kind=unclear conf=1.0 src=extraction@negotiate_say
+  19.5   ? route negotiate_say matched=True -> decide [always]
+  19.5   > enter decide (from negotiate_say)
+  19.5   * function_call_start {"function": "code_exec", "args": {"timeout_ms": 20000, "code": "import base64\nimport json\nimport zlib\nexec(zlib.decompress(base64.b64decode('eNq9fe1y20aW6H89BQbelIiYpknZTiZ0ZJeTODOeiZ1U7NlUSualIQIUYZEADYCSOVGq9jXuC9wH2ye556O/u0FSTnYzNTIB9HefPt/n9J3o503ZRC9evX7x3fPo+zrfptGsyvKohD9N1MPf0/xjPouatMzOq4/j6H1Tlf2ozvtRlrZ5W6zyJIJvUVFGy2qWLqM2b9pmcHQHml5CG/OqjtpFAT+KZT6OmjZbFudRVS63/ajMr/I6qtOiyaO2gm…
+  19.8   * function_call_complete {"function": "code_exec", "result": {"status": "success", "data": null, "message": "Code executed successfully", "status_code": 200, "validation_errors": ["variable 'reply_kind' rejected by schema validation", "variable 'all_products' rejected by schema validation", "variable 'about_product' rejected by schema validation", "variable 'has_question' rejected by schema validation"]}}
+  19.8   ? route decide matched=True -> negotiate_say [always]
+  19.8   > enter negotiate_say (from decide)
+  19.9 AGENT    [negotiate_say] Sorry, I did not catch that. Can you make all of these payments today?
+  21.7 CUSTOMER [negotiate_say] I have been so busy at work that I haven't even had a chance to look at my mail. I will pay the credit card tomorrow, but I am not paying the personal loan or the car loan.
+  23.0   = said_date_text=tomorrow conf=1.0 src=extraction@negotiate_say
+  23.1   = reply_kind=offer conf=1.0 src=extraction@negotiate_say
+  23.1   = about_product=p1 conf=1.0 src=extraction@negotiate_say
+  23.1   ? route negotiate_say matched=True -> decide [always]
+  23.1   > enter decide (from negotiate_say)
+  23.1   * function_call_start {"function": "code_exec", "args": {"timeout_ms": 20000, "code": "import base64\nimport json\nimport zlib\nexec(zlib.decompress(base64.b64decode('eNq9fe1y20aW6H89BQbelIiYpknZTiZ0ZJeTODOeiZ1U7NlUSualIQIUYZEADYCSOVGq9jXuC9wH2ye556O/u0FSTnYzNTIB9HefPt/n9J3o503ZRC9evX7x3fPo+zrfptGsyvKohD9N1MPf0/xjPouatMzOq4/j6H1Tlf2ozvtRlrZ5W6zyJIJvUVFGy2qWLqM2b9pmcHQHml5CG/OqjtpFAT+KZT6OmjZbFudRVS63/ajMr/I6qtOiyaO2gm…
+  23.5   * function_call_complete {"function": "code_exec", "result": {"status": "success", "data": null, "message": "Code executed successfully", "status_code": 200, "validation_errors": ["variable 'reply_kind' rejected by schema validation", "variable 'about_product' rejected by schema validation", "variable 'all_products' rejected by schema validation", "variable 'has_question' rejected by schema validation"]}}
+  23.5   ? route decide matched=True -> negotiate_say [always]
+  23.5   > enter negotiate_say (from decide)
+  23.5 AGENT    [negotiate_say] I have noted the credit card ending 9015 for 510.00 on Thursday 15 October 2026. Could you pay 1320.00 for the personal loan on Friday 16 October 2026?
+  25.6 CUSTOMER [negotiate_say] The commute home was absolutely exhausting today with all  [CUT]
+  26.1   = reply_kind=unclear conf=1.0 src=extraction@negotiate_say
+  26.1   ? route negotiate_say matched=True -> decide [always]
+  26.1   > enter decide (from negotiate_say)
+  26.1   * function_call_start {"function": "code_exec", "args": {"timeout_ms": 20000, "code": "import base64\nimport json\nimport zlib\nexec(zlib.decompress(base64.b64decode('eNq9fe1y20aW6H89BQbelIiYpknZTiZ0ZJeTODOeiZ1U7NlUSualIQIUYZEADYCSOVGq9jXuC9wH2ye556O/u0FSTnYzNTIB9HefPt/n9J3o503ZRC9evX7x3fPo+zrfptGsyvKohD9N1MPf0/xjPouatMzOq4/j6H1Tlf2ozvtRlrZ5W6zyJIJvUVFGy2qWLqM2b9pmcHQHml5CG/OqjtpFAT+KZT6OmjZbFudRVS63/ajMr/I6qtOiyaO2gm…
+  26.4   * function_call_complete {"function": "code_exec", "result": {"status": "success", "data": null, "message": "Code executed successfully", "status_code": 200, "validation_errors": ["variable 'reply_kind' rejected by schema validation", "variable 'about_product' rejected by schema validation", "variable 'all_products' rejected by schema validation", "variable 'has_question' rejected by schema validation"]}}
+  26.4   ? route decide matched=True -> negotiate_say [always]
+  26.4   > enter negotiate_say (from decide)
+  26.4 AGENT    [negotiate_say] Sorry, I did not catch that. Can you do that?
+  28.2 CUSTOMER [negotiate_say] I have been working late every night this week and I am just completely drained. I am not paying that personal loan.
+  28.6   = reply_kind=no conf=1.0 src=extraction@negotiate_say
+  28.6   = about_product=p2 conf=1.0 src=extraction@negotiate_say
+  28.6   ? route negotiate_say matched=True -> decide [always]
+  28.6   > enter decide (from negotiate_say)
+  28.6   * function_call_start {"function": "code_exec", "args": {"timeout_ms": 20000, "code": "import base64\nimport json\nimport zlib\nexec(zlib.decompress(base64.b64decode('eNq9fe1y20aW6H89BQbelIiYpknZTiZ0ZJeTODOeiZ1U7NlUSualIQIUYZEADYCSOVGq9jXuC9wH2ye556O/u0FSTnYzNTIB9HefPt/n9J3o503ZRC9evX7x3fPo+zrfptGsyvKohD9N1MPf0/xjPouatMzOq4/j6H1Tlf2ozvtRlrZ5W6zyJIJvUVFGy2qWLqM2b9pmcHQHml5CG/OqjtpFAT+KZT6OmjZbFudRVS63/ajMr/I6qtOiyaO2gm…
+  30.2   * function_call_complete {"function": "code_exec", "result": {"status": "success", "data": null, "message": "Code executed successfully", "status_code": 200, "validation_errors": ["variable 'reply_kind' rejected by schema validation", "variable 'about_product' rejected by schema validation", "variable 'all_products' rejected by schema validation", "variable 'has_question' rejected by schema validation"]}}
+  30.2   ? route decide matched=True -> negotiate_say [always]
+  30.2   > enter negotiate_say (from decide)
+  30.2 AGENT    [negotiate_say] Could you pay 440.00 for the personal loan on Friday 23 October 2026? The rest stays overdue.
+  31.8 CUSTOMER [negotiate_say] I have had a really long day and the weather is just making everything more difficult. I told you I am not paying the personal loan.
+  32.3   = reply_kind=no conf=1.0 src=extraction@negotiate_say
+  32.3   = about_product=p2 conf=1.0 src=extraction@negotiate_say
+  32.3   ? route negotiate_say matched=True -> decide [always]
+  32.3   > enter decide (from negotiate_say)
+  32.3   * function_call_start {"function": "code_exec", "args": {"timeout_ms": 20000, "code": "import base64\nimport json\nimport zlib\nexec(zlib.decompress(base64.b64decode('eNq9fe1y20aW6H89BQbelIiYpknZTiZ0ZJeTODOeiZ1U7NlUSualIQIUYZEADYCSOVGq9jXuC9wH2ye556O/u0FSTnYzNTIB9HefPt/n9J3o503ZRC9evX7x3fPo+zrfptGsyvKohD9N1MPf0/xjPouatMzOq4/j6H1Tlf2ozvtRlrZ5W6zyJIJvUVFGy2qWLqM2b9pmcHQHml5CG/OqjtpFAT+KZT6OmjZbFudRVS63/ajMr/I6qtOiyaO2gm…
+  32.5   * function_call_complete {"function": "code_exec", "result": {"status": "success", "data": null, "message": "Code executed successfully", "status_code": 200, "validation_errors": ["variable 'reply_kind' rejected by schema validation", "variable 'about_product' rejected by schema validation", "variable 'all_products' rejected by schema validation", "variable 'has_question' rejected by schema validation"]}}
+  32.5   ? route decide matched=True -> negotiate_say [always]
+  32.5   > enter negotiate_say (from decide)
+  32.5 AGENT    [negotiate_say] Could you pay 140.00 for the car loan on Friday 16 October 2026?
+  34.2 CUSTOMER [negotiate_say] Traffic was backed up for miles on the motorway today and I am just getting settled. I am not paying the car loan.
+  35.2   = reply_kind=no conf=1.0 src=extraction@negotiate_say
+  35.2   = about_product=p3 conf=1.0 src=extraction@negotiate_say
+  35.2   ? route negotiate_say matched=True -> decide [always]
+  35.2   > enter decide (from negotiate_say)
+  35.2   * function_call_start {"function": "code_exec", "args": {"timeout_ms": 20000, "code": "import base64\nimport json\nimport zlib\nexec(zlib.decompress(base64.b64decode('eNq9fe1y20aW6H89BQbelIiYpknZTiZ0ZJeTODOeiZ1U7NlUSualIQIUYZEADYCSOVGq9jXuC9wH2ye556O/u0FSTnYzNTIB9HefPt/n9J3o503ZRC9evX7x3fPo+zrfptGsyvKohD9N1MPf0/xjPouatMzOq4/j6H1Tlf2ozvtRlrZ5W6zyJIJvUVFGy2qWLqM2b9pmcHQHml5CG/OqjtpFAT+KZT6OmjZbFudRVS63/ajMr/I6qtOiyaO2gm…
+  35.9   * function_call_complete {"function": "code_exec", "result": {"status": "success", "data": null, "message": "Code executed successfully", "status_code": 200, "validation_errors": ["variable 'reply_kind' rejected by schema validation", "variable 'about_product' rejected by schema validation", "variable 'all_products' rejected by schema validation", "variable 'has_question' rejected by schema validation"]}}
+  35.9   ? route decide matched=True -> negotiate_say [always]
+  35.9   > enter negotiate_say (from decide)
+  36.0 AGENT    [negotiate_say] To confirm: the credit card ending 9015, 510.00 on Thursday 15 October 2026. Do you confirm?
+  37.8 CUSTOMER [negotiate_say] I've been dealing with so  [CUT]
+  38.1   = reply_kind=unclear conf=1.0 src=extraction@negotiate_say
+  38.1   ? route negotiate_say matched=True -> decide [always]
+  38.1   > enter decide (from negotiate_say)
+  38.1   * function_call_start {"function": "code_exec", "args": {"timeout_ms": 20000, "code": "import base64\nimport json\nimport zlib\nexec(zlib.decompress(base64.b64decode('eNq9fe1y20aW6H89BQbelIiYpknZTiZ0ZJeTODOeiZ1U7NlUSualIQIUYZEADYCSOVGq9jXuC9wH2ye556O/u0FSTnYzNTIB9HefPt/n9J3o503ZRC9evX7x3fPo+zrfptGsyvKohD9N1MPf0/xjPouatMzOq4/j6H1Tlf2ozvtRlrZ5W6zyJIJvUVFGy2qWLqM2b9pmcHQHml5CG/OqjtpFAT+KZT6OmjZbFudRVS63/ajMr/I6qtOiyaO2gm…
+  38.9   * function_call_complete {"function": "code_exec", "result": {"status": "success", "data": null, "message": "Code executed successfully", "status_code": 200, "validation_errors": ["variable 'reply_kind' rejected by schema validation", "variable 'about_product' rejected by schema validation", "variable 'all_products' rejected by schema validation", "variable 'has_question' rejected by schema validation"]}}
+  38.9   ? route decide matched=True -> negotiate_say [always]
+  38.9   > enter negotiate_say (from decide)
+  38.9 AGENT    [negotiate_say] Sorry, I did not catch that. Do you confirm?
+  40.7 CUSTOMER [negotiate_say] I am just so worn out from this week and I haven  [CUT]
+  41.0   = reply_kind=unclear conf=1.0 src=extraction@negotiate_say
+  41.0   ? route negotiate_say matched=True -> decide [always]
+  41.0   > enter decide (from negotiate_say)
+  41.0   * function_call_start {"function": "code_exec", "args": {"timeout_ms": 20000, "code": "import base64\nimport json\nimport zlib\nexec(zlib.decompress(base64.b64decode('eNq9fe1y20aW6H89BQbelIiYpknZTiZ0ZJeTODOeiZ1U7NlUSualIQIUYZEADYCSOVGq9jXuC9wH2ye556O/u0FSTnYzNTIB9HefPt/n9J3o503ZRC9evX7x3fPo+zrfptGsyvKohD9N1MPf0/xjPouatMzOq4/j6H1Tlf2ozvtRlrZ5W6zyJIJvUVFGy2qWLqM2b9pmcHQHml5CG/OqjtpFAT+KZT6OmjZbFudRVS63/ajMr/I6qtOiyaO2gm…
+  41.2   * function_call_complete {"function": "code_exec", "result": {"status": "success", "data": null, "message": "Code executed successfully", "status_code": 200, "validation_errors": ["variable 'reply_kind' rejected by schema validation", "variable 'about_product' rejected by schema validation", "variable 'all_products' rejected by schema validation", "variable 'has_question' rejected by schema validation"]}}
+  41.2   ? route decide matched=True -> negotiate_say [always]
+  41.2   > enter negotiate_say (from decide)
+  41.2 AGENT    [negotiate_say] Sorry, I think you were cut off. Do you confirm?
+  43.3 CUSTOMER [negotiate_say] I have been trying to get through my emails all afternoon and  [CUT]
+  43.6   = reply_kind=unclear conf=1.0 src=extraction@negotiate_say
+  43.6   ? route negotiate_say matched=True -> decide [always]
+  43.6   > enter decide (from negotiate_say)
+  43.6   * function_call_start {"function": "code_exec", "args": {"timeout_ms": 20000, "code": "import base64\nimport json\nimport zlib\nexec(zlib.decompress(base64.b64decode('eNq9fe1y20aW6H89BQbelIiYpknZTiZ0ZJeTODOeiZ1U7NlUSualIQIUYZEADYCSOVGq9jXuC9wH2ye556O/u0FSTnYzNTIB9HefPt/n9J3o503ZRC9evX7x3fPo+zrfptGsyvKohD9N1MPf0/xjPouatMzOq4/j6H1Tlf2ozvtRlrZ5W6zyJIJvUVFGy2qWLqM2b9pmcHQHml5CG/OqjtpFAT+KZT6OmjZbFudRVS63/ajMr/I6qtOiyaO2gm…
+  44.4   * function_call_complete {"function": "code_exec", "result": {"status": "success", "data": null, "message": "Code executed successfully", "status_code": 200, "validation_errors": ["variable 'reply_kind' rejected by schema validation", "variable 'about_product' rejected by schema validation", "variable 'all_products' rejected by schema validation", "variable 'has_question' rejected by schema validation"]}}
+  44.4   ? route decide matched=True -> negotiate_say [always]
+  44.4   > enter negotiate_say (from decide)
+  44.4 AGENT    [negotiate_say] Take your time. Do you confirm?
+  46.3 CUSTOMER [negotiate_say] Yes, I confirm.
+  46.7   = reply_kind=yes conf=1.0 src=extraction@negotiate_say
+  46.7   ? route negotiate_say matched=True -> decide [always]
+  46.7   > enter decide (from negotiate_say)
+  46.7   * function_call_start {"function": "code_exec", "args": {"timeout_ms": 20000, "code": "import base64\nimport json\nimport zlib\nexec(zlib.decompress(base64.b64decode('eNq9fe1y20aW6H89BQbelIiYpknZTiZ0ZJeTODOeiZ1U7NlUSualIQIUYZEADYCSOVGq9jXuC9wH2ye556O/u0FSTnYzNTIB9HefPt/n9J3o503ZRC9evX7x3fPo+zrfptGsyvKohD9N1MPf0/xjPouatMzOq4/j6H1Tlf2ozvtRlrZ5W6zyJIJvUVFGy2qWLqM2b9pmcHQHml5CG/OqjtpFAT+KZT6OmjZbFudRVS63/ajMr/I6qtOiyaO2gm…
+  46.8   * function_call_complete {"function": "code_exec", "result": {"status": "success", "data": null, "message": "Code executed successfully", "status_code": 200, "validation_errors": ["variable 'reply_kind' rejected by schema validation", "variable 'about_product' rejected by schema validation", "variable 'all_products' rejected by schema validation", "variable 'has_question' rejected by schema validation"]}}
+  46.8   ? route decide matched=True -> record [neg_action == 'record']
+  46.8   > enter record (from decide)
+  46.8   * function_call_start {"function": "api_call", "args": {"url": "https://freya-bank-mock.freyavoice.workers.dev/v1/create_promise", "method": "POST", "headers": {"Content-Type": "application/json"}, "body": {"date": "2026-10-15", "amount": 510.0, "product_id": "p1", "customer_id": "c_c1cb6b35-3d8"}}}
+  46.9   * function_call_complete {"function": "api_call", "result": {"status": "success", "data": {"ok": true, "promise_id": "pr1"}, "message": "Successfully executed POST request", "status_code": 200, "header": {"Date": "Sun, 11 Oct 2026 08:16:51 GMT", "Content-Type": "application/json", "Content-Length": "30", "Connection": "keep-alive", "Report-To": "{\"group\":\"cf-nel\",\"max_age\":604800,\"endpoints\":[{\"url\":\"https://a…
+  46.9   ? route record matched=True -> after_record [always]
+  46.9   > enter after_record (from record)
+  46.9   * function_call_start {"function": "code_exec", "args": {"timeout_ms": 20000, "code": "import base64\nimport json\nimport zlib\nexec(zlib.decompress(base64.b64decode('eNq9fe1y20aW6H89BQbelIiYpknZTiZ0ZJeTODOeiZ1U7NlUSualIQIUYZEADYCSOVGq9jXuC9wH2ye556O/u0FSTnYzNTIB9HefPt/n9J3o503ZRC9evX7x3fPo+zrfptGsyvKohD9N1MPf0/xjPouatMzOq4/j6H1Tlf2ozvtRlrZ5W6zyJIJvUVFGy2qWLqM2b9pmcHQHml5CG/OqjtpFAT+KZT6OmjZbFudRVS63/ajMr/I6qtOiyaO2gm…
+  47.7   * function_call_complete {"function": "code_exec", "result": {"status": "success", "data": null, "message": "Code executed successfully", "status_code": 200}}
+  47.7   ? route after_record matched=True -> negotiate_say [always]
+  47.7   > enter negotiate_say (from after_record)
+  47.7 AGENT    [negotiate_say] Your promise is recorded: the credit card ending 9015, 510.00 on Thursday 15 October 2026. You will receive a text message confirming this promise. Is there anything else I can help you with?
+  49.8 CUSTOMER [negotiate_say] I have been so busy with work today  [CUT]
+  50.1   = reply_kind=unclear conf=1.0 src=extraction@negotiate_say
+  50.1   ? route negotiate_say matched=True -> decide [always]
+  50.1   > enter decide (from negotiate_say)
+  50.1   * function_call_start {"function": "code_exec", "args": {"timeout_ms": 20000, "code": "import base64\nimport json\nimport zlib\nexec(zlib.decompress(base64.b64decode('eNq9fe1y20aW6H89BQbelIiYpknZTiZ0ZJeTODOeiZ1U7NlUSualIQIUYZEADYCSOVGq9jXuC9wH2ye556O/u0FSTnYzNTIB9HefPt/n9J3o503ZRC9evX7x3fPo+zrfptGsyvKohD9N1MPf0/xjPouatMzOq4/j6H1Tlf2ozvtRlrZ5W6zyJIJvUVFGy2qWLqM2b9pmcHQHml5CG/OqjtpFAT+KZT6OmjZbFudRVS63/ajMr/I6qtOiyaO2gm…
+  50.4   * function_call_complete {"function": "code_exec", "result": {"status": "success", "data": null, "message": "Code executed successfully", "status_code": 200, "validation_errors": ["variable 'reply_kind' rejected by schema validation", "variable 'about_product' rejected by schema validation", "variable 'all_products' rejected by schema validation", "variable 'has_question' rejected by schema validation"]}}
+  50.4   ? route decide matched=True -> negotiate_say [always]
+  50.4   > enter negotiate_say (from decide)
+  50.4 AGENT    [negotiate_say] Sorry, I did not catch that. Is there anything else I can help you with?
+  51.8 CUSTOMER [negotiate_say] No, that is all for now as I still have a mountain of paperwork to finish tonight.
+  52.1   = reply_kind=no conf=1.0 src=extraction@negotiate_say
+  52.1   ? route negotiate_say matched=True -> decide [always]
+  52.1   > enter decide (from negotiate_say)
+  52.1   * function_call_start {"function": "code_exec", "args": {"timeout_ms": 20000, "code": "import base64\nimport json\nimport zlib\nexec(zlib.decompress(base64.b64decode('eNq9fe1y20aW6H89BQbelIiYpknZTiZ0ZJeTODOeiZ1U7NlUSualIQIUYZEADYCSOVGq9jXuC9wH2ye556O/u0FSTnYzNTIB9HefPt/n9J3o503ZRC9evX7x3fPo+zrfptGsyvKohD9N1MPf0/xjPouatMzOq4/j6H1Tlf2ozvtRlrZ5W6zyJIJvUVFGy2qWLqM2b9pmcHQHml5CG/OqjtpFAT+KZT6OmjZbFudRVS63/ajMr/I6qtOiyaO2gm…
+  52.7   * function_call_complete {"function": "code_exec", "result": {"status": "success", "data": null, "message": "Code executed successfully", "status_code": 200, "validation_errors": ["variable 'reply_kind' rejected by schema validation", "variable 'about_product' rejected by schema validation", "variable 'all_products' rejected by schema validation", "variable 'has_question' rejected by schema validation"]}}
+  52.7   ? route decide matched=True -> wrap [neg_action == 'finish']
+  52.7   > enter wrap (from decide)
+  52.7   * function_call_start {"function": "code_exec", "args": {"timeout_ms": 20000, "code": "\nvars['wrapped'] = 'yes'\n"}}
+  52.9   * function_call_complete {"function": "code_exec", "result": {"status": "success", "data": null, "message": "Code executed successfully", "status_code": 200}}
+  52.9   ? route wrap matched=True -> note [note_count > 0]
+  52.9   > enter note (from wrap)
+  52.9   * function_call_start {"function": "api_call", "args": {"url": "https://freya-bank-mock.freyavoice.workers.dev/v1/add_note", "method": "POST", "headers": {"Content-Type": "application/json"}, "body": {"reason": "refused", "product_id": "p2", "customer_id": "c_c1cb6b35-3d8"}}}
+  52.9   * function_call_complete {"function": "api_call", "result": {"status": "success", "data": {"ok": true}, "message": "Successfully executed POST request", "status_code": 200, "header": {"Date": "Sun, 11 Oct 2026 08:16:57 GMT", "Content-Type": "application/json", "Content-Length": "11", "Connection": "keep-alive", "Report-To": "{\"group\":\"cf-nel\",\"max_age\":604800,\"endpoints\":[{\"url\":\"https://a.nel.cloudflare.com/r…
+  52.9   ? route note matched=True -> after_note [always]
+  52.9   > enter after_note (from note)
+  52.9   * function_call_start {"function": "code_exec", "args": {"timeout_ms": 20000, "code": "import base64\nimport json\nimport zlib\nexec(zlib.decompress(base64.b64decode('eNq9fe1y20aW6H89BQbelIiYpknZTiZ0ZJeTODOeiZ1U7NlUSualIQIUYZEADYCSOVGq9jXuC9wH2ye556O/u0FSTnYzNTIB9HefPt/n9J3o503ZRC9evX7x3fPo+zrfptGsyvKohD9N1MPf0/xjPouatMzOq4/j6H1Tlf2ozvtRlrZ5W6zyJIJvUVFGy2qWLqM2b9pmcHQHml5CG/OqjtpFAT+KZT6OmjZbFudRVS63/ajMr/I6qtOiyaO2gm…
+  53.1   * function_call_complete {"function": "code_exec", "result": {"status": "success", "data": null, "message": "Code executed successfully", "status_code": 200}}
+  53.1   ? route after_note matched=True -> note [note_count > 0]
+  53.1   > enter note (from after_note)
+  53.1   * function_call_start {"function": "api_call", "args": {"url": "https://freya-bank-mock.freyavoice.workers.dev/v1/add_note", "method": "POST", "headers": {"Content-Type": "application/json"}, "body": {"reason": "refused", "product_id": "p3", "customer_id": "c_c1cb6b35-3d8"}}}
+  53.2   * function_call_complete {"function": "api_call", "result": {"status": "success", "data": {"ok": true}, "message": "Successfully executed POST request", "status_code": 200, "header": {"Date": "Sun, 11 Oct 2026 08:16:58 GMT", "Content-Type": "application/json", "Content-Length": "11", "Connection": "keep-alive", "Report-To": "{\"group\":\"cf-nel\",\"max_age\":604800,\"endpoints\":[{\"url\":\"https://a.nel.cloudflare.com/r…
+  53.2   ? route note matched=True -> after_note [always]
+  53.2   > enter after_note (from note)
+  53.2   * function_call_start {"function": "code_exec", "args": {"timeout_ms": 20000, "code": "import base64\nimport json\nimport zlib\nexec(zlib.decompress(base64.b64decode('eNq9fe1y20aW6H89BQbelIiYpknZTiZ0ZJeTODOeiZ1U7NlUSualIQIUYZEADYCSOVGq9jXuC9wH2ye556O/u0FSTnYzNTIB9HefPt/n9J3o503ZRC9evX7x3fPo+zrfptGsyvKohD9N1MPf0/xjPouatMzOq4/j6H1Tlf2ozvtRlrZ5W6zyJIJvUVFGy2qWLqM2b9pmcHQHml5CG/OqjtpFAT+KZT6OmjZbFudRVS63/ajMr/I6qtOiyaO2gm…
+  53.9   * function_call_complete {"function": "code_exec", "result": {"status": "success", "data": null, "message": "Code executed successfully", "status_code": 200}}
+  53.9   ? route after_note matched=True -> goodbye [always]
+  53.9   > enter goodbye (from after_note)
+  53.9   * function_call_start {"function": "end_call", "args": {"message_mode": "custom", "spoken_message": "Thank you for your time. Goodbye."}}
+  53.9   * function_call_complete_deferred {"function": "end_call", "result": null, "deferred": true}
+  53.9   . call_ended {"reason": "assistant-ended-call"}
+  53.9 AGENT    [goodbye] Thank you for your time. Goodbye.
+  54.0   * function_call_complete {"function": "end_call", "result": {"status": "success", "message": "Call ended"}}
+  54.7   * function_call_start {"function": "close_call", "args": {"url": "https://freya-bank-mock.freyavoice.workers.dev/v1/close_call", "method": "POST", "headers": {"Content-Type": "application/json"}, "body": {"outcome": "promise", "customer_id": "c_c1cb6b35-3d8"}}}
+  54.8   * function_call_complete {"function": "close_call", "result": {"status": "success", "data": {"ok": true}, "message": "Successfully executed POST request", "status_code": 200, "header": {"Date": "Sun, 11 Oct 2026 08:16:59 GMT", "Content-Type": "application/json", "Content-Length": "11", "Connection": "keep-alive", "Report-To": "{\"group\":\"cf-nel\",\"max_age\":604800,\"endpoints\":[{\"url\":\"https://a.nel.cloudflare.com…

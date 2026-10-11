@@ -1,0 +1,442 @@
+# style4-a-r3-PUB-07 pass=False ended=assistant-ended-call duration=191s call=6acaff93-ab09-4735-b71d-910acdc2cb1a
+# failed: promises [('p1', 540.0, '2026-10-20')], expected [('p1', 540.0, '2026-10-27')]
+# failed: conversation: The conversation failed to meet the success criteria because the promise was recorded for the wrong date. While the agent correctly asked for the exact day (Message 12) and initially offered the correct next business day of Tuesday 27 October (Message 14), it switched to Tuesday 20 October during the confirmation phase (Message 16 and Message 86). The system events confirm that the 'create_promise
+# judge: {"success": false, "reason": "The conversation failed to meet the success criteria because the promise was recorded for the wrong date. While the agent correctly asked for the exact day (Message 12) and initially offered the correct next business day of Tuesday 27 October (Message 14), it switched to Tuesday 20 October during the confirmation phase (Message 16 and Message 86). The system events confirm that the 'create_promise' tool was called with the date '2026-10-20' instead of the requested '2026-10-27'. Additionally, the agent engaged in an excessive repetition loop (Messages 16-84) before finally securing the confirmation.", "relevantMessages": {"12": "The agent asks for the exact day once, as required.", "14": "The agent correctly identifies that 26 October is not a business day and offers the next business day, Tuesday 27 October.", "16": "The agent incorrectly changes the date to Tuesday 20 October during the confirmation request.", "86": "The agent confirms the promise was recorded for the incorrect date of 20 October.", "System Event": "The API call for create_promise shows the date was recorded as 2026-10-20."}}
+
+   0.0   > enter opening (from None)
+   0.0 AGENT    [opening] Hello, this is Freya Bank's digital assistant calling, and we are recording this call. Am I speaking with Mr Ortiz?
+   1.6 CUSTOMER [opening] Yes, this is Samuel Ortiz. It's been a really long day at work with all these meetings.
+   4.5   = who1=confirms conf=1.0 src=extraction@opening
+   4.5   ? route opening matched=True -> setup_id [who1 == 'confirms']
+   4.5   > enter setup_id (from opening)
+   4.5   * function_call_start {"function": "code_exec", "args": {"timeout_ms": 20000, "code": "import base64\nimport json\nimport zlib\nexec(zlib.decompress(base64.b64decode('eNq9Pe2S2zaS/+cpcPSlRGZkRdKM7UQb2+VNnI33zvZW7L3UlmZOpkRoRI9IKiQ1M9ooVfca93r3JNcfAAjwQ5pJrs5bawsg0N1oNBrdjQbySPy0TQvx5t2HN9+/Fj/kcheKRRZJkcJfhfDx90zeyYUowjSaZ3cT8bnI0r7IZV9EYSnLOJGBgG8iTsU6W4RrUcqiLAYnjwD0GmAss1yUqxh+xGs5EUUZreO5yNL1ri9SeSNzkYdxIUWZQTMpAM…
+   4.7   * function_call_complete {"function": "code_exec", "result": {"status": "success", "data": null, "message": "Code executed successfully", "status_code": 200}}
+   4.7   ? route setup_id matched=True -> identity [always]
+   4.8   > enter identity (from setup_id)
+   4.8 AGENT    [identity] Before we continue, I need to ask you two security questions. What is your date of birth?
+   6.1 CUSTOMER [identity] Work has been so busy today, I barely had time for lunch. My date of birth is the fifth of December nineteen seventy five.
+   8.6   = id1=answers conf=1.0 src=extraction@identity
+  11.7   = id_heard=the fifth of December nineteen seventy five conf=0.9878611866625076 src=extraction@identity
+  11.7   = id_last=the fifth of December nineteen seventy five conf=1.0 src=extraction@identity
+  11.7   ? route identity matched=False -> None []
+  15.2   * function_call_start {"function": "verify_identity", "args": {"url": "https://freya-bank-mock.freyavoice.workers.dev/v1/verify_identity", "method": "POST", "headers": {"Content-Type": "application/json"}, "body": {"field": "date_of_birth", "answer": "1975-12-05", "customer_id": "c_cf68e823-340"}}}
+  17.3   * function_call_complete {"function": "verify_identity", "result": {"status": "success", "data": {"ok": true, "verified": true, "wrong_answers_left": 3, "all_verified": false, "what_to_do_next": "Correct. Now ask: What are the last four digits of the phone number we have on file?"}, "message": "Successfully executed POST request", "status_code": 200}}
+  17.3   ? route identity matched=False -> None []
+  17.3 AGENT    [identity] Thank you. What are the last four digits of the phone number we have on file?
+  22.4 CUSTOMER [identity] I've been stuck in traffic for over an hour and it's driving me crazy. The last four digits are seven zero nine three.
+  26.2   = id1=answers conf=1.0 src=extraction@identity
+  30.0   = id_heard=seven zero nine three conf=1.0 src=extraction@identity
+  30.0   = id_last=seven zero nine three conf=1.0 src=extraction@identity
+  30.1   ? route identity matched=False -> None []
+  32.6   * function_call_start {"function": "verify_identity", "args": {"url": "https://freya-bank-mock.freyavoice.workers.dev/v1/verify_identity", "method": "POST", "headers": {"Content-Type": "application/json"}, "body": {"field": "phone_last4", "answer": "7093", "customer_id": "c_cf68e823-340"}}}
+  33.3   * function_call_complete {"function": "verify_identity", "result": {"status": "success", "data": {"ok": true, "verified": true, "wrong_answers_left": 3, "all_verified": true, "what_to_do_next": "Both answers are correct. Thank the customer in a few words."}, "message": "Successfully executed POST request", "status_code": 200}}
+  33.3   ? route identity matched=True -> account [(verify_identity_response.data.all_verified == 'true' OR verify_identity_response.data.all_verified == 'True')]
+  33.4   > enter account (from identity)
+  33.4   * function_call_start {"function": "api_call", "args": {"url": "https://freya-bank-mock.freyavoice.workers.dev/v1/get_account", "method": "POST", "headers": {"Content-Type": "application/json"}, "body": {"customer_id": "c_cf68e823-340"}}}
+  33.4   * function_call_complete {"function": "api_call", "result": {"status": "success", "data": {"ok": true, "products": [{"product_id": "p1", "type": "personal_loan", "past_due": 540, "days_late": 5, "instalment_amount": 180}]}, "message": "Successfully executed POST request", "status_code": 200, "header": {"Date": "Sun, 11 Oct 2026 09:09:14 GMT", "Content-Type": "application/json", "Transfer-Encoding": "chunked", "Connection…
+  33.4   ? route account matched=True -> facts [always]
+  33.4   > enter facts (from account)
+  33.4   * function_call_start {"function": "code_exec", "args": {"timeout_ms": 20000, "code": "import base64\nimport json\nimport zlib\nexec(zlib.decompress(base64.b64decode('eNq9fe1y20aW6H89BQbelIiYpknZTiZ0ZJeTODOeiZ1U7NlUSualIQIUYZEADYCSOVGq9jXuC9wH2ye556O/u0FSTnYzNTIB9HefPt/n9J3o503ZRC9evX7x3fPo+zrfptGsyvKohD9N1MPf0/xjPouatMzOq4/j6H1Tlf2ozvtRlrZ5W6zyJIJvUVFGy2qWLqM2b9pmcHQHml5CG/OqjtpFAT+KZT6OmjZbFudRVS63/ajMr/I6qtOiyaO2gm…
+  34.1   * function_call_complete {"function": "code_exec", "result": {"status": "success", "data": null, "message": "Code executed successfully", "status_code": 200, "validation_errors": ["variable 'reply_kind' rejected by schema validation", "variable 'all_products' rejected by schema validation", "variable 'about_product' rejected by schema validation", "variable 'has_question' rejected by schema validation"]}}
+  34.1   ? route facts matched=True -> negotiate_say [always]
+  34.1   > enter negotiate_say (from facts)
+  34.1 AGENT    [negotiate_say] I am calling from the collections team about a late payment. Your personal loan has 540.00 past due and is 5 days late. Can you make this payment today?
+  36.1 CUSTOMER [negotiate_say] I'm so exhausted from this  [CUT]
+  38.1   = reply_kind=unclear conf=1.0 src=extraction@negotiate_say
+  38.1   ? route negotiate_say matched=True -> decide [always]
+  38.1   > enter decide (from negotiate_say)
+  38.1   * function_call_start {"function": "code_exec", "args": {"timeout_ms": 20000, "code": "import base64\nimport json\nimport zlib\nexec(zlib.decompress(base64.b64decode('eNq9fe1y20aW6H89BQbelIiYpknZTiZ0ZJeTODOeiZ1U7NlUSualIQIUYZEADYCSOVGq9jXuC9wH2ye556O/u0FSTnYzNTIB9HefPt/n9J3o503ZRC9evX7x3fPo+zrfptGsyvKohD9N1MPf0/xjPouatMzOq4/j6H1Tlf2ozvtRlrZ5W6zyJIJvUVFGy2qWLqM2b9pmcHQHml5CG/OqjtpFAT+KZT6OmjZbFudRVS63/ajMr/I6qtOiyaO2gm…
+  38.3   * function_call_complete {"function": "code_exec", "result": {"status": "success", "data": null, "message": "Code executed successfully", "status_code": 200, "validation_errors": ["variable 'reply_kind' rejected by schema validation", "variable 'all_products' rejected by schema validation", "variable 'about_product' rejected by schema validation", "variable 'has_question' rejected by schema validation"]}}
+  38.3   ? route decide matched=True -> negotiate_say [always]
+  38.3   > enter negotiate_say (from decide)
+  38.4 AGENT    [negotiate_say] Sorry, I did not catch that. Can you make this payment today?
+  39.9 CUSTOMER [negotiate_say] I've been running around all day trying to finish my reports and I'm just drained. No, I can't make that payment today, especially with my cousin's wedding coming up on the thirtieth.
+  42.8   = reply_kind=no conf=1.0 src=extraction@negotiate_say
+  42.8   ? route negotiate_say matched=True -> decide [always]
+  42.8   > enter decide (from negotiate_say)
+  42.8   * function_call_start {"function": "code_exec", "args": {"timeout_ms": 20000, "code": "import base64\nimport json\nimport zlib\nexec(zlib.decompress(base64.b64decode('eNq9fe1y20aW6H89BQbelIiYpknZTiZ0ZJeTODOeiZ1U7NlUSualIQIUYZEADYCSOVGq9jXuC9wH2ye556O/u0FSTnYzNTIB9HefPt/n9J3o503ZRC9evX7x3fPo+zrfptGsyvKohD9N1MPf0/xjPouatMzOq4/j6H1Tlf2ozvtRlrZ5W6zyJIJvUVFGy2qWLqM2b9pmcHQHml5CG/OqjtpFAT+KZT6OmjZbFudRVS63/ajMr/I6qtOiyaO2gm…
+  43.0   * function_call_complete {"function": "code_exec", "result": {"status": "success", "data": null, "message": "Code executed successfully", "status_code": 200, "validation_errors": ["variable 'reply_kind' rejected by schema validation", "variable 'all_products' rejected by schema validation", "variable 'about_product' rejected by schema validation", "variable 'has_question' rejected by schema validation"]}}
+  43.0   ? route decide matched=True -> negotiate_say [always]
+  43.0   > enter negotiate_say (from decide)
+  43.0 AGENT    [negotiate_say] Could you pay 540.00 for the personal loan on Friday 16 October 2026?
+  44.9 CUSTOMER [negotiate_say] I've been juggling so many projects at the office that I can't even think straight. I can't do it then, it would have to be the week after next.
+  45.7   = reply_kind=vague conf=1.0 src=extraction@negotiate_say
+  45.9   = said_date_text=the week after next conf=1.0 src=extraction@negotiate_say
+  45.9   ? route negotiate_say matched=True -> decide [always]
+  45.9   > enter decide (from negotiate_say)
+  45.9   * function_call_start {"function": "code_exec", "args": {"timeout_ms": 20000, "code": "import base64\nimport json\nimport zlib\nexec(zlib.decompress(base64.b64decode('eNq9fe1y20aW6H89BQbelIiYpknZTiZ0ZJeTODOeiZ1U7NlUSualIQIUYZEADYCSOVGq9jXuC9wH2ye556O/u0FSTnYzNTIB9HefPt/n9J3o503ZRC9evX7x3fPo+zrfptGsyvKohD9N1MPf0/xjPouatMzOq4/j6H1Tlf2ozvtRlrZ5W6zyJIJvUVFGy2qWLqM2b9pmcHQHml5CG/OqjtpFAT+KZT6OmjZbFudRVS63/ajMr/I6qtOiyaO2gm…
+  46.6   * function_call_complete {"function": "code_exec", "result": {"status": "success", "data": null, "message": "Code executed successfully", "status_code": 200, "validation_errors": ["variable 'reply_kind' rejected by schema validation", "variable 'all_products' rejected by schema validation", "variable 'about_product' rejected by schema validation", "variable 'has_question' rejected by schema validation"]}}
+  46.6   ? route decide matched=True -> negotiate_say [always]
+  46.6   > enter negotiate_say (from decide)
+  46.6 AGENT    [negotiate_say] On which exact day will you pay?
+  47.9 CUSTOMER [negotiate_say] The commute home was absolutely terrible today with all the construction on the main road. I can pay it on Monday the twenty-sixth.
+  52.6   = reply_kind=offer conf=1.0 src=extraction@negotiate_say
+  52.8   = said_date_text=Monday the twenty-sixth conf=1.0 src=extraction@negotiate_say
+  52.8   ? route negotiate_say matched=True -> decide [always]
+  52.8   > enter decide (from negotiate_say)
+  52.8   * function_call_start {"function": "code_exec", "args": {"timeout_ms": 20000, "code": "import base64\nimport json\nimport zlib\nexec(zlib.decompress(base64.b64decode('eNq9fe1y20aW6H89BQbelIiYpknZTiZ0ZJeTODOeiZ1U7NlUSualIQIUYZEADYCSOVGq9jXuC9wH2ye556O/u0FSTnYzNTIB9HefPt/n9J3o503ZRC9evX7x3fPo+zrfptGsyvKohD9N1MPf0/xjPouatMzOq4/j6H1Tlf2ozvtRlrZ5W6zyJIJvUVFGy2qWLqM2b9pmcHQHml5CG/OqjtpFAT+KZT6OmjZbFudRVS63/ajMr/I6qtOiyaO2gm…
+  53.2   * function_call_complete {"function": "code_exec", "result": {"status": "success", "data": null, "message": "Code executed successfully", "status_code": 200, "validation_errors": ["variable 'reply_kind' rejected by schema validation", "variable 'all_products' rejected by schema validation", "variable 'about_product' rejected by schema validation", "variable 'has_question' rejected by schema validation"]}}
+  53.2   ? route decide matched=True -> negotiate_say [always]
+  53.2   > enter negotiate_say (from decide)
+  53.2 AGENT    [negotiate_say] Monday 26 October 2026 is not a business day. Could you pay 540.00 on the next business day, Tuesday 27 October 2026?
+  54.9 CUSTOMER [negotiate_say] My boss has been giving me extra shifts lately so I'm constantly on my feet. Yes, that Tuesday works for me.
+  55.7   = reply_kind=yes conf=1.0 src=extraction@negotiate_say
+  55.9   = said_date_text=that Tuesday conf=1.0 src=extraction@negotiate_say
+  55.9   ? route negotiate_say matched=True -> decide [always]
+  55.9   > enter decide (from negotiate_say)
+  55.9   * function_call_start {"function": "code_exec", "args": {"timeout_ms": 20000, "code": "import base64\nimport json\nimport zlib\nexec(zlib.decompress(base64.b64decode('eNq9fe1y20aW6H89BQbelIiYpknZTiZ0ZJeTODOeiZ1U7NlUSualIQIUYZEADYCSOVGq9jXuC9wH2ye556O/u0FSTnYzNTIB9HefPt/n9J3o503ZRC9evX7x3fPo+zrfptGsyvKohD9N1MPf0/xjPouatMzOq4/j6H1Tlf2ozvtRlrZ5W6zyJIJvUVFGy2qWLqM2b9pmcHQHml5CG/OqjtpFAT+KZT6OmjZbFudRVS63/ajMr/I6qtOiyaO2gm…
+  56.2   * function_call_complete {"function": "code_exec", "result": {"status": "success", "data": null, "message": "Code executed successfully", "status_code": 200, "validation_errors": ["variable 'reply_kind' rejected by schema validation", "variable 'all_products' rejected by schema validation", "variable 'about_product' rejected by schema validation", "variable 'has_question' rejected by schema validation"]}}
+  56.2   ? route decide matched=True -> negotiate_say [always]
+  56.2   > enter negotiate_say (from decide)
+  56.2 AGENT    [negotiate_say] To confirm: the personal loan, 540.00 on Tuesday 20 October 2026. Do you confirm?
+  58.1 CUSTOMER [negotiate_say] I've been dealing with a lot of paperwork today  [CUT]
+  58.9   = reply_kind=unclear conf=1.0 src=extraction@negotiate_say
+  58.9   ? route negotiate_say matched=True -> decide [always]
+  59.0   > enter decide (from negotiate_say)
+  59.0   * function_call_start {"function": "code_exec", "args": {"timeout_ms": 20000, "code": "import base64\nimport json\nimport zlib\nexec(zlib.decompress(base64.b64decode('eNq9fe1y20aW6H89BQbelIiYpknZTiZ0ZJeTODOeiZ1U7NlUSualIQIUYZEADYCSOVGq9jXuC9wH2ye556O/u0FSTnYzNTIB9HefPt/n9J3o503ZRC9evX7x3fPo+zrfptGsyvKohD9N1MPf0/xjPouatMzOq4/j6H1Tlf2ozvtRlrZ5W6zyJIJvUVFGy2qWLqM2b9pmcHQHml5CG/OqjtpFAT+KZT6OmjZbFudRVS63/ajMr/I6qtOiyaO2gm…
+  59.8   * function_call_complete {"function": "code_exec", "result": {"status": "success", "data": null, "message": "Code executed successfully", "status_code": 200, "validation_errors": ["variable 'reply_kind' rejected by schema validation", "variable 'all_products' rejected by schema validation", "variable 'about_product' rejected by schema validation", "variable 'has_question' rejected by schema validation"]}}
+  59.8   ? route decide matched=True -> negotiate_say [always]
+  59.8   > enter negotiate_say (from decide)
+  59.9 AGENT    [negotiate_say] Sorry, I did not catch that. Do you confirm?
+  61.7 CUSTOMER [negotiate_say] I've been dealing with a lot  [CUT]
+  62.4   = reply_kind=unclear conf=1.0 src=extraction@negotiate_say
+  62.4   ? route negotiate_say matched=True -> decide [always]
+  62.5   > enter decide (from negotiate_say)
+  62.5   * function_call_start {"function": "code_exec", "args": {"timeout_ms": 20000, "code": "import base64\nimport json\nimport zlib\nexec(zlib.decompress(base64.b64decode('eNq9fe1y20aW6H89BQbelIiYpknZTiZ0ZJeTODOeiZ1U7NlUSualIQIUYZEADYCSOVGq9jXuC9wH2ye556O/u0FSTnYzNTIB9HefPt/n9J3o503ZRC9evX7x3fPo+zrfptGsyvKohD9N1MPf0/xjPouatMzOq4/j6H1Tlf2ozvtRlrZ5W6zyJIJvUVFGy2qWLqM2b9pmcHQHml5CG/OqjtpFAT+KZT6OmjZbFudRVS63/ajMr/I6qtOiyaO2gm…
+  62.7   * function_call_complete {"function": "code_exec", "result": {"status": "success", "data": null, "message": "Code executed successfully", "status_code": 200, "validation_errors": ["variable 'reply_kind' rejected by schema validation", "variable 'all_products' rejected by schema validation", "variable 'about_product' rejected by schema validation", "variable 'has_question' rejected by schema validation"]}}
+  62.7   ? route decide matched=True -> negotiate_say [always]
+  62.7   > enter negotiate_say (from decide)
+  62.8 AGENT    [negotiate_say] Sorry, I think you were cut off. Do you confirm?
+  64.7 CUSTOMER [negotiate_say] I've been dealing with a lot of paperwork  [CUT]
+  70.6   = reply_kind=unclear conf=1.0 src=extraction@negotiate_say
+  70.6   ? route negotiate_say matched=True -> decide [always]
+  70.6   > enter decide (from negotiate_say)
+  70.6   * function_call_start {"function": "code_exec", "args": {"timeout_ms": 20000, "code": "import base64\nimport json\nimport zlib\nexec(zlib.decompress(base64.b64decode('eNq9fe1y20aW6H89BQbelIiYpknZTiZ0ZJeTODOeiZ1U7NlUSualIQIUYZEADYCSOVGq9jXuC9wH2ye556O/u0FSTnYzNTIB9HefPt/n9J3o503ZRC9evX7x3fPo+zrfptGsyvKohD9N1MPf0/xjPouatMzOq4/j6H1Tlf2ozvtRlrZ5W6zyJIJvUVFGy2qWLqM2b9pmcHQHml5CG/OqjtpFAT+KZT6OmjZbFudRVS63/ajMr/I6qtOiyaO2gm…
+  70.8   * function_call_complete {"function": "code_exec", "result": {"status": "success", "data": null, "message": "Code executed successfully", "status_code": 200, "validation_errors": ["variable 'reply_kind' rejected by schema validation", "variable 'all_products' rejected by schema validation", "variable 'about_product' rejected by schema validation", "variable 'has_question' rejected by schema validation"]}}
+  70.8   ? route decide matched=True -> negotiate_say [always]
+  70.8   > enter negotiate_say (from decide)
+  70.8 AGENT    [negotiate_say] Take your time. Do you confirm?
+  72.6 CUSTOMER [negotiate_say] I have been so preoccupied with my work  [CUT]
+  73.5   = reply_kind=unclear conf=1.0 src=extraction@negotiate_say
+  73.5   ? route negotiate_say matched=True -> decide [always]
+  73.5   > enter decide (from negotiate_say)
+  73.5   * function_call_start {"function": "code_exec", "args": {"timeout_ms": 20000, "code": "import base64\nimport json\nimport zlib\nexec(zlib.decompress(base64.b64decode('eNq9fe1y20aW6H89BQbelIiYpknZTiZ0ZJeTODOeiZ1U7NlUSualIQIUYZEADYCSOVGq9jXuC9wH2ye556O/u0FSTnYzNTIB9HefPt/n9J3o503ZRC9evX7x3fPo+zrfptGsyvKohD9N1MPf0/xjPouatMzOq4/j6H1Tlf2ozvtRlrZ5W6zyJIJvUVFGy2qWLqM2b9pmcHQHml5CG/OqjtpFAT+KZT6OmjZbFudRVS63/ajMr/I6qtOiyaO2gm…
+  73.8   * function_call_complete {"function": "code_exec", "result": {"status": "success", "data": null, "message": "Code executed successfully", "status_code": 200, "validation_errors": ["variable 'reply_kind' rejected by schema validation", "variable 'all_products' rejected by schema validation", "variable 'about_product' rejected by schema validation", "variable 'has_question' rejected by schema validation"]}}
+  73.8   ? route decide matched=True -> negotiate_say [always]
+  73.8   > enter negotiate_say (from decide)
+  73.8 AGENT    [negotiate_say] Sorry, I think you were cut off. Do you confirm?
+  75.8 CUSTOMER [negotiate_say] I've been dealing with a  [CUT]
+  76.1   = reply_kind=unclear conf=1.0 src=extraction@negotiate_say
+  76.1   ? route negotiate_say matched=True -> decide [always]
+  76.1   > enter decide (from negotiate_say)
+  76.1   * function_call_start {"function": "code_exec", "args": {"timeout_ms": 20000, "code": "import base64\nimport json\nimport zlib\nexec(zlib.decompress(base64.b64decode('eNq9fe1y20aW6H89BQbelIiYpknZTiZ0ZJeTODOeiZ1U7NlUSualIQIUYZEADYCSOVGq9jXuC9wH2ye556O/u0FSTnYzNTIB9HefPt/n9J3o503ZRC9evX7x3fPo+zrfptGsyvKohD9N1MPf0/xjPouatMzOq4/j6H1Tlf2ozvtRlrZ5W6zyJIJvUVFGy2qWLqM2b9pmcHQHml5CG/OqjtpFAT+KZT6OmjZbFudRVS63/ajMr/I6qtOiyaO2gm…
+  77.2   * function_call_complete {"function": "code_exec", "result": {"status": "success", "data": null, "message": "Code executed successfully", "status_code": 200, "validation_errors": ["variable 'reply_kind' rejected by schema validation", "variable 'all_products' rejected by schema validation", "variable 'about_product' rejected by schema validation", "variable 'has_question' rejected by schema validation"]}}
+  77.2   ? route decide matched=True -> negotiate_say [always]
+  77.3   > enter negotiate_say (from decide)
+  77.3 AGENT    [negotiate_say] Sorry, I missed the end of that. Do you confirm?
+  79.1 CUSTOMER [negotiate_say] I've been dealing with a lot of paperwork today and  [CUT]
+  79.5   = reply_kind=unclear conf=1.0 src=extraction@negotiate_say
+  79.5   ? route negotiate_say matched=True -> decide [always]
+  79.5   > enter decide (from negotiate_say)
+  79.5   * function_call_start {"function": "code_exec", "args": {"timeout_ms": 20000, "code": "import base64\nimport json\nimport zlib\nexec(zlib.decompress(base64.b64decode('eNq9fe1y20aW6H89BQbelIiYpknZTiZ0ZJeTODOeiZ1U7NlUSualIQIUYZEADYCSOVGq9jXuC9wH2ye556O/u0FSTnYzNTIB9HefPt/n9J3o503ZRC9evX7x3fPo+zrfptGsyvKohD9N1MPf0/xjPouatMzOq4/j6H1Tlf2ozvtRlrZ5W6zyJIJvUVFGy2qWLqM2b9pmcHQHml5CG/OqjtpFAT+KZT6OmjZbFudRVS63/ajMr/I6qtOiyaO2gm…
+  80.0   * function_call_complete {"function": "code_exec", "result": {"status": "success", "data": null, "message": "Code executed successfully", "status_code": 200, "validation_errors": ["variable 'reply_kind' rejected by schema validation", "variable 'all_products' rejected by schema validation", "variable 'about_product' rejected by schema validation", "variable 'has_question' rejected by schema validation"]}}
+  80.0   ? route decide matched=True -> negotiate_say [always]
+  80.0   > enter negotiate_say (from decide)
+  80.0 AGENT    [negotiate_say] Sorry, I think you were cut off. Do you confirm?
+  82.1 CUSTOMER [negotiate_say] I've been dealing with a lot of paperwork today  [CUT]
+  82.6   = reply_kind=unclear conf=1.0 src=extraction@negotiate_say
+  82.6   ? route negotiate_say matched=True -> decide [always]
+  82.6   > enter decide (from negotiate_say)
+  82.6   * function_call_start {"function": "code_exec", "args": {"timeout_ms": 20000, "code": "import base64\nimport json\nimport zlib\nexec(zlib.decompress(base64.b64decode('eNq9fe1y20aW6H89BQbelIiYpknZTiZ0ZJeTODOeiZ1U7NlUSualIQIUYZEADYCSOVGq9jXuC9wH2ye556O/u0FSTnYzNTIB9HefPt/n9J3o503ZRC9evX7x3fPo+zrfptGsyvKohD9N1MPf0/xjPouatMzOq4/j6H1Tlf2ozvtRlrZ5W6zyJIJvUVFGy2qWLqM2b9pmcHQHml5CG/OqjtpFAT+KZT6OmjZbFudRVS63/ajMr/I6qtOiyaO2gm…
+  84.1   * function_call_complete {"function": "code_exec", "result": {"status": "success", "data": null, "message": "Code executed successfully", "status_code": 200, "validation_errors": ["variable 'reply_kind' rejected by schema validation", "variable 'all_products' rejected by schema validation", "variable 'about_product' rejected by schema validation", "variable 'has_question' rejected by schema validation"]}}
+  84.1   ? route decide matched=True -> negotiate_say [always]
+  84.1   > enter negotiate_say (from decide)
+  84.1 AGENT    [negotiate_say] Sorry, I did not catch that. Do you confirm?
+  86.2 CUSTOMER [negotiate_say] The office was so loud today I could barely hear  [CUT]
+  86.6   = reply_kind=unclear conf=1.0 src=extraction@negotiate_say
+  86.6   ? route negotiate_say matched=True -> decide [always]
+  86.6   > enter decide (from negotiate_say)
+  86.6   * function_call_start {"function": "code_exec", "args": {"timeout_ms": 20000, "code": "import base64\nimport json\nimport zlib\nexec(zlib.decompress(base64.b64decode('eNq9fe1y20aW6H89BQbelIiYpknZTiZ0ZJeTODOeiZ1U7NlUSualIQIUYZEADYCSOVGq9jXuC9wH2ye556O/u0FSTnYzNTIB9HefPt/n9J3o503ZRC9evX7x3fPo+zrfptGsyvKohD9N1MPf0/xjPouatMzOq4/j6H1Tlf2ozvtRlrZ5W6zyJIJvUVFGy2qWLqM2b9pmcHQHml5CG/OqjtpFAT+KZT6OmjZbFudRVS63/ajMr/I6qtOiyaO2gm…
+  86.9   * function_call_complete {"function": "code_exec", "result": {"status": "success", "data": null, "message": "Code executed successfully", "status_code": 200, "validation_errors": ["variable 'reply_kind' rejected by schema validation", "variable 'all_products' rejected by schema validation", "variable 'about_product' rejected by schema validation", "variable 'has_question' rejected by schema validation"]}}
+  86.9   ? route decide matched=True -> negotiate_say [always]
+  86.9   > enter negotiate_say (from decide)
+  86.9 AGENT    [negotiate_say] Sorry, I think you were cut off. Do you confirm?
+  88.8 CUSTOMER [negotiate_say] The office was so loud today I could  [CUT]
+  92.4   = reply_kind=unclear conf=1.0 src=extraction@negotiate_say
+  92.4   ? route negotiate_say matched=True -> decide [always]
+  92.4   > enter decide (from negotiate_say)
+  92.4   * function_call_start {"function": "code_exec", "args": {"timeout_ms": 20000, "code": "import base64\nimport json\nimport zlib\nexec(zlib.decompress(base64.b64decode('eNq9fe1y20aW6H89BQbelIiYpknZTiZ0ZJeTODOeiZ1U7NlUSualIQIUYZEADYCSOVGq9jXuC9wH2ye556O/u0FSTnYzNTIB9HefPt/n9J3o503ZRC9evX7x3fPo+zrfptGsyvKohD9N1MPf0/xjPouatMzOq4/j6H1Tlf2ozvtRlrZ5W6zyJIJvUVFGy2qWLqM2b9pmcHQHml5CG/OqjtpFAT+KZT6OmjZbFudRVS63/ajMr/I6qtOiyaO2gm…
+  92.6   * function_call_complete {"function": "code_exec", "result": {"status": "success", "data": null, "message": "Code executed successfully", "status_code": 200, "validation_errors": ["variable 'reply_kind' rejected by schema validation", "variable 'all_products' rejected by schema validation", "variable 'about_product' rejected by schema validation", "variable 'has_question' rejected by schema validation"]}}
+  92.6   ? route decide matched=True -> negotiate_say [always]
+  92.6   > enter negotiate_say (from decide)
+  92.6 AGENT    [negotiate_say] Take your time. Do you confirm?
+  94.4 CUSTOMER [negotiate_say] The office was so loud today I could barely  [CUT]
+  98.3   = reply_kind=unclear conf=1.0 src=extraction@negotiate_say
+  98.3   ? route negotiate_say matched=True -> decide [always]
+  98.3   > enter decide (from negotiate_say)
+  98.3   * function_call_start {"function": "code_exec", "args": {"timeout_ms": 20000, "code": "import base64\nimport json\nimport zlib\nexec(zlib.decompress(base64.b64decode('eNq9fe1y20aW6H89BQbelIiYpknZTiZ0ZJeTODOeiZ1U7NlUSualIQIUYZEADYCSOVGq9jXuC9wH2ye556O/u0FSTnYzNTIB9HefPt/n9J3o503ZRC9evX7x3fPo+zrfptGsyvKohD9N1MPf0/xjPouatMzOq4/j6H1Tlf2ozvtRlrZ5W6zyJIJvUVFGy2qWLqM2b9pmcHQHml5CG/OqjtpFAT+KZT6OmjZbFudRVS63/ajMr/I6qtOiyaO2gm…
+  98.6   * function_call_complete {"function": "code_exec", "result": {"status": "success", "data": null, "message": "Code executed successfully", "status_code": 200, "validation_errors": ["variable 'reply_kind' rejected by schema validation", "variable 'all_products' rejected by schema validation", "variable 'about_product' rejected by schema validation", "variable 'has_question' rejected by schema validation"]}}
+  98.6   ? route decide matched=True -> negotiate_say [always]
+  98.6   > enter negotiate_say (from decide)
+  98.6 AGENT    [negotiate_say] Sorry, I think you were cut off. Do you confirm?
+ 100.5 CUSTOMER [negotiate_say] The office was so loud today I could barely  [CUT]
+ 100.9   = reply_kind=unclear conf=1.0 src=extraction@negotiate_say
+ 101.0   ? route negotiate_say matched=True -> decide [always]
+ 101.0   > enter decide (from negotiate_say)
+ 101.0   * function_call_start {"function": "code_exec", "args": {"timeout_ms": 20000, "code": "import base64\nimport json\nimport zlib\nexec(zlib.decompress(base64.b64decode('eNq9fe1y20aW6H89BQbelIiYpknZTiZ0ZJeTODOeiZ1U7NlUSualIQIUYZEADYCSOVGq9jXuC9wH2ye556O/u0FSTnYzNTIB9HefPt/n9J3o503ZRC9evX7x3fPo+zrfptGsyvKohD9N1MPf0/xjPouatMzOq4/j6H1Tlf2ozvtRlrZ5W6zyJIJvUVFGy2qWLqM2b9pmcHQHml5CG/OqjtpFAT+KZT6OmjZbFudRVS63/ajMr/I6qtOiyaO2gm…
+ 101.3   * function_call_complete {"function": "code_exec", "result": {"status": "success", "data": null, "message": "Code executed successfully", "status_code": 200, "validation_errors": ["variable 'reply_kind' rejected by schema validation", "variable 'all_products' rejected by schema validation", "variable 'about_product' rejected by schema validation", "variable 'has_question' rejected by schema validation"]}}
+ 101.3   ? route decide matched=True -> negotiate_say [always]
+ 101.3   > enter negotiate_say (from decide)
+ 101.3 AGENT    [negotiate_say] Sorry, I missed the end of that. Do you confirm?
+ 103.4 CUSTOMER [negotiate_say] The office was so loud today I could barely hear  [CUT]
+ 103.8   = reply_kind=unclear conf=1.0 src=extraction@negotiate_say
+ 103.8   ? route negotiate_say matched=True -> decide [always]
+ 103.8   > enter decide (from negotiate_say)
+ 103.8   * function_call_start {"function": "code_exec", "args": {"timeout_ms": 20000, "code": "import base64\nimport json\nimport zlib\nexec(zlib.decompress(base64.b64decode('eNq9fe1y20aW6H89BQbelIiYpknZTiZ0ZJeTODOeiZ1U7NlUSualIQIUYZEADYCSOVGq9jXuC9wH2ye556O/u0FSTnYzNTIB9HefPt/n9J3o503ZRC9evX7x3fPo+zrfptGsyvKohD9N1MPf0/xjPouatMzOq4/j6H1Tlf2ozvtRlrZ5W6zyJIJvUVFGy2qWLqM2b9pmcHQHml5CG/OqjtpFAT+KZT6OmjZbFudRVS63/ajMr/I6qtOiyaO2gm…
+ 104.1   * function_call_complete {"function": "code_exec", "result": {"status": "success", "data": null, "message": "Code executed successfully", "status_code": 200, "validation_errors": ["variable 'reply_kind' rejected by schema validation", "variable 'all_products' rejected by schema validation", "variable 'about_product' rejected by schema validation", "variable 'has_question' rejected by schema validation"]}}
+ 104.1   ? route decide matched=True -> negotiate_say [always]
+ 104.1   > enter negotiate_say (from decide)
+ 104.1 AGENT    [negotiate_say] Sorry, I think you were cut off. Do you confirm?
+ 105.9 CUSTOMER [negotiate_say] The office was so loud today I could barely hear anything.
+ 110.3   = reply_kind=unclear conf=1.0 src=extraction@negotiate_say
+ 110.3   ? route negotiate_say matched=True -> decide [always]
+ 110.3   > enter decide (from negotiate_say)
+ 110.3   * function_call_start {"function": "code_exec", "args": {"timeout_ms": 20000, "code": "import base64\nimport json\nimport zlib\nexec(zlib.decompress(base64.b64decode('eNq9fe1y20aW6H89BQbelIiYpknZTiZ0ZJeTODOeiZ1U7NlUSualIQIUYZEADYCSOVGq9jXuC9wH2ye556O/u0FSTnYzNTIB9HefPt/n9J3o503ZRC9evX7x3fPo+zrfptGsyvKohD9N1MPf0/xjPouatMzOq4/j6H1Tlf2ozvtRlrZ5W6zyJIJvUVFGy2qWLqM2b9pmcHQHml5CG/OqjtpFAT+KZT6OmjZbFudRVS63/ajMr/I6qtOiyaO2gm…
+ 110.7   * function_call_complete {"function": "code_exec", "result": {"status": "success", "data": null, "message": "Code executed successfully", "status_code": 200, "validation_errors": ["variable 'reply_kind' rejected by schema validation", "variable 'all_products' rejected by schema validation", "variable 'about_product' rejected by schema validation", "variable 'has_question' rejected by schema validation"]}}
+ 110.7   ? route decide matched=True -> negotiate_say [always]
+ 110.7   > enter negotiate_say (from decide)
+ 110.7 AGENT    [negotiate_say] Sorry, I did not catch that. Do you confirm?
+ 112.6 CUSTOMER [negotiate_say] The office was so loud today I could barely hear  [CUT]
+ 113.1   = reply_kind=unclear conf=1.0 src=extraction@negotiate_say
+ 113.1   ? route negotiate_say matched=True -> decide [always]
+ 113.1   > enter decide (from negotiate_say)
+ 113.1   * function_call_start {"function": "code_exec", "args": {"timeout_ms": 20000, "code": "import base64\nimport json\nimport zlib\nexec(zlib.decompress(base64.b64decode('eNq9fe1y20aW6H89BQbelIiYpknZTiZ0ZJeTODOeiZ1U7NlUSualIQIUYZEADYCSOVGq9jXuC9wH2ye556O/u0FSTnYzNTIB9HefPt/n9J3o503ZRC9evX7x3fPo+zrfptGsyvKohD9N1MPf0/xjPouatMzOq4/j6H1Tlf2ozvtRlrZ5W6zyJIJvUVFGy2qWLqM2b9pmcHQHml5CG/OqjtpFAT+KZT6OmjZbFudRVS63/ajMr/I6qtOiyaO2gm…
+ 113.4   * function_call_complete {"function": "code_exec", "result": {"status": "success", "data": null, "message": "Code executed successfully", "status_code": 200, "validation_errors": ["variable 'reply_kind' rejected by schema validation", "variable 'all_products' rejected by schema validation", "variable 'about_product' rejected by schema validation", "variable 'has_question' rejected by schema validation"]}}
+ 113.4   ? route decide matched=True -> negotiate_say [always]
+ 113.4   > enter negotiate_say (from decide)
+ 113.4 AGENT    [negotiate_say] Sorry, I think you were cut off. Do you confirm?
+ 115.3 CUSTOMER [negotiate_say] The office was so loud today I could barely  [CUT]
+ 115.9   = reply_kind=unclear conf=1.0 src=extraction@negotiate_say
+ 115.9   ? route negotiate_say matched=True -> decide [always]
+ 115.9   > enter decide (from negotiate_say)
+ 115.9   * function_call_start {"function": "code_exec", "args": {"timeout_ms": 20000, "code": "import base64\nimport json\nimport zlib\nexec(zlib.decompress(base64.b64decode('eNq9fe1y20aW6H89BQbelIiYpknZTiZ0ZJeTODOeiZ1U7NlUSualIQIUYZEADYCSOVGq9jXuC9wH2ye556O/u0FSTnYzNTIB9HefPt/n9J3o503ZRC9evX7x3fPo+zrfptGsyvKohD9N1MPf0/xjPouatMzOq4/j6H1Tlf2ozvtRlrZ5W6zyJIJvUVFGy2qWLqM2b9pmcHQHml5CG/OqjtpFAT+KZT6OmjZbFudRVS63/ajMr/I6qtOiyaO2gm…
+ 116.2   * function_call_complete {"function": "code_exec", "result": {"status": "success", "data": null, "message": "Code executed successfully", "status_code": 200, "validation_errors": ["variable 'reply_kind' rejected by schema validation", "variable 'all_products' rejected by schema validation", "variable 'about_product' rejected by schema validation", "variable 'has_question' rejected by schema validation"]}}
+ 116.2   ? route decide matched=True -> negotiate_say [always]
+ 116.2   > enter negotiate_say (from decide)
+ 116.2 AGENT    [negotiate_say] Take your time. Do you confirm?
+ 118.3 CUSTOMER [negotiate_say] I've been so busy with these deadlines  [CUT]
+ 118.7   = reply_kind=unclear conf=1.0 src=extraction@negotiate_say
+ 118.7   ? route negotiate_say matched=True -> decide [always]
+ 118.7   > enter decide (from negotiate_say)
+ 118.7   * function_call_start {"function": "code_exec", "args": {"timeout_ms": 20000, "code": "import base64\nimport json\nimport zlib\nexec(zlib.decompress(base64.b64decode('eNq9fe1y20aW6H89BQbelIiYpknZTiZ0ZJeTODOeiZ1U7NlUSualIQIUYZEADYCSOVGq9jXuC9wH2ye556O/u0FSTnYzNTIB9HefPt/n9J3o503ZRC9evX7x3fPo+zrfptGsyvKohD9N1MPf0/xjPouatMzOq4/j6H1Tlf2ozvtRlrZ5W6zyJIJvUVFGy2qWLqM2b9pmcHQHml5CG/OqjtpFAT+KZT6OmjZbFudRVS63/ajMr/I6qtOiyaO2gm…
+ 119.2   * function_call_complete {"function": "code_exec", "result": {"status": "success", "data": null, "message": "Code executed successfully", "status_code": 200, "validation_errors": ["variable 'reply_kind' rejected by schema validation", "variable 'all_products' rejected by schema validation", "variable 'about_product' rejected by schema validation", "variable 'has_question' rejected by schema validation"]}}
+ 119.3   ? route decide matched=True -> negotiate_say [always]
+ 119.3   > enter negotiate_say (from decide)
+ 119.3 AGENT    [negotiate_say] Sorry, I think you were cut off. Do you confirm?
+ 121.5 CUSTOMER [negotiate_say] I've been so busy with these deadlines that I  [CUT]
+ 121.9   = reply_kind=unclear conf=1.0 src=extraction@negotiate_say
+ 121.9   ? route negotiate_say matched=True -> decide [always]
+ 121.9   > enter decide (from negotiate_say)
+ 121.9   * function_call_start {"function": "code_exec", "args": {"timeout_ms": 20000, "code": "import base64\nimport json\nimport zlib\nexec(zlib.decompress(base64.b64decode('eNq9fe1y20aW6H89BQbelIiYpknZTiZ0ZJeTODOeiZ1U7NlUSualIQIUYZEADYCSOVGq9jXuC9wH2ye556O/u0FSTnYzNTIB9HefPt/n9J3o503ZRC9evX7x3fPo+zrfptGsyvKohD9N1MPf0/xjPouatMzOq4/j6H1Tlf2ozvtRlrZ5W6zyJIJvUVFGy2qWLqM2b9pmcHQHml5CG/OqjtpFAT+KZT6OmjZbFudRVS63/ajMr/I6qtOiyaO2gm…
+ 122.4   * function_call_complete {"function": "code_exec", "result": {"status": "success", "data": null, "message": "Code executed successfully", "status_code": 200, "validation_errors": ["variable 'reply_kind' rejected by schema validation", "variable 'all_products' rejected by schema validation", "variable 'about_product' rejected by schema validation", "variable 'has_question' rejected by schema validation"]}}
+ 122.4   ? route decide matched=True -> negotiate_say [always]
+ 122.4   > enter negotiate_say (from decide)
+ 122.4 AGENT    [negotiate_say] Sorry, I missed the end of that. Do you confirm?
+ 124.7 CUSTOMER [negotiate_say] I've been so busy with these deadlines that I haven  [CUT]
+ 127.3   = reply_kind=unclear conf=1.0 src=extraction@negotiate_say
+ 127.3   ? route negotiate_say matched=True -> decide [always]
+ 127.3   > enter decide (from negotiate_say)
+ 127.3   * function_call_start {"function": "code_exec", "args": {"timeout_ms": 20000, "code": "import base64\nimport json\nimport zlib\nexec(zlib.decompress(base64.b64decode('eNq9fe1y20aW6H89BQbelIiYpknZTiZ0ZJeTODOeiZ1U7NlUSualIQIUYZEADYCSOVGq9jXuC9wH2ye556O/u0FSTnYzNTIB9HefPt/n9J3o503ZRC9evX7x3fPo+zrfptGsyvKohD9N1MPf0/xjPouatMzOq4/j6H1Tlf2ozvtRlrZ5W6zyJIJvUVFGy2qWLqM2b9pmcHQHml5CG/OqjtpFAT+KZT6OmjZbFudRVS63/ajMr/I6qtOiyaO2gm…
+ 127.5   * function_call_complete {"function": "code_exec", "result": {"status": "success", "data": null, "message": "Code executed successfully", "status_code": 200, "validation_errors": ["variable 'reply_kind' rejected by schema validation", "variable 'all_products' rejected by schema validation", "variable 'about_product' rejected by schema validation", "variable 'has_question' rejected by schema validation"]}}
+ 127.5   ? route decide matched=True -> negotiate_say [always]
+ 127.5   > enter negotiate_say (from decide)
+ 127.5 AGENT    [negotiate_say] Sorry, I think you were cut off. Do you confirm?
+ 129.6 CUSTOMER [negotiate_say] I've been so busy with these deadlines  [CUT]
+ 130.0   = reply_kind=unclear conf=1.0 src=extraction@negotiate_say
+ 130.0   ? route negotiate_say matched=True -> decide [always]
+ 130.0   > enter decide (from negotiate_say)
+ 130.0   * function_call_start {"function": "code_exec", "args": {"timeout_ms": 20000, "code": "import base64\nimport json\nimport zlib\nexec(zlib.decompress(base64.b64decode('eNq9fe1y20aW6H89BQbelIiYpknZTiZ0ZJeTODOeiZ1U7NlUSualIQIUYZEADYCSOVGq9jXuC9wH2ye556O/u0FSTnYzNTIB9HefPt/n9J3o503ZRC9evX7x3fPo+zrfptGsyvKohD9N1MPf0/xjPouatMzOq4/j6H1Tlf2ozvtRlrZ5W6zyJIJvUVFGy2qWLqM2b9pmcHQHml5CG/OqjtpFAT+KZT6OmjZbFudRVS63/ajMr/I6qtOiyaO2gm…
+ 130.5   * function_call_complete {"function": "code_exec", "result": {"status": "success", "data": null, "message": "Code executed successfully", "status_code": 200, "validation_errors": ["variable 'reply_kind' rejected by schema validation", "variable 'all_products' rejected by schema validation", "variable 'about_product' rejected by schema validation", "variable 'has_question' rejected by schema validation"]}}
+ 130.5   ? route decide matched=True -> negotiate_say [always]
+ 130.5   > enter negotiate_say (from decide)
+ 130.5 AGENT    [negotiate_say] Sorry, I did not catch that. Do you confirm?
+ 132.4 CUSTOMER [negotiate_say] I've been so busy with these deadlines that  [CUT]
+ 132.8   = reply_kind=unclear conf=1.0 src=extraction@negotiate_say
+ 132.8   ? route negotiate_say matched=True -> decide [always]
+ 132.8   > enter decide (from negotiate_say)
+ 132.8   * function_call_start {"function": "code_exec", "args": {"timeout_ms": 20000, "code": "import base64\nimport json\nimport zlib\nexec(zlib.decompress(base64.b64decode('eNq9fe1y20aW6H89BQbelIiYpknZTiZ0ZJeTODOeiZ1U7NlUSualIQIUYZEADYCSOVGq9jXuC9wH2ye556O/u0FSTnYzNTIB9HefPt/n9J3o503ZRC9evX7x3fPo+zrfptGsyvKohD9N1MPf0/xjPouatMzOq4/j6H1Tlf2ozvtRlrZ5W6zyJIJvUVFGy2qWLqM2b9pmcHQHml5CG/OqjtpFAT+KZT6OmjZbFudRVS63/ajMr/I6qtOiyaO2gm…
+ 133.0   * function_call_complete {"function": "code_exec", "result": {"status": "success", "data": null, "message": "Code executed successfully", "status_code": 200, "validation_errors": ["variable 'reply_kind' rejected by schema validation", "variable 'all_products' rejected by schema validation", "variable 'about_product' rejected by schema validation", "variable 'has_question' rejected by schema validation"]}}
+ 133.0   ? route decide matched=True -> negotiate_say [always]
+ 133.0   > enter negotiate_say (from decide)
+ 133.0 AGENT    [negotiate_say] Sorry, I think you were cut off. Do you confirm?
+ 134.8 CUSTOMER [negotiate_say] I've been so busy with these deadlines that I haven  [CUT]
+ 135.1   = reply_kind=unclear conf=1.0 src=extraction@negotiate_say
+ 135.1   ? route negotiate_say matched=True -> decide [always]
+ 135.1   > enter decide (from negotiate_say)
+ 135.1   * function_call_start {"function": "code_exec", "args": {"timeout_ms": 20000, "code": "import base64\nimport json\nimport zlib\nexec(zlib.decompress(base64.b64decode('eNq9fe1y20aW6H89BQbelIiYpknZTiZ0ZJeTODOeiZ1U7NlUSualIQIUYZEADYCSOVGq9jXuC9wH2ye556O/u0FSTnYzNTIB9HefPt/n9J3o503ZRC9evX7x3fPo+zrfptGsyvKohD9N1MPf0/xjPouatMzOq4/j6H1Tlf2ozvtRlrZ5W6zyJIJvUVFGy2qWLqM2b9pmcHQHml5CG/OqjtpFAT+KZT6OmjZbFudRVS63/ajMr/I6qtOiyaO2gm…
+ 135.4   * function_call_complete {"function": "code_exec", "result": {"status": "success", "data": null, "message": "Code executed successfully", "status_code": 200, "validation_errors": ["variable 'reply_kind' rejected by schema validation", "variable 'all_products' rejected by schema validation", "variable 'about_product' rejected by schema validation", "variable 'has_question' rejected by schema validation"]}}
+ 135.4   ? route decide matched=True -> negotiate_say [always]
+ 135.4   > enter negotiate_say (from decide)
+ 135.4 AGENT    [negotiate_say] Take your time. Do you confirm?
+ 137.3 CUSTOMER [negotiate_say] I've been so busy with these deadlines that I haven  [CUT]
+ 141.6   = reply_kind=unclear conf=1.0 src=extraction@negotiate_say
+ 141.6   ? route negotiate_say matched=True -> decide [always]
+ 141.6   > enter decide (from negotiate_say)
+ 141.7   * function_call_start {"function": "code_exec", "args": {"timeout_ms": 20000, "code": "import base64\nimport json\nimport zlib\nexec(zlib.decompress(base64.b64decode('eNq9fe1y20aW6H89BQbelIiYpknZTiZ0ZJeTODOeiZ1U7NlUSualIQIUYZEADYCSOVGq9jXuC9wH2ye556O/u0FSTnYzNTIB9HefPt/n9J3o503ZRC9evX7x3fPo+zrfptGsyvKohD9N1MPf0/xjPouatMzOq4/j6H1Tlf2ozvtRlrZ5W6zyJIJvUVFGy2qWLqM2b9pmcHQHml5CG/OqjtpFAT+KZT6OmjZbFudRVS63/ajMr/I6qtOiyaO2gm…
+ 142.2   * function_call_complete {"function": "code_exec", "result": {"status": "success", "data": null, "message": "Code executed successfully", "status_code": 200, "validation_errors": ["variable 'reply_kind' rejected by schema validation", "variable 'all_products' rejected by schema validation", "variable 'about_product' rejected by schema validation", "variable 'has_question' rejected by schema validation"]}}
+ 142.2   ? route decide matched=True -> negotiate_say [always]
+ 142.2   > enter negotiate_say (from decide)
+ 142.2 AGENT    [negotiate_say] Sorry, I think you were cut off. Do you confirm?
+ 144.3 CUSTOMER [negotiate_say] I've been so busy with  [CUT]
+ 144.8   = reply_kind=unclear conf=1.0 src=extraction@negotiate_say
+ 144.8   ? route negotiate_say matched=True -> decide [always]
+ 144.8   > enter decide (from negotiate_say)
+ 144.8   * function_call_start {"function": "code_exec", "args": {"timeout_ms": 20000, "code": "import base64\nimport json\nimport zlib\nexec(zlib.decompress(base64.b64decode('eNq9fe1y20aW6H89BQbelIiYpknZTiZ0ZJeTODOeiZ1U7NlUSualIQIUYZEADYCSOVGq9jXuC9wH2ye556O/u0FSTnYzNTIB9HefPt/n9J3o503ZRC9evX7x3fPo+zrfptGsyvKohD9N1MPf0/xjPouatMzOq4/j6H1Tlf2ozvtRlrZ5W6zyJIJvUVFGy2qWLqM2b9pmcHQHml5CG/OqjtpFAT+KZT6OmjZbFudRVS63/ajMr/I6qtOiyaO2gm…
+ 145.2   * function_call_complete {"function": "code_exec", "result": {"status": "success", "data": null, "message": "Code executed successfully", "status_code": 200, "validation_errors": ["variable 'reply_kind' rejected by schema validation", "variable 'all_products' rejected by schema validation", "variable 'about_product' rejected by schema validation", "variable 'has_question' rejected by schema validation"]}}
+ 145.2   ? route decide matched=True -> negotiate_say [always]
+ 145.2   > enter negotiate_say (from decide)
+ 145.2 AGENT    [negotiate_say] Sorry, I missed the end of that. Do you confirm?
+ 146.9 CUSTOMER [negotiate_say] I've been so busy with these deadlines that I haven  [CUT]
+ 148.0   = reply_kind=unclear conf=1.0 src=extraction@negotiate_say
+ 148.1   ? route negotiate_say matched=True -> decide [always]
+ 148.1   > enter decide (from negotiate_say)
+ 148.1   * function_call_start {"function": "code_exec", "args": {"timeout_ms": 20000, "code": "import base64\nimport json\nimport zlib\nexec(zlib.decompress(base64.b64decode('eNq9fe1y20aW6H89BQbelIiYpknZTiZ0ZJeTODOeiZ1U7NlUSualIQIUYZEADYCSOVGq9jXuC9wH2ye556O/u0FSTnYzNTIB9HefPt/n9J3o503ZRC9evX7x3fPo+zrfptGsyvKohD9N1MPf0/xjPouatMzOq4/j6H1Tlf2ozvtRlrZ5W6zyJIJvUVFGy2qWLqM2b9pmcHQHml5CG/OqjtpFAT+KZT6OmjZbFudRVS63/ajMr/I6qtOiyaO2gm…
+ 148.3   * function_call_complete {"function": "code_exec", "result": {"status": "success", "data": null, "message": "Code executed successfully", "status_code": 200, "validation_errors": ["variable 'reply_kind' rejected by schema validation", "variable 'all_products' rejected by schema validation", "variable 'about_product' rejected by schema validation", "variable 'has_question' rejected by schema validation"]}}
+ 148.3   ? route decide matched=True -> negotiate_say [always]
+ 148.3   > enter negotiate_say (from decide)
+ 148.3 AGENT    [negotiate_say] Sorry, I think you were cut off. Do you confirm?
+ 150.2 CUSTOMER [negotiate_say] I've been dealing with a lot of  [CUT]
+ 151.6   = reply_kind=unclear conf=1.0 src=extraction@negotiate_say
+ 151.6   ? route negotiate_say matched=True -> decide [always]
+ 151.6   > enter decide (from negotiate_say)
+ 151.6   * function_call_start {"function": "code_exec", "args": {"timeout_ms": 20000, "code": "import base64\nimport json\nimport zlib\nexec(zlib.decompress(base64.b64decode('eNq9fe1y20aW6H89BQbelIiYpknZTiZ0ZJeTODOeiZ1U7NlUSualIQIUYZEADYCSOVGq9jXuC9wH2ye556O/u0FSTnYzNTIB9HefPt/n9J3o503ZRC9evX7x3fPo+zrfptGsyvKohD9N1MPf0/xjPouatMzOq4/j6H1Tlf2ozvtRlrZ5W6zyJIJvUVFGy2qWLqM2b9pmcHQHml5CG/OqjtpFAT+KZT6OmjZbFudRVS63/ajMr/I6qtOiyaO2gm…
+ 151.8   * function_call_complete {"function": "code_exec", "result": {"status": "success", "data": null, "message": "Code executed successfully", "status_code": 200, "validation_errors": ["variable 'reply_kind' rejected by schema validation", "variable 'all_products' rejected by schema validation", "variable 'about_product' rejected by schema validation", "variable 'has_question' rejected by schema validation"]}}
+ 151.8   ? route decide matched=True -> negotiate_say [always]
+ 151.8   > enter negotiate_say (from decide)
+ 151.9 AGENT    [negotiate_say] Sorry, I did not catch that. Do you confirm?
+ 153.8 CUSTOMER [negotiate_say] I've been dealing with a lot of paperwork today  [CUT]
+ 154.2   = reply_kind=unclear conf=1.0 src=extraction@negotiate_say
+ 154.2   ? route negotiate_say matched=True -> decide [always]
+ 154.2   > enter decide (from negotiate_say)
+ 154.2   * function_call_start {"function": "code_exec", "args": {"timeout_ms": 20000, "code": "import base64\nimport json\nimport zlib\nexec(zlib.decompress(base64.b64decode('eNq9fe1y20aW6H89BQbelIiYpknZTiZ0ZJeTODOeiZ1U7NlUSualIQIUYZEADYCSOVGq9jXuC9wH2ye556O/u0FSTnYzNTIB9HefPt/n9J3o503ZRC9evX7x3fPo+zrfptGsyvKohD9N1MPf0/xjPouatMzOq4/j6H1Tlf2ozvtRlrZ5W6zyJIJvUVFGy2qWLqM2b9pmcHQHml5CG/OqjtpFAT+KZT6OmjZbFudRVS63/ajMr/I6qtOiyaO2gm…
+ 154.9   * function_call_complete {"function": "code_exec", "result": {"status": "success", "data": null, "message": "Code executed successfully", "status_code": 200, "validation_errors": ["variable 'reply_kind' rejected by schema validation", "variable 'all_products' rejected by schema validation", "variable 'about_product' rejected by schema validation", "variable 'has_question' rejected by schema validation"]}}
+ 154.9   ? route decide matched=True -> negotiate_say [always]
+ 154.9   > enter negotiate_say (from decide)
+ 155.0 AGENT    [negotiate_say] Sorry, I think you were cut off. Do you confirm?
+ 157.1 CUSTOMER [negotiate_say] I've been dealing with a lot of paperwork today and  [CUT]
+ 157.4   = reply_kind=unclear conf=1.0 src=extraction@negotiate_say
+ 157.4   ? route negotiate_say matched=True -> decide [always]
+ 157.4   > enter decide (from negotiate_say)
+ 157.4   * function_call_start {"function": "code_exec", "args": {"timeout_ms": 20000, "code": "import base64\nimport json\nimport zlib\nexec(zlib.decompress(base64.b64decode('eNq9fe1y20aW6H89BQbelIiYpknZTiZ0ZJeTODOeiZ1U7NlUSualIQIUYZEADYCSOVGq9jXuC9wH2ye556O/u0FSTnYzNTIB9HefPt/n9J3o503ZRC9evX7x3fPo+zrfptGsyvKohD9N1MPf0/xjPouatMzOq4/j6H1Tlf2ozvtRlrZ5W6zyJIJvUVFGy2qWLqM2b9pmcHQHml5CG/OqjtpFAT+KZT6OmjZbFudRVS63/ajMr/I6qtOiyaO2gm…
+ 157.6   * function_call_complete {"function": "code_exec", "result": {"status": "success", "data": null, "message": "Code executed successfully", "status_code": 200, "validation_errors": ["variable 'reply_kind' rejected by schema validation", "variable 'all_products' rejected by schema validation", "variable 'about_product' rejected by schema validation", "variable 'has_question' rejected by schema validation"]}}
+ 157.6   ? route decide matched=True -> negotiate_say [always]
+ 157.6   > enter negotiate_say (from decide)
+ 157.7 AGENT    [negotiate_say] Take your time. Do you confirm?
+ 159.6 CUSTOMER [negotiate_say] I've been dealing with a lot of paperwork  [CUT]
+ 160.4   = reply_kind=unclear conf=1.0 src=extraction@negotiate_say
+ 160.4   ? route negotiate_say matched=True -> decide [always]
+ 160.4   > enter decide (from negotiate_say)
+ 160.4   * function_call_start {"function": "code_exec", "args": {"timeout_ms": 20000, "code": "import base64\nimport json\nimport zlib\nexec(zlib.decompress(base64.b64decode('eNq9fe1y20aW6H89BQbelIiYpknZTiZ0ZJeTODOeiZ1U7NlUSualIQIUYZEADYCSOVGq9jXuC9wH2ye556O/u0FSTnYzNTIB9HefPt/n9J3o503ZRC9evX7x3fPo+zrfptGsyvKohD9N1MPf0/xjPouatMzOq4/j6H1Tlf2ozvtRlrZ5W6zyJIJvUVFGy2qWLqM2b9pmcHQHml5CG/OqjtpFAT+KZT6OmjZbFudRVS63/ajMr/I6qtOiyaO2gm…
+ 160.6   * function_call_complete {"function": "code_exec", "result": {"status": "success", "data": null, "message": "Code executed successfully", "status_code": 200, "validation_errors": ["variable 'reply_kind' rejected by schema validation", "variable 'all_products' rejected by schema validation", "variable 'about_product' rejected by schema validation", "variable 'has_question' rejected by schema validation"]}}
+ 160.6   ? route decide matched=True -> negotiate_say [always]
+ 160.6   > enter negotiate_say (from decide)
+ 160.6 AGENT    [negotiate_say] Sorry, I think you were cut off. Do you confirm?
+ 162.6 CUSTOMER [negotiate_say] I've been dealing with a lot of paperwork today  [CUT]
+ 163.0   = reply_kind=unclear conf=1.0 src=extraction@negotiate_say
+ 163.0   ? route negotiate_say matched=True -> decide [always]
+ 163.0   > enter decide (from negotiate_say)
+ 163.0   * function_call_start {"function": "code_exec", "args": {"timeout_ms": 20000, "code": "import base64\nimport json\nimport zlib\nexec(zlib.decompress(base64.b64decode('eNq9fe1y20aW6H89BQbelIiYpknZTiZ0ZJeTODOeiZ1U7NlUSualIQIUYZEADYCSOVGq9jXuC9wH2ye556O/u0FSTnYzNTIB9HefPt/n9J3o503ZRC9evX7x3fPo+zrfptGsyvKohD9N1MPf0/xjPouatMzOq4/j6H1Tlf2ozvtRlrZ5W6zyJIJvUVFGy2qWLqM2b9pmcHQHml5CG/OqjtpFAT+KZT6OmjZbFudRVS63/ajMr/I6qtOiyaO2gm…
+ 163.3   * function_call_complete {"function": "code_exec", "result": {"status": "success", "data": null, "message": "Code executed successfully", "status_code": 200, "validation_errors": ["variable 'reply_kind' rejected by schema validation", "variable 'all_products' rejected by schema validation", "variable 'about_product' rejected by schema validation", "variable 'has_question' rejected by schema validation"]}}
+ 163.3   ? route decide matched=True -> negotiate_say [always]
+ 163.3   > enter negotiate_say (from decide)
+ 163.3 AGENT    [negotiate_say] Sorry, I missed the end of that. Do you confirm?
+ 165.1 CUSTOMER [negotiate_say] I've been so stressed with work and  [CUT]
+ 165.5   = reply_kind=unclear conf=1.0 src=extraction@negotiate_say
+ 165.5   ? route negotiate_say matched=True -> decide [always]
+ 165.5   > enter decide (from negotiate_say)
+ 165.5   * function_call_start {"function": "code_exec", "args": {"timeout_ms": 20000, "code": "import base64\nimport json\nimport zlib\nexec(zlib.decompress(base64.b64decode('eNq9fe1y20aW6H89BQbelIiYpknZTiZ0ZJeTODOeiZ1U7NlUSualIQIUYZEADYCSOVGq9jXuC9wH2ye556O/u0FSTnYzNTIB9HefPt/n9J3o503ZRC9evX7x3fPo+zrfptGsyvKohD9N1MPf0/xjPouatMzOq4/j6H1Tlf2ozvtRlrZ5W6zyJIJvUVFGy2qWLqM2b9pmcHQHml5CG/OqjtpFAT+KZT6OmjZbFudRVS63/ajMr/I6qtOiyaO2gm…
+ 166.0   * function_call_complete {"function": "code_exec", "result": {"status": "success", "data": null, "message": "Code executed successfully", "status_code": 200, "validation_errors": ["variable 'reply_kind' rejected by schema validation", "variable 'all_products' rejected by schema validation", "variable 'about_product' rejected by schema validation", "variable 'has_question' rejected by schema validation"]}}
+ 166.0   ? route decide matched=True -> negotiate_say [always]
+ 166.0   > enter negotiate_say (from decide)
+ 166.0 AGENT    [negotiate_say] Sorry, I think you were cut off. Do you confirm?
+ 167.9 CUSTOMER [negotiate_say] I've been so stressed with work and haven  [CUT]
+ 168.3   = reply_kind=unclear conf=1.0 src=extraction@negotiate_say
+ 168.3   ? route negotiate_say matched=True -> decide [always]
+ 168.3   > enter decide (from negotiate_say)
+ 168.3   * function_call_start {"function": "code_exec", "args": {"timeout_ms": 20000, "code": "import base64\nimport json\nimport zlib\nexec(zlib.decompress(base64.b64decode('eNq9fe1y20aW6H89BQbelIiYpknZTiZ0ZJeTODOeiZ1U7NlUSualIQIUYZEADYCSOVGq9jXuC9wH2ye556O/u0FSTnYzNTIB9HefPt/n9J3o503ZRC9evX7x3fPo+zrfptGsyvKohD9N1MPf0/xjPouatMzOq4/j6H1Tlf2ozvtRlrZ5W6zyJIJvUVFGy2qWLqM2b9pmcHQHml5CG/OqjtpFAT+KZT6OmjZbFudRVS63/ajMr/I6qtOiyaO2gm…
+ 168.9   * function_call_complete {"function": "code_exec", "result": {"status": "success", "data": null, "message": "Code executed successfully", "status_code": 200, "validation_errors": ["variable 'reply_kind' rejected by schema validation", "variable 'all_products' rejected by schema validation", "variable 'about_product' rejected by schema validation", "variable 'has_question' rejected by schema validation"]}}
+ 168.9   ? route decide matched=True -> negotiate_say [always]
+ 168.9   > enter negotiate_say (from decide)
+ 168.9 AGENT    [negotiate_say] Sorry, I did not catch that. Do you confirm?
+ 170.7 CUSTOMER [negotiate_say] I've been so stressed with work and haven't  [CUT]
+ 175.1   = reply_kind=unclear conf=1.0 src=extraction@negotiate_say
+ 175.1   ? route negotiate_say matched=True -> decide [always]
+ 175.1   > enter decide (from negotiate_say)
+ 175.1   * function_call_start {"function": "code_exec", "args": {"timeout_ms": 20000, "code": "import base64\nimport json\nimport zlib\nexec(zlib.decompress(base64.b64decode('eNq9fe1y20aW6H89BQbelIiYpknZTiZ0ZJeTODOeiZ1U7NlUSualIQIUYZEADYCSOVGq9jXuC9wH2ye556O/u0FSTnYzNTIB9HefPt/n9J3o503ZRC9evX7x3fPo+zrfptGsyvKohD9N1MPf0/xjPouatMzOq4/j6H1Tlf2ozvtRlrZ5W6zyJIJvUVFGy2qWLqM2b9pmcHQHml5CG/OqjtpFAT+KZT6OmjZbFudRVS63/ajMr/I6qtOiyaO2gm…
+ 175.3   * function_call_complete {"function": "code_exec", "result": {"status": "success", "data": null, "message": "Code executed successfully", "status_code": 200, "validation_errors": ["variable 'reply_kind' rejected by schema validation", "variable 'all_products' rejected by schema validation", "variable 'about_product' rejected by schema validation", "variable 'has_question' rejected by schema validation"]}}
+ 175.3   ? route decide matched=True -> negotiate_say [always]
+ 175.3   > enter negotiate_say (from decide)
+ 175.3 AGENT    [negotiate_say] Sorry, I think you were cut off. Do you confirm?
+ 177.4 CUSTOMER [negotiate_say] I've been so stressed with work  [CUT]
+ 178.1   = reply_kind=unclear conf=1.0 src=extraction@negotiate_say
+ 178.1   ? route negotiate_say matched=True -> decide [always]
+ 178.1   > enter decide (from negotiate_say)
+ 178.1   * function_call_start {"function": "code_exec", "args": {"timeout_ms": 20000, "code": "import base64\nimport json\nimport zlib\nexec(zlib.decompress(base64.b64decode('eNq9fe1y20aW6H89BQbelIiYpknZTiZ0ZJeTODOeiZ1U7NlUSualIQIUYZEADYCSOVGq9jXuC9wH2ye556O/u0FSTnYzNTIB9HefPt/n9J3o503ZRC9evX7x3fPo+zrfptGsyvKohD9N1MPf0/xjPouatMzOq4/j6H1Tlf2ozvtRlrZ5W6zyJIJvUVFGy2qWLqM2b9pmcHQHml5CG/OqjtpFAT+KZT6OmjZbFudRVS63/ajMr/I6qtOiyaO2gm…
+ 178.3   * function_call_complete {"function": "code_exec", "result": {"status": "success", "data": null, "message": "Code executed successfully", "status_code": 200, "validation_errors": ["variable 'reply_kind' rejected by schema validation", "variable 'all_products' rejected by schema validation", "variable 'about_product' rejected by schema validation", "variable 'has_question' rejected by schema validation"]}}
+ 178.4   ? route decide matched=True -> negotiate_say [always]
+ 178.4   > enter negotiate_say (from decide)
+ 178.4 AGENT    [negotiate_say] Take your time. Do you confirm?
+ 180.2 CUSTOMER [negotiate_say] I've been so stressed with work and haven  [CUT]
+ 180.7   = reply_kind=unclear conf=1.0 src=extraction@negotiate_say
+ 180.7   ? route negotiate_say matched=True -> decide [always]
+ 180.7   > enter decide (from negotiate_say)
+ 180.7   * function_call_start {"function": "code_exec", "args": {"timeout_ms": 20000, "code": "import base64\nimport json\nimport zlib\nexec(zlib.decompress(base64.b64decode('eNq9fe1y20aW6H89BQbelIiYpknZTiZ0ZJeTODOeiZ1U7NlUSualIQIUYZEADYCSOVGq9jXuC9wH2ye556O/u0FSTnYzNTIB9HefPt/n9J3o503ZRC9evX7x3fPo+zrfptGsyvKohD9N1MPf0/xjPouatMzOq4/j6H1Tlf2ozvtRlrZ5W6zyJIJvUVFGy2qWLqM2b9pmcHQHml5CG/OqjtpFAT+KZT6OmjZbFudRVS63/ajMr/I6qtOiyaO2gm…
+ 180.9   * function_call_complete {"function": "code_exec", "result": {"status": "success", "data": null, "message": "Code executed successfully", "status_code": 200, "validation_errors": ["variable 'reply_kind' rejected by schema validation", "variable 'all_products' rejected by schema validation", "variable 'about_product' rejected by schema validation", "variable 'has_question' rejected by schema validation"]}}
+ 181.0   ? route decide matched=True -> negotiate_say [always]
+ 181.0   > enter negotiate_say (from decide)
+ 181.0 AGENT    [negotiate_say] Sorry, I think you were cut off. Do you confirm?
+ 182.0 CUSTOMER [negotiate_say] I've been so stressed with work and haven't had a chance to breathe. Yes, I confirm.
+ 182.4   = reply_kind=yes conf=1.0 src=extraction@negotiate_say
+ 182.4   ? route negotiate_say matched=True -> decide [always]
+ 182.4   > enter decide (from negotiate_say)
+ 182.4   * function_call_start {"function": "code_exec", "args": {"timeout_ms": 20000, "code": "import base64\nimport json\nimport zlib\nexec(zlib.decompress(base64.b64decode('eNq9fe1y20aW6H89BQbelIiYpknZTiZ0ZJeTODOeiZ1U7NlUSualIQIUYZEADYCSOVGq9jXuC9wH2ye556O/u0FSTnYzNTIB9HefPt/n9J3o503ZRC9evX7x3fPo+zrfptGsyvKohD9N1MPf0/xjPouatMzOq4/j6H1Tlf2ozvtRlrZ5W6zyJIJvUVFGy2qWLqM2b9pmcHQHml5CG/OqjtpFAT+KZT6OmjZbFudRVS63/ajMr/I6qtOiyaO2gm…
+ 182.7   * function_call_complete {"function": "code_exec", "result": {"status": "success", "data": null, "message": "Code executed successfully", "status_code": 200, "validation_errors": ["variable 'reply_kind' rejected by schema validation", "variable 'all_products' rejected by schema validation", "variable 'about_product' rejected by schema validation", "variable 'has_question' rejected by schema validation"]}}
+ 182.7   ? route decide matched=True -> record [neg_action == 'record']
+ 182.7   > enter record (from decide)
+ 182.7   * function_call_start {"function": "api_call", "args": {"url": "https://freya-bank-mock.freyavoice.workers.dev/v1/create_promise", "method": "POST", "headers": {"Content-Type": "application/json"}, "body": {"date": "2026-10-20", "amount": 540.0, "product_id": "p1", "customer_id": "c_cf68e823-340"}}}
+ 182.9   * function_call_complete {"function": "api_call", "result": {"status": "success", "data": {"ok": true, "promise_id": "pr1"}, "message": "Successfully executed POST request", "status_code": 200, "header": {"Date": "Sun, 11 Oct 2026 09:11:43 GMT", "Content-Type": "application/json", "Content-Length": "30", "Connection": "keep-alive", "Report-To": "{\"group\":\"cf-nel\",\"max_age\":604800,\"endpoints\":[{\"url\":\"https://a…
+ 182.9   ? route record matched=True -> after_record [always]
+ 182.9   > enter after_record (from record)
+ 182.9   * function_call_start {"function": "code_exec", "args": {"timeout_ms": 20000, "code": "import base64\nimport json\nimport zlib\nexec(zlib.decompress(base64.b64decode('eNq9fe1y20aW6H89BQbelIiYpknZTiZ0ZJeTODOeiZ1U7NlUSualIQIUYZEADYCSOVGq9jXuC9wH2ye556O/u0FSTnYzNTIB9HefPt/n9J3o503ZRC9evX7x3fPo+zrfptGsyvKohD9N1MPf0/xjPouatMzOq4/j6H1Tlf2ozvtRlrZ5W6zyJIJvUVFGy2qWLqM2b9pmcHQHml5CG/OqjtpFAT+KZT6OmjZbFudRVS63/ajMr/I6qtOiyaO2gm…
+ 183.5   * function_call_complete {"function": "code_exec", "result": {"status": "success", "data": null, "message": "Code executed successfully", "status_code": 200}}
+ 183.5   ? route after_record matched=True -> negotiate_say [always]
+ 183.5   > enter negotiate_say (from after_record)
+ 183.5 AGENT    [negotiate_say] Your promise is recorded: the personal loan, 540.00 on Tuesday 20 October 2026. You will receive a text message confirming this promise. Is there anything else I can help you with?
+ 185.4 CUSTOMER [negotiate_say] The traffic was so heavy on the way home that I  [CUT]
+ 185.9   = reply_kind=unclear conf=1.0 src=extraction@negotiate_say
+ 185.9   ? route negotiate_say matched=True -> decide [always]
+ 185.9   > enter decide (from negotiate_say)
+ 185.9   * function_call_start {"function": "code_exec", "args": {"timeout_ms": 20000, "code": "import base64\nimport json\nimport zlib\nexec(zlib.decompress(base64.b64decode('eNq9fe1y20aW6H89BQbelIiYpknZTiZ0ZJeTODOeiZ1U7NlUSualIQIUYZEADYCSOVGq9jXuC9wH2ye556O/u0FSTnYzNTIB9HefPt/n9J3o503ZRC9evX7x3fPo+zrfptGsyvKohD9N1MPf0/xjPouatMzOq4/j6H1Tlf2ozvtRlrZ5W6zyJIJvUVFGy2qWLqM2b9pmcHQHml5CG/OqjtpFAT+KZT6OmjZbFudRVS63/ajMr/I6qtOiyaO2gm…
+ 186.2   * function_call_complete {"function": "code_exec", "result": {"status": "success", "data": null, "message": "Code executed successfully", "status_code": 200, "validation_errors": ["variable 'reply_kind' rejected by schema validation", "variable 'all_products' rejected by schema validation", "variable 'about_product' rejected by schema validation", "variable 'has_question' rejected by schema validation"]}}
+ 186.2   ? route decide matched=True -> negotiate_say [always]
+ 186.2   > enter negotiate_say (from decide)
+ 186.3 AGENT    [negotiate_say] Sorry, I did not catch that. Is there anything else I can help you with?
+ 188.3 CUSTOMER [negotiate_say] The traffic was so heavy on the way home that I'
+ 188.6   = reply_kind=unclear conf=1.0 src=extraction@negotiate_say
+ 188.6   ? route negotiate_say matched=True -> decide [always]
+ 188.6   > enter decide (from negotiate_say)
+ 188.6   * function_call_start {"function": "code_exec", "args": {"timeout_ms": 20000, "code": "import base64\nimport json\nimport zlib\nexec(zlib.decompress(base64.b64decode('eNq9fe1y20aW6H89BQbelIiYpknZTiZ0ZJeTODOeiZ1U7NlUSualIQIUYZEADYCSOVGq9jXuC9wH2ye556O/u0FSTnYzNTIB9HefPt/n9J3o503ZRC9evX7x3fPo+zrfptGsyvKohD9N1MPf0/xjPouatMzOq4/j6H1Tlf2ozvtRlrZ5W6zyJIJvUVFGy2qWLqM2b9pmcHQHml5CG/OqjtpFAT+KZT6OmjZbFudRVS63/ajMr/I6qtOiyaO2gm…
+ 189.5   * function_call_complete {"function": "code_exec", "result": {"status": "success", "data": null, "message": "Code executed successfully", "status_code": 200, "validation_errors": ["variable 'reply_kind' rejected by schema validation", "variable 'all_products' rejected by schema validation", "variable 'about_product' rejected by schema validation", "variable 'has_question' rejected by schema validation"]}}
+ 189.5   ? route decide matched=True -> wrap [neg_action == 'finish']
+ 189.5   > enter wrap (from decide)
+ 189.5   * function_call_start {"function": "code_exec", "args": {"timeout_ms": 20000, "code": "\nvars['wrapped'] = 'yes'\n"}}
+ 190.5   * function_call_complete {"function": "code_exec", "result": {"status": "success", "data": null, "message": "Code executed successfully", "status_code": 200}}
+ 190.5   ? route wrap matched=True -> goodbye [always]
+ 190.5   > enter goodbye (from wrap)
+ 190.5   * function_call_start {"function": "end_call", "args": {"message_mode": "custom", "spoken_message": "Thank you for your time. Goodbye."}}
+ 190.5   * function_call_complete_deferred {"function": "end_call", "result": null, "deferred": true}
+ 190.5   . call_ended {"reason": "assistant-ended-call"}
+ 190.5 AGENT    [goodbye] Thank you for your time. Goodbye.
+ 190.6   * function_call_complete {"function": "end_call", "result": {"status": "success", "message": "Call ended"}}
+ 191.8   * function_call_start {"function": "close_call", "args": {"url": "https://freya-bank-mock.freyavoice.workers.dev/v1/close_call", "method": "POST", "headers": {"Content-Type": "application/json"}, "body": {"outcome": "promise", "customer_id": "c_cf68e823-340"}}}
+ 191.9   * function_call_complete {"function": "close_call", "result": {"status": "success", "data": {"ok": true}, "message": "Successfully executed POST request", "status_code": 200, "header": {"Date": "Sun, 11 Oct 2026 09:11:52 GMT", "Content-Type": "application/json", "Content-Length": "11", "Connection": "keep-alive", "Report-To": "{\"group\":\"cf-nel\",\"max_age\":604800,\"endpoints\":[{\"url\":\"https://a.nel.cloudflare.com…

@@ -1,0 +1,24 @@
+# style4-a-r3-PUB-01 pass=False ended=customer-ended-call duration=65s call=41635d27-13c0-412e-9875-db537a3c026c
+# failed: outcome ('not_reached', 'unclear'), expected ('promise', None)
+# failed: promises [], expected [('p1', 420.0, '2026-10-14')]
+# failed: conversation: The conversation failed to meet several success criteria: only one security question was asked (date of birth) before the agent attempted to close the call, whereas two were required; the 'create_promise' tool was never called; and consequently, the text-message sentence was never spoken. The agent ended the call prematurely after the first security answer.
+# judge: {"success": false, "reason": "The conversation failed to meet several success criteria: only one security question was asked (date of birth) before the agent attempted to close the call, whereas two were required; the 'create_promise' tool was never called; and consequently, the text-message sentence was never spoken. The agent ended the call prematurely after the first security answer.", "relevantMessages": {"0": "Agent starts the call correctly.", "2": "Agent asks the first security question (date of birth).", "3": "User provides the answer to the first question, but the agent does not ask a second one before the call process is interrupted/ended by system events."}}
+
+   0.0   > enter opening (from None)
+   0.0 AGENT    [opening] Hello, this is Freya Bank's digital assistant calling, and we are recording this call. Am I speaking with Mr Reyes?
+   1.3 CUSTOMER [opening] I've been stuck in traffic for an hour and it's really frustrating. Yes, this is Daniel Reyes.
+   3.4   = who1=confirms conf=1.0 src=extraction@opening
+   3.4   ? route opening matched=True -> setup_id [who1 == 'confirms']
+   3.4   > enter setup_id (from opening)
+   3.4   * function_call_start {"function": "code_exec", "args": {"timeout_ms": 20000, "code": "import base64\nimport json\nimport zlib\nexec(zlib.decompress(base64.b64decode('eNq9Pe2S2zaS/+cpcPSlRGZkRdKM7UQb2+VNnI33zvZW7L3UlmZOpkRoRI9IKiQ1M9ooVfca93r3JNcfAAjwQ5pJrs5bawsg0N1oNBrdjQbySPy0TQvx5t2HN9+/Fj/kcheKRRZJkcJfhfDx90zeyYUowjSaZ3cT8bnI0r7IZV9EYSnLOJGBgG8iTsU6W4RrUcqiLAYnjwD0GmAss1yUqxh+xGs5EUUZreO5yNL1ri9SeSNzkYdxIUWZQTMpAM…
+   3.5   * function_call_complete {"function": "code_exec", "result": {"status": "success", "data": null, "message": "Code executed successfully", "status_code": 200}}
+   3.5   ? route setup_id matched=True -> identity [always]
+   3.5   > enter identity (from setup_id)
+   3.5 AGENT    [identity] Before we continue, I need to ask you two security questions. What is your date of birth?
+   4.9 CUSTOMER [identity] Work has been so busy lately I haven't had a moment to breathe. It's the 14th of March 1988.
+  10.8   = id1=answers conf=1.0 src=extraction@identity
+  29.7   = id_heard=the 14th of March 1988 conf=0.9547363916873695 src=extraction@identity
+  29.7   = id_last=the 14th of March 1988 conf=1.0 src=extraction@identity
+  29.7   ? route identity matched=False -> None []
+  65.4   * function_call_start {"function": "close_call", "args": {"url": "https://freya-bank-mock.freyavoice.workers.dev/v1/close_call", "method": "POST", "headers": {"Content-Type": "application/json"}, "body": {"reason": "unclear", "outcome": "not_reached", "customer_id": "c_8c80b844-90e"}}}
+  65.4   * function_call_complete {"function": "close_call", "result": {"status": "success", "data": {"ok": true}, "message": "Successfully executed POST request", "status_code": 200, "header": {"Date": "Sun, 11 Oct 2026 09:10:17 GMT", "Content-Type": "application/json", "Content-Length": "11", "Connection": "keep-alive", "Report-To": "{\"group\":\"cf-nel\",\"max_age\":604800,\"endpoints\":[{\"url\":\"https://a.nel.cloudflare.com…
