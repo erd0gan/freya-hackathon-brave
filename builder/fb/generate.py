@@ -36,6 +36,9 @@ ALWAYS = {"operator": "always"}
 # an add_note sent at 28 s with the default 12 s timeout landed after the call was closed). No
 # automatic retry: a late first request plus a retry would record the write twice.
 WRITE_TIMEOUT_MS = 25000
+# Turn cap of the identity steps. At 16 a talkative customer whose turns kept arriving cut off was
+# closed as declined (B PUB-11, 15 small-talk fragments, none a refusal).
+ID_MAX_TURNS = 60
 TRUE = ("true", "True")
 
 
@@ -717,7 +720,9 @@ def build(spec: dict[str, Any], tools: dict[str, ToolDef]) -> tuple[dict[str, An
         },
         extraction=[enum_var("id1", id_vals, id_desc, 0.6), heard_var, last_var],
         tools=[verify_fn],
-        max_turns=16,
+        # Only a safety net: a talkative customer's turns often arrive cut off and 15 of them
+        # in a row were seen (none a refusal); the call's own time limit ends a real loop.
+        max_turns=ID_MAX_TURNS,
         cap_to="fin_declined",
         first_entry_only=True,
     )
@@ -737,7 +742,7 @@ def build(spec: dict[str, Any], tools: dict[str, ToolDef]) -> tuple[dict[str, An
         },
         extraction=[enum_var("id2", id_vals, id_desc, 0.6), heard_var, last_var],
         tools=[verify_fn],
-        max_turns=14,
+        max_turns=ID_MAX_TURNS,
         cap_to="fin_declined",
         first_entry_only=True,
     )

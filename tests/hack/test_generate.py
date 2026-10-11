@@ -146,3 +146,11 @@ def test_writes_wait_longer_than_reads():
     for node in ("record", "cb_book", "transfer", "transfer_pre"):
         assert wf["nodes"][node]["pre_actions"][0]["config"]["timeoutMs"] == 25000
         assert wf["nodes"][node]["pre_actions"][0]["config"]["maxRetries"] == 0
+
+
+# talkative (B PUB-11): 15 cut small-talk turns at the phone question hit the 16-turn cap and
+# the call was closed as declined although the customer never refused
+def test_identity_turn_cap_leaves_room_for_cut_turns():
+    wf, _ = build(copy.deepcopy(SPEC_A), parse_openapi(OPENAPI))
+    for name in ("identity", "identity2"):
+        assert wf["nodes"][name]["max_node_turns"] >= 40
