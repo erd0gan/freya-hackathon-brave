@@ -5,12 +5,15 @@ Northwind APIs with their real extractions, and the hand-written SPEC_A / SPEC_B
 problem: a false positive stops the build after the repair round."""
 
 import copy
+import importlib.util
 import json
+import time
 from pathlib import Path
 
 import pytest
 from fb.openapi_tools import parse_openapi
 from fb.spec_extract import bindings, check, close_reasons, responses, structure
+from fb.trace import Trace
 from spec_fixtures import SPEC_A, SPEC_B
 
 from conftest import KIT, ROOT
@@ -277,3 +280,73 @@ def test_required_field_without_a_role_is_only_a_warning():
     text_required(o)
     soft = bindings(SPEC, parse_openapi(o))
     assert len(soft) == 1 and soft[0][1] is False and "['text']" in soft[0][0]
+
+
+# ---------------------------------------------------------------- build.py: budget and smoke
+def load_build():
+    spec = importlib.util.spec_from_file_location("builder_main", ROOT / "builder" / "build.py")
+    mod = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(mod)
+    return mod
+
+
+def test_freya_calls_stop_at_the_budget():
+    b = load_build()
+    api = b.bounded_api(time.monotonic() - 1)
+    with pytest.raises(RuntimeError, match="no time left"):
+        api("GET", "/api/v2/workspaces")
+
+
+def test_smoke_reports_failures(monkeypatch):
+    b = load_build()
+    trace = Trace(None, echo=False)
+
+    def says(text):
+        return lambda *a, **k: {"response": text}
+
+    monkeypatch.setattr(b.freya, "api", says("Hello, this is Freya Bank."))
+    assert b.smoke(trace, "wf", {}) == "passed"
+    monkeypatch.setattr(b.freya, "api", says("Hello, I am calling about your debt."))
+    assert b.smoke(trace, "wf", {}) == "failed"
+    monkeypatch.setattr(b.freya, "api", says("Hello, this is Northwind Loans."))
+    assert b.smoke(trace, "wf", {}, ["loan"], "Northwind Loans") == "passed"
+    assert b.smoke(trace, "wf", {}, ["loans"]) == "failed"
+
+    def boom(*a, **k):
+        raise TimeoutError("read timed out")
+
+    monkeypatch.setattr(b.freya, "api", boom)
+    assert b.smoke(trace, "wf", {}) == "failed"
+
+
+def test_run_exports_and_marks_a_failed_smoke(monkeypatch, tmp_path):
+    b = load_build()
+    monkeypatch.setattr(b, "ROOT", tmp_path)
+    monkeypatch.setattr(b, "extract", lambda *a, **k: copy.deepcopy(SPEC))
+    monkeypatch.setattr(b.freya, "validate_workflow", lambda *a, **k: {})
+    monkeypatch.setattr(
+        b.freya, "save_workflow", lambda *a, **k: {"workflow_id": "w1", "agent_id": "a1"}
+    )
+
+    def chat_fails(*a, **k):
+        raise RuntimeError("POST /api/v2/chat/message -> 500")
+
+    def export_fails(*a, **k):
+        raise RuntimeError("GET /api/v2/workflow/w1 -> 502")
+
+    monkeypatch.setattr(b.freya, "api", chat_fails)
+    monkeypatch.setattr(b.freya, "export_workflow", export_fails)
+    log = tmp_path / "t.log"
+    trace = Trace(log, echo=False)
+    rc = b.run(
+        trace,
+        KIT / "briefs" / "brief-a.md",
+        KIT / "tools" / "openapi.json",
+        "x",
+        time.monotonic() + 600,
+    )
+    assert rc == 0
+    end = log.read_text().splitlines()[-1]
+    assert "status=ok_smoke_failed_export_failed" in end and "smoke=failed" in end
+    out = json.loads((tmp_path / "submission" / "x.workflow.json").read_text())
+    assert out["workflow_id"] == "w1" and out["workflow"]["nodes"]
