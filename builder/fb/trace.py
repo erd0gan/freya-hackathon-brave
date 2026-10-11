@@ -18,7 +18,7 @@ def _utc(ts: float | None = None) -> str:
 
 def redact(text: str) -> str:
     out = _SECRET.sub("<redacted>", text)
-    for name in ("FREYA_API_KEY", "FREYA_BANK_TEAM_KEY", "OPENROUTER_API_KEY"):
+    for name in ("FREYA_API_KEY", "FREYA_BANK_TEAM_KEY", "OPENROUTER_API_KEY", "ANTHROPIC_API_KEY"):
         val = os.environ.get(name)
         if val and len(val) >= 8:
             out = out.replace(val, "<redacted>")
