@@ -370,7 +370,8 @@ def test_code_nodes_fit_a_long_call_and_only_big_ones_are_packed():
                     continue
                 code = a["function"]["parameters"]["properties"]["code"]["default"]
                 assert len(code.encode()) <= CODE_HARD_CAP, k
-                if len(code.encode()) <= CODE_BUDGET:
-                    assert "b64decode" not in code, k
+                # a packed node is packed because its readable form is over the budget; packed
+                # (docstrings and comments dropped) it is far under it
+                assert len(code.encode()) <= CODE_BUDGET, k
                 if k != "decide":
                     assert "b64decode" not in code, k

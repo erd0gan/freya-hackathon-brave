@@ -99,6 +99,23 @@ def subset(lib: str, *sources: str) -> str:
     return "\n\n\n".join(kept) + "\n"
 
 
+def bare(code: str) -> str:
+    """`code` without docstrings and comments (ast round trip, same behaviour): nobody reads
+    the packed part, and the text left is code_exec room for the call's data."""
+    tree = ast.parse(code)
+    for node in ast.walk(tree):
+        body = getattr(node, "body", None)
+        if (
+            isinstance(node, (ast.Module, ast.FunctionDef, ast.ClassDef))
+            and body
+            and isinstance(body[0], ast.Expr)
+            and isinstance(body[0].value, ast.Constant)
+            and isinstance(body[0].value.value, str)
+        ):
+            node.body = body[1:] or [ast.Pass()]
+    return ast.unparse(tree) + "\n"
+
+
 @functools.cache
 def packed(lib: str) -> str:
     """The lib compressed and unpacked at run time (the sandbox has zlib, base64 and exec,
@@ -151,7 +168,7 @@ def snippet(body: str, cfg: dict[str, Any], lib: str = LIB, on_error: str = "") 
             "# 131072 bytes for the call's data in a long call.\n"
             "# " + _defs_listed(code) + "\n" + rule + "import json\n"
         )
-        src = head + packed(code) + main
+        src = head + packed(bare(code)) + main
     if "{{" in src or "}}" in src:
         raise ValueError("code snippet contains a template brace pair")
     return src
