@@ -1,0 +1,76 @@
+{
+ "slot": "brief-a",
+ "status": "ok",
+ "started_utc": "2026-10-11T15:57:15Z",
+ "duration_s": 49.5,
+ "commit": "8d50cbb-dirty",
+ "inputs": {
+  "brief": "kit\\briefs\\brief-a.md",
+  "brief_sha256": "c989bc4484c9643b0e79646c3091fe29b1792fce9972efd571815ce38fbb7573",
+  "tool_api": "kit\\tools\\openapi.json",
+  "tool_api_sha256": "fa5ef2aec75e41c7f0be454cde1f6ffd69c5a4735ebe364ee065b13090b74d02"
+ },
+ "spec": {
+  "counts": {
+   "identity_factors": 2,
+   "bands": 2,
+   "holidays": 5,
+   "attempt_plan": 2,
+   "outcomes": 7,
+   "neg_outcomes": 4,
+   "neg_reasons": 5,
+   "queues": 3,
+   "forbidden_before_verify": 11,
+   "lines": 23,
+   "notes": 14
+  },
+  "problems": [],
+  "warnings": []
+ },
+ "observer": {
+  "status": "done",
+  "disputed": [
+   "forbidden_before_verify"
+  ],
+  "forbidden_added": []
+ },
+ "validator": {
+  "errors": 0,
+  "warnings": 13,
+  "codes": {
+   "warn:code_try": 13
+  }
+ },
+ "proof_map": {
+  "covered": 16,
+  "values_ok": 43,
+  "values_missing": 0,
+  "prompt_only": 4,
+  "unmapped": 0,
+  "units": 63,
+  "missing_quotes": 0
+ },
+ "selftest": {
+  "state": "passed",
+  "cases": 880,
+  "failures": 0
+ },
+ "workflow_sha256": "86b5c9696c12852236b4daf98222dec47da28688e64d29c6eb22d2f610d4373a",
+ "export": {
+  "mode": "platform",
+  "file": "brief-a.workflow.json",
+  "sha256": "f5632a861e9d4a3a264df10b4f90df704c36276509b3c9a8a3a018e0397534be",
+  "check": "ok"
+ },
+ "freya": {
+  "workflow_id": "ac6bd729-f4c2-4e48-9dbc-dde4c717680d",
+  "agent_id": "20616ec5-e539-477a-a57b-6221b526d7ae",
+  "version": 13
+ },
+ "smoke": "passed",
+ "model": {
+  "calls": 2,
+  "cost_usd": 0.2702,
+  "failures": 0
+ }
+}

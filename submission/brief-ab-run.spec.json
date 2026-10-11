@@ -1,0 +1,218 @@
+{
+ "bank_name": "Freya Bank",
+ "notes": [
+  "Brief B applies on top of Brief A and replaces it where they differ. Customers can have one to three products. Every late product is stated before any question. Bands, deadlines and persuasion attempts are per product. Products are handled in get_account order.",
+  "Brief A says it never uses add_note. Brief B (later, explicitly overriding) wins: every product without a promise gets add_note with its product_id and a reason. This also applies when no product gets a promise. The exception is any transfer (restructuring, support, human): then no notes at all, before or after it.",
+  "Closing follows Brief B. Outcome is 'promise' if at least one promise was recorded, except on a transfer. With no promise, if every product is noted 'paid', the outcome is 'paid'. Otherwise the outcome is 'no_promise' with the reason of the first product, in get_account order, whose note is not 'paid'.",
+  "Brief A rule 37 closes as no_promise/service_error after two failed create_promise calls. Brief B rule 11 replaces this: keep the recorded promises, note the failed product as service_error and continue. The close reason then follows the closing rules.",
+  "If a transfer follows a recorded promise, the call closes as transferred with that transfer's reason. On a restructuring request, promises that are agreed but not yet recorded are not recorded.",
+  "If the customer names one date for everything and it is after one product's deadline, that product is recorded on its own deadline and the read-back says so. All promises are read back together with one confirmation.",
+  "Opening: the brief requires saying the call is recorded. The word 'recorded' is reserved, so the line says 'we are recording this call'.",
+  "The brief writes the question as {title} {last_name}. It is written as {{title}} {{last_name}} to match the call-variable format.",
+  "Brief B gives no exact words for the multi-product today question. Literal reading of rule 4: ask whether the customer can pay all of them today.",
+  "Callback window: 'today or the next business day', 10:00 to 19:00 both included, later than now. business_days_only=true is the literal reading: the next day must be a business day.",
+  "record_failure_queue: the brief never transfers on a record failure (record_failure=continue). The queue is set to 'support' only as an unused placeholder.",
+  "reason_priority: the brief uses the first-product rule, so no priority order is defined. The list is left empty rather than invented.",
+  "The human queue is the tool enum 'general' (Brief A rule 42); its transfer reason is 'human'.",
+  "Lines with no exact wording in the brief (identity_intro, sympathy, support_offer, help_first, callback_booked, goodbye) were written as short plain sentences that follow the brief's instructions.",
+  "Dates given only as numbers are read day, month, year (DMY), per Brief A rule 11.",
+  "Attempt 1 amount is 'current': the full past-due amount, or the floor if the customer already said the full amount is too much. Attempt 2 (late band only) is the floor on the deadline. If today is the last business day of the week, attempt 1 proposes the last business day of next week.",
+  "The 'recorded' line is the brief's exact required sentence (Brief A rule 38). The promise is only described as recorded after create_promise returns ok:true."
+ ],
+ "call_variables": {
+  "customer_id": "customer_id",
+  "title": "title",
+  "first_name": "first_name",
+  "last_name": "last_name",
+  "now": "now"
+ },
+ "lines": {
+  "opening": "Hello, I am a digital assistant calling from Freya Bank, and we are recording this call.",
+  "who_question": "Am I speaking with {{title}} {{last_name}}?",
+  "ai_answer": "I am Freya Bank's digital assistant.",
+  "scam_answer": "You can verify this call by phoning Freya Bank's customer service number.",
+  "deceased": "I am sorry for your loss.",
+  "identity_intro": "Before we continue, I need to ask you two security questions.",
+  "identity_why": "These questions protect your account.",
+  "identity_failed": "I could not verify your identity. Please use the mobile app or visit a branch.",
+  "present_intro": "I am calling from the collections team about a late payment.",
+  "today_question": "Can you make this payment today?",
+  "multi_today_question": "Can you pay all of them today?",
+  "confirm_question": "Do you confirm?",
+  "recorded": "You will receive a text message confirming this promise.",
+  "paid": "Thank you. Payments can take one business day to appear.",
+  "sympathy": "I am very sorry to hear that.",
+  "support_offer": "Would you like me to connect you with our customer support team?",
+  "help_first": "Before I transfer you, can I help you with that myself?",
+  "callback_booked": "Thank you, I have booked a callback.",
+  "goodbye": "Thank you for your time. Goodbye.",
+  "no_info": "I am sorry, I do not have that information.",
+  "rest_overdue": "The rest stays overdue."
+ },
+ "forbidden_before_verify": [
+  "collections",
+  "debt",
+  "payment",
+  "credit card",
+  "personal loan",
+  "car loan"
+ ],
+ "identity": {
+  "questions": [
+   {
+    "field": "date_of_birth",
+    "ask": "What is your date of birth?",
+    "kind": "date"
+   },
+   {
+    "field": "phone_last4",
+    "ask": "What are the last four digits of the phone number on file?",
+    "kind": "digits"
+   }
+  ],
+  "swap_hint": "day_month_swapped",
+  "swap_instruction": "Could you say your date of birth again, with the month as a word?",
+  "date_order": "DMY"
+ },
+ "outcomes": {
+  "unclear": [
+   "not_reached",
+   "unclear"
+  ],
+  "callback": [
+   "not_reached",
+   "callback"
+  ],
+  "no_callback": [
+   "not_reached",
+   "no_callback"
+  ],
+  "wrong_number": [
+   "not_reached",
+   "wrong_number"
+  ],
+  "deceased": [
+   "not_reached",
+   "deceased"
+  ],
+  "failed": [
+   "not_verified",
+   "failed"
+  ],
+  "declined": [
+   "not_verified",
+   "declined"
+  ]
+ },
+ "callback": {
+  "start": "10:00",
+  "end": "19:00",
+  "include_today": true,
+  "business_days_ahead": 1,
+  "business_days_only": true,
+  "reasks": 1
+ },
+ "calendar": {
+  "holidays": [
+   "2026-10-26",
+   "2026-11-11",
+   "2026-11-26",
+   "2026-12-25",
+   "2027-01-01"
+  ],
+  "workdays": [
+   0,
+   1,
+   2,
+   3,
+   4
+  ]
+ },
+ "bands": [
+  {
+   "name": "early",
+   "min_days_late": 1,
+   "max_days_late": 7,
+   "deadline_days": 12,
+   "deadline_unit": "business",
+   "attempts": 1
+  },
+  {
+   "name": "late",
+   "min_days_late": 8,
+   "max_days_late": 45,
+   "deadline_days": 7,
+   "deadline_unit": "business",
+   "attempts": 2
+  }
+ ],
+ "attempt1": {
+  "rule": "last_business_day_of_week",
+  "n": 0
+ },
+ "attempt_plan": [
+  {
+   "amount": "current",
+   "date": "attempt1"
+  },
+  {
+   "amount": "floor",
+   "date": "deadline"
+  }
+ ],
+ "product_fields": {
+  "list": "products",
+  "product_id": "product_id",
+  "type": "type",
+  "past_due": "past_due",
+  "days_late": "days_late"
+ },
+ "floor_field": {
+  "credit_card": "minimum_payment",
+  "personal_loan": "instalment_amount",
+  "car_loan": "instalment_amount"
+ },
+ "product_names": {
+  "credit_card": "credit card ending {card_last4}",
+  "personal_loan": "personal loan",
+  "car_loan": "car loan"
+ },
+ "neg": {
+  "outcomes": {
+   "promise": "promise",
+   "paid": "paid",
+   "transferred": "transferred",
+   "no_promise": "no_promise"
+  },
+  "reasons": {
+   "refused": "refused",
+   "hardship": "hardship",
+   "dispute": "dispute",
+   "service_error": "service_error",
+   "paid": "paid"
+  },
+  "queues": {
+   "restructuring": "restructuring",
+   "human": "general",
+   "support": "support"
+  },
+  "transfer_reasons": {
+   "restructuring": "restructuring",
+   "human": "human",
+   "support": "support"
+  },
+  "notes": true,
+  "human_requests_to_transfer": 2,
+  "stop_requests_to_close": 2,
+  "promise_attempts": 2,
+  "record_failure": "continue",
+  "record_failure_queue": "support",
+  "hardship": "offer_support",
+  "hardship_queue": "support",
+  "no_promise_reason": "first_product",
+  "reason_priority": [],
+  "notes_on_transfer": false,
+  "vague_date_asks": 1,
+  "floor_offers": 1
+ }
+}
