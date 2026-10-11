@@ -209,3 +209,64 @@ def test_note_reason_the_tool_has_no_value_for_is_not_required():
     assert any("neg.reasons.dispute" in p for p in check(s, parse_openapi(o), BRIEF, o))
     neg = to_generator(spec_with(lambda s: s["neg"]["reasons"].update(hardship="")))["cfg"]["neg"]
     assert "hardship" not in neg["reasons"]
+
+
+# ---------------------------------------------------------------- 3b. problems left: publish
+def load_build():
+    import importlib.util
+
+    from conftest import ROOT
+
+    spec = importlib.util.spec_from_file_location("builder_main", ROOT / "builder" / "build.py")
+    mod = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(mod)
+    return mod
+
+
+def run_build(monkeypatch, tmp_path, s):
+    import time
+
+    from fb.trace import Trace
+
+    b = load_build()
+    saved = []
+    monkeypatch.setattr(b, "ROOT", tmp_path)
+    monkeypatch.setattr(b, "extract", lambda *a, **k: copy.deepcopy(s))
+    monkeypatch.setattr(b.freya, "validate_workflow", lambda *a, **k: {})
+
+    def save(slot, wf, **k):
+        saved.append(wf)
+        return {"workflow_id": "w1", "agent_id": "a1"}
+
+    monkeypatch.setattr(b.freya, "save_workflow", save)
+    monkeypatch.setattr(b.freya, "api", lambda *a, **k: {"response": "Hello."})
+    monkeypatch.setattr(b.freya, "export_workflow", lambda *a, **k: None)
+    log = tmp_path / "t.log"
+    rc = b.run(
+        Trace(log, echo=False),
+        KIT / "briefs" / "brief-a.md",
+        KIT / "tools" / "openapi.json",
+        "x",
+        time.monotonic() + 600,
+    )
+    return rc, log.read_text(), saved
+
+
+def test_problems_left_after_the_repair_still_publish(monkeypatch, tmp_path):
+    s = spec_with(lambda s: s["product_fields"].update(past_due="nonexistent"))
+    rc, log, saved = run_build(monkeypatch, tmp_path, s)
+    assert rc == 0 and len(saved) == 1
+    assert "spec error: product_fields.past_due" in log
+    assert "status=ok_spec_problems" in log.splitlines()[-1]
+
+
+def test_a_spec_without_questions_publishes_nothing(monkeypatch, tmp_path):
+    s = spec_with(lambda s: s["identity"].update(questions=[]))
+    rc, log, saved = run_build(monkeypatch, tmp_path, s)
+    assert rc == 1 and saved == []
+    assert "spec invalid (identity.questions is empty)" in log.splitlines()[-1]
+
+
+def test_a_clean_spec_still_ends_ok(monkeypatch, tmp_path):
+    rc, log, _ = run_build(monkeypatch, tmp_path, spec_with())
+    assert rc == 0 and "status=ok " in log.splitlines()[-1] + " "

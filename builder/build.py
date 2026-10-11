@@ -9,7 +9,9 @@ OPENROUTER_API_KEY in the environment (or in a .env / kit/env.sh file next to th
 
 Once a workflow is saved, a submission file is always written: the platform export, or the
 workflow as sent if the export fails. The trace's END line says how far the run got
-(status=ok only when the chat smoke test passed; smoke=passed|failed|skipped).
+(status=ok only when the chat smoke test passed; smoke=passed|failed|skipped). Spec problems
+left after the repair round do not stop the build (status ok_spec_problems, the problems in
+the trace) unless the spec cannot make a workflow at all.
 """
 
 from __future__ import annotations
@@ -57,7 +59,7 @@ sys.path.insert(0, str(ROOT / "kit"))
 import freya  # noqa: E402
 from fb.generate import build  # noqa: E402
 from fb.openapi_tools import parse_openapi  # noqa: E402
-from fb.spec_extract import check, extract, to_generator  # noqa: E402
+from fb.spec_extract import blocking, check, extract, to_generator  # noqa: E402
 from fb.trace import Trace  # noqa: E402
 from fb.validate import validate  # noqa: E402
 
@@ -224,17 +226,26 @@ def run(trace: Trace, brief_path: Path, api_path: Path, slot: str, deadline: flo
     (ROOT / "submission").mkdir(exist_ok=True)
     (ROOT / "submission" / f"{slot}.spec.json").write_text(json.dumps(spec, indent=1))
     problems = check(spec, tools, brief, openapi)
+    for p in problems:
+        trace.note(f"spec error: {p}")
     if problems:
-        # A structural error left after the repair would publish a broken agent: stop here
-        # and run the builder again (the extraction is a model call and can differ).
-        for p in problems:
-            trace.note(f"spec error: {p}")
-        trace.end(status=f"spec invalid ({len(problems)} errors), nothing published")
-        return 1
-    trace.note("spec checks: 0 errors")
+        # A submitted imperfect workflow scores more than none: problems left after the repair
+        # round are kept in the trace and the build goes on, unless the spec cannot make a
+        # workflow at all (no identity questions, no bands).
+        hard = blocking(spec)
+        if hard:
+            trace.end(status=f"spec invalid ({'; '.join(hard)}), nothing published")
+            return 1
+        trace.note(f"spec checks: {len(problems)} problems left, building anyway")
+    else:
+        trace.note("spec checks: 0 errors")
 
-    gen = to_generator(spec)
-    wf, policy = build(gen, tools)
+    try:
+        gen = to_generator(spec)
+        wf, policy = build(gen, tools)
+    except Exception as e:
+        trace.end(status=f"generation failed: {type(e).__name__}: {str(e)[:300]}")
+        return 1
     rep = validate(wf, tools, policy)
     for i in rep.errors:
         trace.note(f"validator: {i}")
@@ -297,7 +308,8 @@ def run(trace: Trace, brief_path: Path, api_path: Path, slot: str, deadline: flo
         out.write_text(json.dumps({**ids, "updated_at": None, "workflow": wf}, indent=1))
         trace.freya(f"wrote the saved workflow as sent -> {out.relative_to(ROOT)}")
         export = "local"
-    status = "ok" + ("" if result == "passed" else f"_smoke_{result}")
+    status = "ok_spec_problems" if problems else "ok"
+    status += "" if result == "passed" else f"_smoke_{result}"
     status += "" if export == "platform" else "_export_failed"
     trace.end(
         status=status,

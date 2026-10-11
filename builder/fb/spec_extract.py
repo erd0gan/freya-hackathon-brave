@@ -641,6 +641,26 @@ def _is_int(x: Any, lo: int | None = None) -> bool:
     return isinstance(x, int) and not isinstance(x, bool) and (lo is None or x >= lo)
 
 
+def blocking(spec: dict[str, Any]) -> list[str]:
+    """The problems no workflow can be built around: build.py publishes despite every other
+    problem check() reports (an imperfect agent scores more than none), but not without a
+    security question to ask or a band to place a late product in."""
+    out = []
+    qs = (spec.get("identity") or {}).get("questions") or []
+    if not [x for x in qs if isinstance(x, dict) and x.get("field")]:
+        out.append("identity.questions is empty")
+    bands = [
+        b
+        for b in spec.get("bands") or []
+        if isinstance(b, dict)
+        and _is_int(b.get("min_days_late"), 0)
+        and _is_int(b.get("max_days_late"), 0)
+    ]
+    if not bands:
+        out.append("no band with whole-number min_days_late and max_days_late")
+    return out
+
+
 def _hhmm(x: Any) -> bool:
     m = re.fullmatch(r"(\d{2}):(\d{2})", str(x or ""))
     return bool(m) and int(m.group(1)) < 24 and int(m.group(2)) < 60
