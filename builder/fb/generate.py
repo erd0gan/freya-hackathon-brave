@@ -27,7 +27,7 @@ import copy
 from typing import Any
 
 from fb.nodecode import bodies
-from fb.nodecode.embed import LIB, LIB_CALENDAR, snippet
+from fb.nodecode.embed import LIB, LIB_CALENDAR, snippet, subset
 from fb.openapi_tools import ToolDef, freya_tool
 from fb.validate import Policy
 
@@ -285,6 +285,10 @@ def identity_hooks(
         + "except Exception:\n"
         + "    pass\n"
     )
+    # only the calendar/speech functions the hook uses, readable (was the whole 30 KB library)
+    hook = pre[len(LIB_CALENDAR) :]
+    used = subset(LIB_CALENDAR, hook)
+    pre = "# Library functions this hook uses (from builder/fb/nodecode/*_lib.py)\n" + used + hook
     post = (
         "try:\n"
         + "    _order = "
@@ -378,6 +382,55 @@ CLOSE_PRE = (
     "except Exception:\n"
     "    pass\n"
 )
+
+
+# ---------------------------------------------------------------- editor layout
+COL_W, ROW_H = 420, 190
+
+
+def _targets(n: dict[str, Any]) -> list[str]:
+    out = [t.get("target_node") for t in n.get("transitions") or []]
+    out += [n.get("passthrough_default_transition"), n.get("max_turn_transition")]
+    seen: list[str] = []
+    for t in out:
+        if t and t not in seen:
+            seen.append(t)
+    return seen
+
+
+def layout(nodes: dict[str, Any], start: str) -> None:
+    """A `position` for every node, so the visual editor shows the flow instead of placing the
+    nodes itself: one column per step from the start (breadth first), each node next to the
+    nodes it comes from, closing nodes (fin_*, goodbye) at the bottom of their column."""
+    depth = {start: 0}
+    queue = [start]
+    while queue:
+        k = queue.pop(0)
+        for t in _targets(nodes[k]):
+            if t in nodes and t not in depth:
+                depth[t] = depth[k] + 1
+                queue.append(t)
+    last = max(depth.values(), default=0)
+    for k in nodes:
+        depth.setdefault(k, last + 1)  # not reached from the start: a column of their own
+    parents: dict[str, list[str]] = {k: [] for k in nodes}
+    for k, n in nodes.items():
+        for t in _targets(n):
+            if t in parents and depth[k] < depth[t]:
+                parents[t].append(k)
+    row: dict[str, float] = {}
+    for d in sorted(set(depth.values())):
+        col = [k for k in nodes if depth[k] == d]
+
+        def key(k: str) -> tuple[int, float, int]:
+            ps = [row[p] for p in parents[k] if p in row]
+            closing = k.startswith("fin_") or k == "goodbye"
+            return (int(closing), sum(ps) / len(ps) if ps else 0.0, list(nodes).index(k))
+
+        col.sort(key=key)
+        for i, k in enumerate(col):
+            row[k] = float(i)
+            nodes[k]["position"] = {"x": float(d * COL_W), "y": float(i * ROW_H)}
 
 
 # ---------------------------------------------------------------- the workflow
@@ -1134,6 +1187,7 @@ def build(spec: dict[str, Any], tools: dict[str, ToolDef]) -> tuple[dict[str, An
             },
         },
     }
+    layout(nodes, "opening")
     wf = {
         "initial_node": "opening",
         "system_prompt": sys_prompt,

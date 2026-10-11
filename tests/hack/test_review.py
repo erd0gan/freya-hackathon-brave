@@ -336,3 +336,39 @@ def test_product_order_from_the_brief():
     assert [q["id"] for q in st["p"]] == ["p2", "p1"]
     st = NS["new_state"](pf, CFG["neg"], "2026-10-14")
     assert [q["id"] for q in st["p"]] == ["p1", "p2"]
+
+
+# readable workflow: every node has a place in the editor; code is plain unless too big
+def built_workflows():
+    import copy
+    import json as _json
+
+    from fb.generate import build
+    from fb.openapi_tools import parse_openapi
+    from spec_fixtures import SPEC_A, SPEC_B
+
+    from conftest import KIT
+
+    tools = parse_openapi(_json.loads((KIT / "tools" / "openapi.json").read_text()))
+    return [build(copy.deepcopy(s), tools)[0] for s in (SPEC_A, SPEC_B)]
+
+
+def test_every_node_has_an_editor_position():
+    for wf in built_workflows():
+        pos = [(n["position"]["x"], n["position"]["y"]) for n in wf["nodes"].values()]
+        assert len(pos) == len(wf["nodes"]) == len(set(pos))
+        assert wf["nodes"][wf["initial_node"]]["position"]["x"] == 0.0
+
+
+def test_code_nodes_fit_a_long_call_and_only_big_ones_are_packed():
+    from fb.nodecode.embed import CODE_BUDGET
+
+    for wf in built_workflows():
+        for k, n in wf["nodes"].items():
+            for a in n.get("pre_actions") or []:
+                if a.get("function", {}).get("name") != "code_exec":
+                    continue
+                code = a["function"]["parameters"]["properties"]["code"]["default"]
+                assert len(code.encode()) <= CODE_BUDGET, k
+                if k != "decide":
+                    assert "b64decode" not in code, k
