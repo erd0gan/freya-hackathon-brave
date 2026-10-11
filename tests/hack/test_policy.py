@@ -85,7 +85,13 @@ def test_hardship_closes_at_once():
 def _finish_with(statuses, **kw):
     pf = {"product_count": str(len(statuses))}
     for i in range(len(statuses)):
-        pf.update({f"p{i + 1}_id": f"p{i + 1}", f"p{i + 1}_past_due": "100.00"})
+        pf.update(
+            {
+                f"p{i + 1}_id": f"p{i + 1}",
+                f"p{i + 1}_past_due": "100.00",
+                f"p{i + 1}_deadline": "2026-10-30",  # a product without a deadline is dropped
+            }
+        )
     n = {**CFG["neg"], **kw}
     st = NS["new_state"](pf, n, "2026-10-14T11:00")
     for q, s in zip(st["p"], statuses, strict=True):

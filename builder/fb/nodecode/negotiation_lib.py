@@ -107,13 +107,23 @@ def new_state(pf, neg, now):
             att = int(pf.get(key + "_attempts") or 1)
         except Exception:
             att = 1
+        deadline = str(pf.get(key + "_deadline") or "")
+        try:
+            datetime.date.fromisoformat(deadline[:10])
+        except Exception:
+            deadline = ""
+        if full <= 0.005 or not deadline or not pf.get(key + "_id"):
+            # no amount, no deadline (a product outside every band) or no id: nothing about it
+            # can be offered or recorded (review: a missing past_due was offered as 0.00)
+            continue
+        floor = min(floor, full) if floor > 0.005 else full
         ps.append(
             {
                 "id": pf.get(key + "_id") or key,
                 "name": pf.get(key + "_name") or "",
                 "full": full,
                 "floor": floor,
-                "deadline": pf.get(key + "_deadline") or "",
+                "deadline": deadline,
                 "days_late": pf.get(key + "_days_late") or "",
                 "attempts": att,
                 "used": 0,
@@ -142,6 +152,16 @@ def new_state(pf, neg, now):
         "final_lines": [],
         "last_ask": "",
     }
+    if not ps:
+        # get_account failed or gave nothing usable: no negotiation on made-up values
+        st["phase"] = "closing"
+        st["action"] = "finish"
+        st["final_lines"] = [
+            _line(neg, "no_account", "I am sorry, I cannot see your account details right now.")
+        ]
+        st["final_outcome"] = (neg.get("outcomes") or {}).get("no_promise", "no_promise")
+        st["final_reason"] = (neg.get("reasons") or {}).get("service_error", "service_error")
+        return st
     st["say"] = present_text(st, neg)
     st["last_ask"] = st["say"]
     return st
@@ -231,8 +251,56 @@ def _current_amount(p):
     return p["floor"] if p["too_much"] else p["full"]
 
 
+def _amount_for(p, amount):
+    """The amount a turn is about. A turn that names only a day keeps the amount said or
+    offered before it ("200" ... "Friday" is 200 on Friday, not the full amount)."""
+    if amount is not None:
+        return amount
+    if p.get("pending_amount") is not None:
+        return p["pending_amount"]
+    if p.get("offer"):
+        return p["offer"]["amount"]
+    if p.get("amount") is not None:
+        return p["amount"]
+    return _current_amount(p)
+
+
+def _valid_day(q, d, now, cfg, cal):
+    """(a day the bank may record for product q, why it differs from d). Every offer and every
+    record goes through the date rules: today or later, a business day, not after the
+    deadline."""
+    res = check_promise_date(d, q["deadline"], now, cfg) if d else "unreadable"
+    if res == "ok":
+        return d, ""
+    if res.startswith("not_business_day"):
+        return res.split(":", 1)[1], "not_business_day"
+    if res.startswith("after_deadline"):
+        return q["deadline"], "deadline"
+    for c in (cal.get("today_iso"), cal.get("attempt1_date")):
+        if c and check_promise_date(c, q["deadline"], now, cfg) == "ok":
+            return c, "past"
+    return q["deadline"], "deadline"
+
+
+def _invalid_agreed(st, now, cfg, cal):
+    """The first agreed product whose amount or day breaks the rules, with fixed values; the
+    last check before anything reaches the bank."""
+    for j, q in enumerate(st["p"]):
+        if q["status"] != "agreed":
+            continue
+        amt = q.get("amount")
+        ok_amt = amt is not None and q["floor"] - 0.005 <= float(amt) <= q["full"] + 0.005
+        d, why = _valid_day(q, q.get("date"), now, cfg, cal)
+        if ok_amt and not why:
+            continue
+        amt = q["full"] if amt is None else min(max(float(amt), q["floor"]), q["full"])
+        return j, round(amt, 2), d
+    return None
+
+
 def _attempt_offer(st, k, neg, cal):
     p = st["p"][k]
+    st["i"] = k
     plan = neg.get("attempt_plan") or [
         {"amount": "current", "date": "attempt1"},
         {"amount": "floor", "date": "deadline"},
@@ -247,6 +315,7 @@ def _attempt_offer(st, k, neg, cal):
     if date and p["deadline"] and date > p["deadline"]:
         date = p["deadline"]
     p["offer"] = {"amount": amount, "date": date, "kind": "attempt"}
+    p["pending_amount"] = None
     floor_note = ""
     if amount < p["full"] - 0.005:
         floor_note = " " + _rest(neg)
@@ -282,33 +351,44 @@ def _agree(p, amount, date, own_deadline=False):
     p["amount"] = round(float(amount), 2)
     p["date"] = date
     p["offer"] = None
+    p["pending_amount"] = None
     p["own_deadline"] = own_deadline
 
 
 def _apply_offer(st, k, amount, date_iso, date_kind, neg, cal, now, cfg, all_products):
     """The customer named an amount and/or a date for product k (or for all)."""
     p = st["p"][k]
+    st["i"] = k  # the next yes answers a question about this product
     targets = (
         [j for j, q in enumerate(st["p"]) if q["status"] in ("open", "agreed")]
         if all_products
         else [k]
     )
-    if amount is None:
-        amount = p["offer"]["amount"] if p.get("offer") else _current_amount(p)
+    amount = _amount_for(p, amount)
     if amount > p["full"] + 0.005:
         amount = p["full"]
     if amount < p["floor"] - 0.005 and len(targets) == 1:
         if p["floor_offered"] >= _pol(neg, "floor_offers"):
             return _flat_refusal(st, k, neg, cal)
         p["floor_offered"] += 1
-        d = date_iso or (p["offer"] or {}).get("date") or cal.get("today_iso")
+        # the floor keeps the date rules: a day after the deadline or in the past is not offered
+        d0 = date_iso or (p["offer"] or {}).get("date") or cal.get("today_iso")
+        d, why = _valid_day(p, d0, now, cfg, cal)
         p["offer"] = {"amount": p["floor"], "date": d, "kind": "floor"}
+        p["pending_amount"] = None
+        lead = ""
+        if date_iso and why == "deadline":
+            lead = "The latest date I can record is " + _d(d) + ". "
+        elif date_iso and why == "not_business_day":
+            lead = _d(date_iso) + " is not a business day. "
         return (
             "I cannot record "
             + _m(amount)
             + ". The minimum is "
             + _m(p["floor"])
-            + ". Could you pay "
+            + ". "
+            + lead
+            + "Could you pay "
             + _m(p["floor"])
             + " on "
             + _d(d)
@@ -334,18 +414,20 @@ def _apply_offer(st, k, amount, date_iso, date_kind, neg, cal, now, cfg, all_pro
         else:
             p["pending_amount"] = amount
             return "On which day can you pay " + _m(amount) + "?"
+    # Every product the day is for is checked first; a counter-offer for one of them must not
+    # drop the day for the others (review: "both on the 26th" lost the loan's own date).
     said = []
     for j in targets:
         q = st["p"][j]
-        amt = amount if j == k else (q["amount"] if q["status"] == "agreed" else _current_amount(q))
+        amt = amount if j == k else _amount_for(q, None)
         res = check_promise_date(date_iso, q["deadline"], now, cfg)
+        line = ""
         if res == "ok":
             _agree(q, amt, date_iso)
         elif res.startswith("after_deadline") and len(targets) > 1:
             _agree(q, amt, q["deadline"], own_deadline=True)
         elif res.startswith("after_deadline"):
-            q["offer"] = {"amount": amt, "date": q["deadline"], "kind": "deadline"}
-            said.append(
+            line = (
                 "The latest date I can record for "
                 + _the(q["name"])
                 + " is "
@@ -354,24 +436,30 @@ def _apply_offer(st, k, amount, date_iso, date_kind, neg, cal, now, cfg, all_pro
                 + _m(amt)
                 + " on that day?"
             )
+            q["offer"] = {"amount": amt, "date": q["deadline"], "kind": "deadline", "say": line}
         elif res.startswith("not_business_day"):
             nb = res.split(":", 1)[1]
-            q["offer"] = {"amount": amt, "date": nb, "kind": "next_business_day"}
-            said.append(
+            line = (
                 _d(date_iso)
                 + " is not a business day. Could you pay "
                 + _m(amt)
+                + (" for " + _the(q["name"]) if len(targets) > 1 else "")
                 + " on the next business day, "
                 + _d(nb)
                 + "?"
             )
+            q["offer"] = {"amount": amt, "date": nb, "kind": "next_business_day", "say": line}
         elif res == "past":
-            said.append("The date has to be today or later. On which day can you pay?")
+            q["pending_amount"] = amt
+            line = "The date has to be today or later. On which day can you pay?"
         else:
-            said.append("On which exact day can you pay?")
-        if said:
-            st["i"] = j
-            return said[0]
+            q["pending_amount"] = amt
+            line = "On which exact day can you pay?"
+        if line:
+            said.append((j, line))
+    if said:
+        st["i"] = said[0][0]
+        return said[0][1]
     return None
 
 
@@ -423,6 +511,9 @@ def _advance(st, neg, cal):
         st["i"] = j
         st["phase"] = "offer"
         p = st["p"][j]
+        if (p.get("offer") or {}).get("say"):
+            # the customer's own day for this product needs its own answer (holiday, deadline)
+            return ack + p["offer"]["say"]
         if p["used"] == 0:
             p["used"] = 1
         return ack + _attempt_offer(st, j, neg, cal)
@@ -444,6 +535,10 @@ def _finish(st, neg):
         "failed": "service_error",
         "paid": "paid",
     }
+    recorded = set(st.get("recorded") or [])
+    for q in st["p"]:
+        if q["id"] in recorded:
+            q["status"] = "recorded"  # a promise the bank holds is never undone by later words
     notes = []
     for q in st["p"]:
         if q["status"] != "recorded":
@@ -526,6 +621,10 @@ def step(st, r, neg, cal, now, cfg):
     st["action"] = "say"
     st["mode"] = "speak"
     kind = r.get("kind") or "unclear"
+    if kind == "unclear" and r.get("cut_kind") and int(st.get("unclear_run") or 0) >= 2:
+        # the third cut-off turn in a row: the customer's words so far are taken as said, or a
+        # cut-off "no" could be asked about until the call runs out of time
+        kind = r["cut_kind"]
     st["unclear_run"] = int(st.get("unclear_run") or 0) + 1 if kind == "unclear" else 0
     k = st["i"]
     # A product the customer names counts only while it is still open (extraction is noisy).
@@ -570,11 +669,13 @@ def step(st, r, neg, cal, now, cfg):
             st["say"] = _sorry(st, r) + " " + _short(st, neg)
             return st
         elif kind in ("question", "hardship", "evasive"):
-            # a question is not an answer to the offer: answer it and keep the offer open
-            st["hardship_repeats"] = int(st.get("hardship_repeats") or 0) + 1
-            if st["hardship_repeats"] > 2:
-                _close_hardship(st, neg)
-                return st
+            # a question is not an answer to the offer: answer it and keep the offer open. Only
+            # non-answers are counted (a question is never a refusal of the offer).
+            if kind != "question":
+                st["hardship_repeats"] = int(st.get("hardship_repeats") or 0) + 1
+                if st["hardship_repeats"] > 2:
+                    _close_hardship(st, neg)
+                    return st
             if kind == "question":
                 st["mode"] = "llm"
                 st["say"] = (
@@ -620,6 +721,16 @@ def step(st, r, neg, cal, now, cfg):
             return st
         st["say"] = "I understand. " + _short(st, neg)
         return st
+    if kind in ("paid", "dispute") and phase in ("closing", "recording"):
+        # said after the promises were recorded: what the bank holds stays as it is
+        _finish(st, neg)
+        return st
+    if kind in ("paid", "dispute") and st["p"][k]["status"] not in ("open", "agreed"):
+        left = [j for j, q in enumerate(st["p"]) if q["status"] in ("open", "agreed")]
+        if not left:
+            _finish(st, neg)
+            return st
+        k = left[0]
     if kind in ("paid", "dispute"):
         p = st["p"][k]
         p["status"] = kind
@@ -671,56 +782,78 @@ def step(st, r, neg, cal, now, cfg):
         _finish(st, neg)
         return st
     if phase == "confirm":
+        agreed = [j for j, q in enumerate(st["p"]) if q["status"] == "agreed"]
         if kind == "yes":
+            bad = _invalid_agreed(st, now, cfg, cal)
+            if bad is not None:
+                # nothing outside the rules reaches the bank: offer the nearest allowed values
+                j, amt, d = bad
+                q = st["p"][j]
+                q["status"] = "open"
+                q["offer"] = {"amount": amt, "date": d, "kind": "fixed"}
+                st["i"] = j
+                st["phase"] = "offer"
+                say = "Could you pay " + _m(amt) + " for " + _the(q["name"]) + " on " + _d(d) + "?"
+                if amt < q["full"] - 0.005:
+                    say += " " + _rest(neg)
+                st["say"] = say
+                st["last_ask"] = say
+                return st
             st["rec"] = [j for j, q in enumerate(st["p"]) if q["status"] == "agreed"]
             st["rec_try"] = 0
             st["action"] = "record"
             st["phase"] = "recording"
             _set_rec(st)
             return st
-        if kind == "offer":
-            agreed = [j for j, q in enumerate(st["p"]) if q["status"] == "agreed"]
-            j = k if k in agreed else (agreed[0] if agreed else k)
-            say = _apply_offer(
-                st,
-                j,
-                r.get("amount"),
-                r.get("date"),
-                r.get("date_kind"),
-                neg,
-                cal,
-                now,
-                cfg,
-                bool(r.get("all")) and len(agreed) > 1,
+        if kind in ("offer", "vague", "too_much") and agreed:
+            # A35: a change at the read-back reopens the product(s) it is about; what follows is
+            # the same as before the read-back, and only a new read-back and a new yes record
+            # (review: a yes after a counter-offer here recorded the old read-back)
+            every = (
+                kind != "too_much"
+                and len(agreed) > 1
+                and bool(r.get("all"))
+                and not r.get("mixed")
+                and r.get("amount") is None
             )
-            st["say"] = say or _readback(st, neg)
-            if say is None:
-                st["phase"] = "confirm"
-            st["last_ask"] = st["say"]
-            return st
-        if kind == "no":
-            agreed = [j for j, q in enumerate(st["p"]) if q["status"] == "agreed"]
-            if len(agreed) == 1:
-                j = agreed[0]
+            k = k if k in agreed else agreed[0]
+            for j in agreed if every else [k]:
                 st["p"][j]["status"] = "open"
-                say = _flat_refusal(st, j, neg, cal)
-                if say is None:
-                    say = _advance(st, neg, cal)
-                if say is None:
-                    _finish(st, neg)
-                    return st
-                st["phase"] = "offer" if st["p"][j]["status"] == "open" else st["phase"]
-                st["say"] = say
-                st["last_ask"] = say
+            phase = "offer"
+            st["phase"] = "offer"
+            st["i"] = k
+        elif kind == "no":
+            named = r.get("product")
+            if named in agreed:
+                which = [named]
+            elif len(agreed) == 1:
+                which = agreed
+            elif not st.get("which_asked"):
+                st["which_asked"] = True
+                st["say"] = _line(neg, "which_change", "Which promise would you like to change?")
                 return st
-            st["say"] = "Which promise would you like to change?"
+            else:
+                which = agreed  # a no again and no product named: a no to all of them
+            for j in which:
+                st["p"][j]["status"] = "open"
+            say = _flat_refusal(st, which[0], neg, cal)
+            if say is None:
+                say = _advance(st, neg, cal)
+            if say is None:
+                _finish(st, neg)
+                return st
+            if any(q["status"] == "open" for q in st["p"]):
+                st["phase"] = "offer"
+            st["say"] = say
+            st["last_ask"] = say
             return st
-        if kind == "unclear":
+        elif kind == "unclear":
             # the read-back was said; saying it whole again and again read as a loop
             st["say"] = _sorry(st, r) + " " + _short(st, neg)
             return st
-        st["say"] = _readback(st, neg)
-        return st
+        else:
+            st["say"] = _readback(st, neg)
+            return st
     # ask_today or offer
     p = st["p"][k]
     multi = len(st["p"]) > 1
@@ -768,6 +901,7 @@ def step(st, r, neg, cal, now, cfg):
             cfg,
             multi
             and amount is None
+            and not r.get("mixed")
             and (
                 bool(r.get("all"))
                 # an answer to "all of them today?" that names a day and no product means all
@@ -788,8 +922,11 @@ def step(st, r, neg, cal, now, cfg):
             and p["floor"] < p["full"] - 0.005
         ):
             p["floor_offered"] += 1
-            d = (p.get("offer") or {}).get("date") or cal.get("today_iso")
+            d0 = (p.get("offer") or {}).get("date") or cal.get("today_iso")
+            d, _why = _valid_day(p, d0, now, cfg, cal)
             p["offer"] = {"amount": p["floor"], "date": d, "kind": "floor"}
+            p["pending_amount"] = None
+            st["i"] = k
             say = (
                 "The minimum for "
                 + _the(p["name"])
@@ -837,6 +974,7 @@ def record_result(st, ok, neg, cal):
     q = st["p"][j]
     if ok:
         q["status"] = "recorded"
+        st["recorded"] = list(st.get("recorded") or []) + [q["id"]]
         st["rec"].pop(0)
         st["rec_try"] = 0
     else:
@@ -936,6 +1074,18 @@ ALL_WORDS = re.compile(r"\b(both|all of them|all (two|three|four|five|2|3|4|5)( 
 REFUSAL_WORDS = re.compile(r"\b(not|never|refuse|won't|can't|cannot|don't)\b|n't\b", re.I)
 
 
+# A wish to end the call that is whole without an end mark.
+STOP_WORDS = re.compile(
+    r"\b(do not|don't|dont) want to (talk|speak|continue)|stop calling|leave me alone|"
+    r"not interested|hang(ing)? up|goodbye\b",
+    re.I,
+)
+# Asking what the call is about instead of answering a security question (a refusal to answer).
+ABOUT_WORDS = re.compile(
+    r"\b(what|why)('s| is| are)? (this|it|the call|you calling)( about| for)?\b|"
+    r"\bwhy (do|would) you (need|want)\b|\bwho (is this|are you)\b",
+    re.I,
+)
 END_MARK = re.compile(r"[.!?…\"')\]]\s*$")
 
 
@@ -969,12 +1119,19 @@ def read_reply(v, today):
     codes = re.findall(r"p([1-9])", prod)
     pi = int(codes[0]) - 1 if codes else None
     raw = last_customer_text(v)
+    mixed = bool(raw and REFUSAL_WORDS.search(raw))
     allp = str(v.get("all_products") or "").strip().lower() in ("yes", "true", "all")
-    if raw and ALL_WORDS.search(raw):
+    if raw and ALL_WORDS.search(raw) and not mixed:
+        # "both" in "I cannot pay both" is no day for all of them
         allp = True
     cut = is_cut(raw)
-    if cut and kind in ("stop", "evasive") and not iso and amount is None:
-        # half a sentence is no wish to end the call and no non-answer: nothing is counted
+    cut_kind = ""
+    if cut and kind == "stop" and STOP_WORDS.search(raw):
+        pass  # "I do not want to talk" is whole even without a full stop
+    elif cut and kind in ("stop", "evasive", "no", "too_much") and not iso and amount is None:
+        # half a sentence is no wish to end the call, no non-answer and no refusal yet ("I
+        # cannot pay because my" may go on with a day): nothing is counted for now
+        cut_kind = kind
         kind = "unclear"
     return {
         "kind": kind,
@@ -983,8 +1140,9 @@ def read_reply(v, today):
         "date_kind": dk,
         "all": allp,
         "product": pi,
-        "mixed": bool(raw and REFUSAL_WORDS.search(raw)),
+        "mixed": mixed,
         "cut": cut,
+        "cut_kind": cut_kind,
         "question": str(v.get("has_question") or "").strip().lower() in ("yes", "true"),
         "said_yes": said_yes,
         "date_text": str(v.get("said_date_text") or ""),
@@ -1033,10 +1191,18 @@ def load_state(v):
         return None
 
 
-def pop_note(v):
-    """After one add_note call: move to the next note or report none left."""
+def pop_note(v, check=False):
+    """After one add_note call: move to the next note or report none left. With `check` (the
+    tool reports success in note_ok) a failed note is tried once more before moving on."""
     st = load_state(v) or {}
     notes = st.get("notes") or []
+    ok = str(v.get("note_ok") or "").strip().lower() == "true"
+    v["note_ok"] = ""
+    if check and notes and not ok and str(v.get("note_retry") or "") != "1":
+        v["note_retry"] = "1"
+        v["note_count"] = str(len(notes))
+        return
+    v["note_retry"] = ""
     if notes:
         notes.pop(0)
     st["notes"] = notes
