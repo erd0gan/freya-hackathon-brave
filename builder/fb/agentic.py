@@ -164,7 +164,9 @@ Time: you must be finished, with the final version saved, by {deadline_utc} UTC.
   JSON, not an answer). Read the format documents fully before writing.
 
 ## How to work fast
-- You have about {minutes} minutes in all. Work in parallel: start sub-agents (the Agent
+- You have about {minutes} minutes in all. That is enough for a careful build: plan the
+  steps first and do not cut the design to save time; a clear multi-step workflow with code
+  for every reading, tested with simulations, is the goal. Work in parallel: start sub-agents (the Agent
   tool) for independent parts, e.g. one writes `rules.md` from the documents while you read
   the format docs, or one runs `python ft.py sim` while you fix another branch. Sub-agents
   have the same permissions as you.
