@@ -60,16 +60,17 @@ case folder + mock_url
 | Mock of the bank's 7 services (Cloudflare Worker) | [`mock/`](mock/), live at https://freyabank-statement-mock.burak-erd0g4n.workers.dev |
 | Mock self-test (all 617 test-customer answers byte-exact, 645 checks) | `node mock/test_mock.mjs` |
 | Submission | [`submission.json`](submission.json) |
-| Exported workflow | [`submission/final.workflow.json`](submission/final.workflow.json) (37 steps, 7 tools) |
-| Builder trace | [`traces/final.log`](traces/final.log) |
-| Coding agent's session log | [`traces/final.agent.jsonl`](traces/final.agent.jsonl) |
-| Rules the agent derived, with sources | [`submission/final.rules.md`](submission/final.rules.md) |
+| Exported workflow | [`submission/final8.workflow.json`](submission/final8.workflow.json) |
+| Builder trace | [`traces/final8.log`](traces/final8.log) |
+| Coding agent's session log | [`traces/final8.agent.jsonl`](traces/final8.agent.jsonl) |
+| Rules the agent derived, with sources | [`submission/final8.rules.md`](submission/final8.rules.md) |
 
-Run command: `python3 builder/build.py {case_folder} {mock_url}`. The submitted run built
-the case folder in 20 min 52 s (status ok, smoke passed). On Freya's own simulation with 12
-callers (the six example scenarios plus six edge cases), it passed 10, 11, 11 and 11 of 12 in
-four runs. The one repeated miss: a caller who asks for a person in the first sentence is
-offered the main menu instead of being transferred at once.
+Run command: `python3 builder/build.py {case_folder} {mock_url}`. The submitted run (commit
+`85de296`) took 29 min 40 s, inside the rules' 30 minutes. Its coding agent tested itself with
+Freya simulations (1/8, 9/14, 11/14 of its own callers) and kept improving until its
+deadline. On Freya's own simulation with 12 callers (the six example scenarios plus six edge
+cases) the submitted agent passed 12 and 11 of 12 in two runs. An earlier run of the same
+builder (`traces/final.log`, chat tests only) passed 44 of 48 in four runs.
 
 ## Quick start
 
