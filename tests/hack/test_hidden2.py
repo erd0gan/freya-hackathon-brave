@@ -353,3 +353,50 @@ def test_verify_all_verified_behind_a_ref_is_found():
     wf = workflow(spec_with(), api_with(by_ref))
     cond = wf["nodes"]["identity"]["transitions"][0]["condition"]
     assert all(c["variable"] != "id_all_ok" for c in cond["conditions"])
+
+
+# ---------------------------------------------------------------- 6. reason_priority as codes
+def priority_codes(s):
+    s["neg"]["reasons"].update(dispute="DSP", hardship="HRD", refused="REF")
+    s["neg"]["close_reasons"] = {"service_error": "TECH"}
+    s["neg"].update(no_promise_reason="priority", reason_priority=["DSP", "TECH", "HRD", "REF"])
+
+
+def test_priority_written_as_bank_codes_is_mapped_to_semantic_keys():
+    neg = to_generator(spec_with(priority_codes))["cfg"]["neg"]
+    assert neg["reason_priority"] == ["dispute", "service_error", "hardship", "refused"]
+    out = structure_of(spec_with(priority_codes))
+    assert not [p for p in out if "reason_priority" in p], out
+
+
+def test_priority_with_unknown_entries_is_reported():
+    s = spec_with(priority_codes)
+    s["neg"]["reason_priority"] = ["disputed", "dispute"]
+    out = structure_of(s)
+    assert any(p.startswith("neg.reason_priority: ['disputed']") for p in out), out
+    s["neg"]["reason_priority"] = []
+    assert any("names no reason" in p for p in structure_of(s))
+
+
+def test_engine_closes_with_the_priority_reason():
+    from fb.nodecode.embed import namespace
+
+    ns = namespace()
+    neg = to_generator(spec_with(priority_codes))["cfg"]["neg"]
+    st = {
+        "p": [
+            {"id": "p1", "n": 1, "status": "refused"},
+            {"id": "p2", "n": 2, "status": "dispute"},
+        ],
+        "transfer": "",
+        "recorded": [],
+        "final_lines": [],
+    }
+    ns["_finish"](st, neg)
+    assert st["final_reason"] == "DSP"
+
+
+def structure_of(s):
+    from fb.spec_extract import structure
+
+    return structure(s)

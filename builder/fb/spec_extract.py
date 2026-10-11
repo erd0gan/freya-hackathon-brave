@@ -210,7 +210,8 @@ only what one example bank used, never copy it without reading the brief):
 - hardship_queue ["support"]: semantic queue for hardship transfers.
 - no_promise_reason ["first_product"]: with no promise recorded, the close reason is the
   reason of the "first_product" (in get_account order) that is not paid, or "priority".
-- reason_priority [...]: order of semantic reasons when no_promise_reason is "priority".
+- reason_priority [...]: order of reasons when no_promise_reason is "priority", written as the
+  semantic keys refused, hardship, dispute, service_error (not the bank's codes).
 - notes_on_transfer [false]: true if notes are still added on a transferred call.
 - vague_date_asks [1]: times to ask for the exact day after a vague answer before proposing
   the deadline.
@@ -645,6 +646,27 @@ def _is_int(x: Any, lo: int | None = None) -> bool:
     return isinstance(x, int) and not isinstance(x, bool) and (lo is None or x >= lo)
 
 
+def semantic_priority(neg: dict[str, Any]) -> tuple[list[str], list[str]]:
+    """neg.reason_priority as the semantic keys negotiation_lib compares (refused, hardship,
+    dispute, service_error): a bank code (a value of neg.close_reasons or neg.reasons) is
+    mapped back to its key. Returns (keys, entries that are neither)."""
+    back: dict[str, str] = {}
+    for src in ("reasons", "close_reasons"):
+        for k, v in (neg.get(src) or {}).items():
+            if k in CLOSE_REASON_KEYS and isinstance(v, str) and v:
+                back.setdefault(v, k)
+    keys: list[str] = []
+    unknown: list[str] = []
+    pr = neg.get("reason_priority")
+    for x in pr if isinstance(pr, list) else []:
+        k = str(x) if x in CLOSE_REASON_KEYS else back.get(str(x), "")
+        if not k:
+            unknown.append(str(x))
+        elif k not in keys:
+            keys.append(k)
+    return keys, unknown
+
+
 def blocking(spec: dict[str, Any]) -> list[str]:
     """The problems no workflow can be built around: build.py publishes despite every other
     problem check() reports (an imperfect agent scores more than none), but not without a
@@ -726,6 +748,20 @@ def structure(spec: dict[str, Any]) -> list[str]:
     for k, allowed in ENUMS.items():
         if k in neg and neg.get(k) not in allowed:
             bad.append(f"neg.{k} must be one of {list(allowed)}")
+    pr = neg.get("reason_priority")
+    if pr is not None and not isinstance(pr, list):
+        bad.append("neg.reason_priority must be a list")
+    keys, unknown = semantic_priority(neg)
+    if unknown:
+        bad.append(
+            f"neg.reason_priority: {unknown} are not reasons: use the semantic keys "
+            f"{list(CLOSE_REASON_KEYS)} (or values of neg.reasons)"
+        )
+    if neg.get("no_promise_reason") == "priority" and not keys:
+        bad.append(
+            "neg.no_promise_reason is priority but neg.reason_priority names no reason: list "
+            f"{list(CLOSE_REASON_KEYS)} in the brief's order"
+        )
     # A reason the tool API has no value for (an add_note enum without hardship) is '': only
     # refused, the reason of every product left without a promise, must be named.
     rs = neg.get("reasons")
@@ -1024,6 +1060,10 @@ def to_generator(spec: dict[str, Any]) -> dict[str, Any]:
     if paid:
         cr["paid"] = paid
     neg["close_reasons"] = cr
+    # negotiation_lib compares semantic keys: bank codes in the priority are mapped back (a
+    # code list was silently ignored and the first product's reason won)
+    if isinstance(neg.get("reason_priority"), list):
+        neg["reason_priority"] = semantic_priority(neg)[0]
     # a reason the tool API has no value for is '': left out, the engine uses the semantic key
     neg["reasons"] = {
         k: v for k, v in (neg.get("reasons") or {}).items() if isinstance(v, str) and v.strip()
