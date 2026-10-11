@@ -74,7 +74,7 @@
   html[data-lang="en"] .lang button[data-set="en"], html[data-lang="tr"] .lang button[data-set="tr"] { color: #1b1b1e; }
 
   /* ---------- layout ---------- */
-  .layout { display: grid; grid-template-columns: 250px 1fr; padding-top: 56px; }
+  .layout { display: grid; grid-template-columns: 250px minmax(0, 1fr); padding-top: 56px; }
   nav.toc { position: sticky; top: 56px; align-self: start; height: calc(100vh - 56px); overflow-y: auto; padding: 26px 16px; border-right: 1px solid var(--line); }
   nav.toc ol { list-style: none; margin: 0; padding: 0; counter-reset: toc; }
   nav.toc li { counter-increment: toc; }
@@ -85,7 +85,10 @@
   nav.toc a:hover { color: var(--text); background: rgba(255,255,255,0.04); }
   nav.toc a.active { color: var(--text); background: var(--orange-soft); }
   nav.toc a.active::after { content: ""; position: absolute; left: -16px; top: 6px; bottom: 6px; width: 3px; background: var(--orange); border-radius: 2px; }
-  main { padding: 0 56px 100px; max-width: 1140px; }
+  main { width: 100%; max-width: 1280px; margin: 0 auto; padding: 0 clamp(18px, 4vw, 64px) 100px; }
+  .menu-btn { display: none; border: 1px solid var(--line); background: var(--bg-deep); color: var(--text); border-radius: 8px; width: 38px; height: 34px; font-size: 18px; cursor: pointer; }
+  .topbar .right { display: flex; align-items: center; gap: 10px; }
+  .scroll-x { overflow-x: auto; -webkit-overflow-scrolling: touch; }
   section { padding-top: 84px; }
   h2 { font-size: 34px; margin: 0 0 4px; display: flex; align-items: baseline; gap: 14px; line-height: 1.15; }
   h2 .num { font: 600 15px var(--mono); color: var(--orange); }
@@ -220,10 +223,59 @@
 
   footer { margin-top: 70px; padding-top: 20px; border-top: 1px solid var(--line); color: var(--muted); font-size: 14px; display: flex; justify-content: space-between; flex-wrap: wrap; gap: 12px; }
 
+  /* ---------- responsive ---------- */
+  @media (min-width: 1700px) {
+    .layout { grid-template-columns: 280px minmax(0, 1fr); }
+    main { max-width: 1360px; }
+  }
+  @media (max-width: 1200px) {
+    .g3 { grid-template-columns: repeat(2, 1fr); }
+    .g3 > :nth-child(3):last-child { grid-column: 1 / -1; }
+    .explorer { grid-template-columns: 1fr; }
+  }
   @media (max-width: 1000px) {
-    .layout { grid-template-columns: 1fr; } nav.toc { display: none; }
-    main { padding: 0 20px 70px; } .g2, .g3, .walk, .explorer { grid-template-columns: 1fr; }
-    .stats { grid-template-columns: repeat(2, 1fr); } .walk-panel { grid-template-columns: 1fr; }
+    .layout { grid-template-columns: minmax(0, 1fr); }
+    .menu-btn { display: inline-block; }
+    nav.toc {
+      position: fixed; top: 56px; left: 0; bottom: 0; width: min(300px, 86vw); height: auto; z-index: 45;
+      background: rgba(35, 35, 39, 0.97); backdrop-filter: blur(10px); border-right: 1px solid var(--line);
+      transform: translateX(-102%); transition: transform .35s var(--ease); box-shadow: 20px 0 50px rgba(0,0,0,.35);
+    }
+    body.menu-open nav.toc { transform: none; }
+    .stats { grid-template-columns: repeat(2, 1fr); }
+    .walk-panel { grid-template-columns: 1fr; }
+    .hero { min-height: auto; padding: 56px 0 90px; }
+  }
+  @media (max-width: 700px) {
+    body { font-size: 16px; }
+    section { padding-top: 60px; }
+    h2 { font-size: 26px; gap: 10px; } h3 { font-size: 19px; }
+    .lead { font-size: 16.5px; }
+    .g2, .g3 { grid-template-columns: 1fr; }
+    .card { padding: 16px 16px; }
+    .card:hover { transform: none; }
+    .hero p.sub { font-size: 17px; }
+    .stat { padding: 12px 14px; } .stat b { font-size: 28px; }
+    .topbar { padding: 0 12px; } .topbar .brand { letter-spacing: .1em; }
+    ol.steps > li { padding: 10px 12px 10px 48px; } ol.steps > li::before { left: 10px; width: 26px; height: 26px; }
+    table { display: block; overflow-x: auto; -webkit-overflow-scrolling: touch; font-size: 14px; }
+    th, td { padding: 8px 8px; }
+    figure.scroll-x svg#pipe { min-width: 820px; }
+    figure.scroll-x svg#callflow { min-width: 900px; }
+    figure.scroll-x::after { display: block; text-align: center; font: 600 11px var(--mono); color: var(--muted); letter-spacing: .12em; margin-top: 6px; position: sticky; left: 0; }
+    html[data-lang="en"] figure.scroll-x::after { content: "← swipe →"; }
+    html[data-lang="tr"] figure.scroll-x::after { content: "← kaydır →"; }
+    .tty { font-size: 13.5px; padding: 30px 14px 14px; }
+    .tty::before { left: 14px; right: auto; }
+    .meter-label { flex-direction: column; gap: 2px; }
+    .scen button, .ctrl button, .chip { padding: 8px 11px; }
+    .walk-panel { padding: 14px; }
+    footer { flex-direction: column; }
+  }
+  @media (max-width: 420px) {
+    .stats { grid-template-columns: 1fr 1fr; gap: 10px; }
+    .stat b { font-size: 24px; } .stat > span { font-size: 12.5px; }
+    .lang button { padding: 6px 10px; }
   }
   @media (prefers-reduced-motion: reduce) {
     *, *::before, *::after { animation: none !important; transition: none !important; }
@@ -242,10 +294,13 @@
     </svg>
     BRAVE
   </div>
-  <div class="lang" role="group" aria-label="Language">
-    <span class="knob"></span>
-    <button data-set="en" type="button">EN</button>
-    <button data-set="tr" type="button">TR</button>
+  <div class="right">
+    <div class="lang" role="group" aria-label="Language">
+      <span class="knob"></span>
+      <button data-set="en" type="button">EN</button>
+      <button data-set="tr" type="button">TR</button>
+    </div>
+    <button class="menu-btn" id="menu-btn" type="button" aria-label="Contents" aria-expanded="false">☰</button>
   </div>
   <div class="progress" id="progress"></div>
 </header>
@@ -400,7 +455,7 @@
 <section id="pipeline">
   <h2 class="reveal"><span class="num">03</span><span data-l="en">The pipeline</span><span data-l="tr">İşlem hattı</span></h2>
   <p class="lead reveal"><code>python3 builder/build.py &lt;brief.md&gt; &lt;openapi.json&gt;</code> · <span data-l="en">standard library only</span><span data-l="tr">yalnızca standart kütüphane</span></p>
-  <figure class="reveal">
+  <figure class="reveal scroll-x">
     <svg viewBox="0 0 1000 300" role="img" aria-label="Pipeline" id="pipe">
       <defs><marker id="arr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0L10 5L0 10Z" fill="#8d8c97"/></marker></defs>
       <g class="stage" data-i="0"><rect x="10" y="40" width="140" height="56" rx="10" fill="#313136" stroke="#47474f" stroke-width="1.5"/><text class="svg-t" x="80" y="66" text-anchor="middle">brief.md</text><text class="svg-s" x="80" y="84" text-anchor="middle"><tspan data-l="en">policy in words</tspan><tspan data-l="tr">politika metni</tspan></text></g>
@@ -569,7 +624,7 @@
     <span class="tag">conversation</span> <span class="tag code">code</span> <span class="tag api">api_request</span> <span class="tag end">end_call</span></p>
 
   <div class="walk reveal">
-    <figure style="margin:0">
+    <figure class="scroll-x" style="margin:0">
       <svg viewBox="0 0 1000 580" role="img" aria-label="Call flow" id="callflow">
         <defs><marker id="a2" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0L10 5L0 10Z" fill="#8d8c97"/></marker></defs>
         <style>
@@ -919,6 +974,14 @@
       listeners.forEach(function (f) { f(); });
     });
   });
+
+  /* ---------- mobile menu ---------- */
+  var menuBtn = document.getElementById("menu-btn");
+  function setMenu(open) { document.body.classList.toggle("menu-open", open); menuBtn.setAttribute("aria-expanded", open ? "true" : "false"); menuBtn.textContent = open ? "✕" : "☰"; }
+  menuBtn.addEventListener("click", function (e) { e.stopPropagation(); setMenu(!document.body.classList.contains("menu-open")); });
+  document.querySelectorAll("nav.toc a").forEach(function (a) { a.addEventListener("click", function () { setMenu(false); }); });
+  document.addEventListener("click", function (e) { if (document.body.classList.contains("menu-open") && !e.target.closest("nav.toc")) setMenu(false); });
+  addEventListener("keydown", function (e) { if (e.key === "Escape") setMenu(false); });
 
   /* ---------- progress + toc ---------- */
   var bar = document.getElementById("progress");
