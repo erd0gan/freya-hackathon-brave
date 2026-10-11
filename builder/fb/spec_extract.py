@@ -9,16 +9,24 @@ from __future__ import annotations
 
 import copy
 import datetime
+import difflib
 import itertools
 import json
 import re
 import string
 from typing import Any
 
-from fb.generate import find_field, paid_close_reason
+from fb.generate import (
+    DEFAULT_CALL_VARS,
+    conform,
+    find_field,
+    match_enum,
+    norm,
+    paid_close_reason,
+)
 from fb.llm import chat, parse_json
 from fb.nodecode.embed import namespace
-from fb.openapi_tools import ToolDef, fixed_value
+from fb.openapi_tools import ToolDef, fixed_value, leaf_paths, path_schema
 from fb.trace import Trace
 
 POLICY_DEFAULTS: dict[str, Any] = namespace()["POLICY_DEFAULTS"]
@@ -127,7 +135,10 @@ SCHEMA = {
     "attempt1": {"rule": "last_business_day_of_week | nth_business_day", "n": "int for nth"},
     "attempt_plan": [{"amount": "current | full | floor", "date": "attempt1 | deadline"}],
     "tool_fields": {
-        "_": "the request field name of each role, per tool, exactly as in the tool API",
+        "_": "the request field name of each role, per tool, exactly as in the tool API (a "
+        'nested response field as a dotted path: result.verified). Under any tool, "extras": '
+        "{field: value}: for a required tool field none of the roles above covers, give the "
+        "constant value the brief implies",
         "verify_identity": {
             "customer_id": "...",
             "field": "...",
@@ -270,11 +281,13 @@ def tool_summary(openapi: dict[str, Any], tools: dict[str, ToolDef]) -> str:
                 bits.append("required")
             if f.enum:
                 bits.append("enum " + json.dumps(f.enum))
+            if f.location != "body":
+                bits.append(f"in {f.location}")
             out.append(f"    {f.name}: {', '.join(bits)}  {f.description}".rstrip())
         if t.response:
             shown = t.response
-            if not isinstance(shown.get("properties"), dict) and t.response_props:
-                # allOf / $ref: the model sees the resolved fields, not the reference
+            if t.response_props:
+                # allOf / $ref (also nested): the model sees the resolved fields
                 shown = {"type": "object", "properties": t.response_props}
             out.append("    response: " + json.dumps(shown)[:1500])
     return "\n".join(out)
@@ -364,7 +377,18 @@ def check(
             continue
         names = {f.name for f in t.fields}
         for role, name in roles.items():
-            if role in ("response", "_") or not name:
+            if role == "extras" and isinstance(name, dict):
+                for k, v in name.items():
+                    f = t.field(str(k))
+                    if f is None:
+                        bad.append(
+                            f"tool_fields.{tool}.extras: {k!r} is not a field of {tool} "
+                            f"{sorted(names)}"
+                        )
+                    elif f.enum and str(v) not in f.enum:
+                        bad.append(f"tool_fields.{tool}.extras.{k}: {v!r} is not one of {f.enum}")
+                continue
+            if role in ("response", "_") or not name or not isinstance(name, str):
                 continue
             if name not in names:
                 bad.append(
@@ -436,24 +460,62 @@ def _bind(spec: dict[str, Any], t: ToolDef, cands: tuple[str, ...]) -> str:
     return find_field(t, *cands)
 
 
+def _call_vars(spec: dict[str, Any]) -> list[str]:
+    cv = spec.get("call_variables") or {}
+    if not isinstance(cv, dict) or not cv:
+        return list(DEFAULT_CALL_VARS)
+    return [str(v) for v in cv.values() if v and isinstance(v, str)]
+
+
 def bindings(spec: dict[str, Any], tools: dict[str, ToolDef]) -> list[tuple[str, bool]]:
-    """Required request fields no role binds. Hard (True) when a role of the same tool found no
-    field: the tool API renamed it and tool_fields can fix that. A required field with no role
-    at all (every role bound) cannot be fixed in the spec and is only a warning."""
+    """Required request fields nothing fills (no role, no constant in tool_fields.<tool>.extras,
+    no call variable of the same name, no default or single value in the tool API). Hard
+    (True) when a role of the same tool found no field (the tool API renamed it: tool_fields
+    can fix that), or when a workflow step sends the call (no model fills it): extras can give
+    the value. verify_identity's other fields are the model's to fill: only a warning. URL
+    parameters (query/path) are a warning too: moving them into the URL is not documented."""
     out = []
+    cvars = {norm(v) for v in _call_vars(spec)}
     for tool, roles in TOOL_ROLES.items():
         t = tools.get(tool)
         if not t:
             continue
+        url = [f.name for f in t.fields if f.location in ("query", "path")]
+        if url:
+            out.append(
+                (
+                    f"{tool}: {url} are URL parameters (query/path); a pre hook moves them from "
+                    "the body into the URL, which Freya's api_call docs do not confirm",
+                    False,
+                )
+            )
         bound = {_bind(spec, t, cands) for cands in roles} - {""}
+        extras = _tf(spec, tool).get("extras")
+        bound |= set(extras) if isinstance(extras, dict) else set()
         loose = [
             f.name
             for f in t.fields
-            if f.required and f.name not in bound and fixed_value(f) is None
+            if f.required
+            and f.name not in bound
+            and fixed_value(f) is None
+            and norm(f.name) not in cvars
         ]
         if not loose:
             continue
         missing = [cands[0] for cands in roles if not _bind(spec, t, cands)]
+        if not missing and tool != "verify_identity":
+            enums = {n: t.field(n).enum for n in loose if t.field(n).enum}  # type: ignore[union-attr]
+            out.append(
+                (
+                    f"{tool}: required field(s) {loose} play no role the workflow fills and the "
+                    "tool API gives no default or single value for them; a workflow step sends "
+                    f"them empty and the bank rejects the call: set tool_fields.{tool}.extras "
+                    "to {field: the constant value the brief implies}"
+                    + (f" (allowed values: {enums})" if enums else ""),
+                    True,
+                )
+            )
+            continue
         if missing:
             out.append(
                 (
@@ -469,8 +531,8 @@ def bindings(spec: dict[str, Any], tools: dict[str, ToolDef]) -> list[tuple[str,
             out.append(
                 (
                     f"{tool}: required field(s) {loose} play no role the workflow fills and "
-                    "the tool API gives no default or single value for them; a call from a "
-                    "workflow step (no model) sends them empty",
+                    "the tool API gives no default or single value for them; the model is "
+                    "left to fill them",
                     False,
                 )
             )
@@ -551,6 +613,17 @@ def _props(node: Any, doc: dict[str, Any] | None) -> dict[str, Any] | None:
     return props or None
 
 
+def _at(top: dict[str, Any] | None, name: str, doc: dict[str, Any] | None) -> Any:
+    """The schema of response field `name` (a dotted path for a nested one), None if absent."""
+    cur = top
+    *path, last = str(name).split(".")
+    for p in path:
+        cur = _props(cur.get(p), doc) if cur else None
+    if not cur or last not in cur:
+        return None
+    return _deref(cur[last], doc) or {}
+
+
 def _placeholders(tpl: str) -> list[str]:
     try:
         parsed = list(string.Formatter().parse(tpl))
@@ -579,7 +652,7 @@ def responses(
         others = {str(rmap.get(r) or r) for r in want if r != "ok"}
         for role in want:
             name = str(rmap.get(role) or role)
-            if name in top:
+            if _at(top, name, openapi) is not None:
                 continue
             if role == "ok" and not any(
                 isinstance(x, dict) and x.get("type") == "boolean" and k not in others
@@ -589,8 +662,8 @@ def responses(
             if (
                 tool == "verify_identity"
                 and role == "all_verified"
-                and role not in top
-                and str(rmap.get("verified") or "verified") in top
+                and _at(top, role, openapi) is None
+                and _at(top, str(rmap.get("verified") or "verified"), openapi) is not None
             ):
                 continue  # no such flag: the identity hook counts the verified answers itself
             what = {
@@ -602,7 +675,7 @@ def responses(
                 f"response {sorted(top)}; set it to the response field that {what}"
             )
         if tool == "verify_identity" and swap:
-            hint = _deref(top.get(str(rmap.get("hint") or "hint")), openapi)
+            hint = _at(top, str(rmap.get("hint") or "hint"), openapi)
             enum = (
                 [str(e) for e in (hint or {}).get("enum") or []] if isinstance(hint, dict) else []
             )
@@ -662,6 +735,181 @@ def responses(
             if ph not in items:
                 bad.append(f"product_names.{ptype}: {{{ph}}} is not a field {where}")
     return bad
+
+
+# ---------------------------------------------------------------- deterministic fallback
+# Words a renamed product field keeps (amount_overdue for past_due, days_overdue for days_late).
+PRODUCT_WORDS: dict[str, tuple[str, ...]] = {
+    "product_id": ("id", "ref", "number"),
+    "type": ("type", "kind", "category"),
+    "days_late": ("day",),
+    "past_due": ("due", "overdue", "arrear", "outstanding", "owed", "balance", "late"),
+}
+
+
+def _one(xs: list[str]) -> str:
+    xs = list(dict.fromkeys(xs))
+    return xs[0] if len(xs) == 1 else ""
+
+
+def _guess(want: str, pool: list[str], cutoff: float = 0.75) -> str:
+    """The one name of `pool` that is `want` written otherwise, or the one close spelling."""
+    hit = _one([p for p in pool if norm(p) == norm(want)])
+    if hit:
+        return hit
+    last = {p: p.split(".")[-1] for p in pool}
+    hit = _one([p for p in pool if norm(last[p]) == norm(want.split(".")[-1])])
+    if hit:
+        return hit
+    close = difflib.get_close_matches(want.split(".")[-1], list(set(last.values())), 2, cutoff)
+    return _one([p for p in pool if len(close) == 1 and last[p] == close[0]])
+
+
+def autocorrect(
+    spec: dict[str, Any], tools: dict[str, ToolDef], openapi: dict[str, Any] | None = None
+) -> list[str]:
+    """After the repair round: a field name or enum value the tool API does not have (a spec
+    older than the tool file) is set, in place, to the tool API's field or value it stands for
+    (the same name written otherwise, a unique close name, the only unbound required field).
+    Returns one note per change (also added to spec["notes"]); what it cannot place stays and
+    check() reports it."""
+    notes: list[str] = []
+
+    def tool_tf(tool: str) -> dict[str, Any]:
+        if not isinstance(spec.get("tool_fields"), dict):
+            spec["tool_fields"] = {}
+        tf = spec["tool_fields"]
+        if not isinstance(tf.get(tool), dict):
+            tf[tool] = {}
+        return tf[tool]
+
+    # request roles that found no field
+    for tool, roles in TOOL_ROLES.items():
+        t = tools.get(tool)
+        if not t:
+            continue
+        for _ in range(len(roles)):
+            missing = [c for c in roles if not _bind(spec, t, c)]
+            if not missing:
+                break
+            bound = {_bind(spec, t, c) for c in roles} - {""}
+            pool = [f for f in t.fields if f.name not in bound and fixed_value(f) is None]
+            req = [f for f in pool if f.required]
+            done = False
+            for cands in missing:
+                name = _one([f.name for f in pool if norm(f.name) in {norm(c) for c in cands}])
+                name = name or _guess(cands[0], [f.name for f in pool], 0.6)
+                if not name and cands[0] == "field":
+                    name = _one([f.name for f in req if f.enum])
+                if not name and len(missing) == 1 and len(req) == 1:
+                    name = req[0].name
+                if name:
+                    old = tool_tf(tool).get(cands[0])
+                    tool_tf(tool)[cands[0]] = name
+                    notes.append(f"tool_fields.{tool}.{cands[0]}: {old!r} -> {name!r}")
+                    done = True
+                    break
+            if not done:
+                break
+    # response fields the workflow reads
+    for tool, roles in RESPONSE_ROLES.items():
+        t = tools.get(tool)
+        top = t.response_props if t else {}
+        if not top:
+            continue
+        leaves = leaf_paths(top)
+        want = list(roles)
+        if tool == "verify_identity" and (spec.get("identity") or {}).get("swap_hint"):
+            want.append("hint")
+        got = _tf(spec, tool).get("response")
+        rmap = dict(got) if isinstance(got, dict) else {}
+        for role in [r for r in want if r != "ok"] + (["ok"] if "ok" in want else []):
+            name = str(rmap.get(role) or role)
+            if path_schema(top, name) is not None:
+                continue
+            # another role's field is never this one's (all_verified is not verified)
+            others = {str(rmap.get(r) or r) for r in want if r != role}
+            if role == "ok":
+                new = _one(
+                    [
+                        k
+                        for k, x in top.items()
+                        if isinstance(x, dict) and x.get("type") == "boolean" and k not in others
+                    ]
+                )
+            else:
+                new = _guess(role, [p for p in leaves if p not in others])
+            if new:
+                rmap[role] = new
+                tool_tf(tool)["response"] = rmap
+                notes.append(f"tool_fields.{tool}.response.{role}: {name!r} -> {new!r}")
+    # the products list and its fields
+    t = tools.get("get_account")
+    top = t.response_props if t else {}
+    pf = dict(spec["product_fields"]) if isinstance(spec.get("product_fields"), dict) else {}
+    n_before = len(notes)
+    if top:
+        lst = str(pf.get("list") or "products")
+        arr = path_schema(top, lst)
+        if not (isinstance(arr, dict) and isinstance(arr.get("items"), dict)):
+            lists = [
+                p
+                for p, x in leaf_paths(top).items()
+                if isinstance(x, dict)
+                and isinstance((x.get("items") or {}).get("properties"), dict)
+            ]
+            new = _one(lists)
+            if new:
+                pf["list"] = new
+                notes.append(f"product_fields.list: {lst!r} -> {new!r}")
+                arr = path_schema(top, new)
+        items = (arr.get("items") or {}).get("properties") if isinstance(arr, dict) else None
+        if isinstance(items, dict) and items:
+            used = {str(pf.get(r) or r) for r in PRODUCT_WORDS} & set(items)
+            for role in ("days_late", "product_id", "type", "past_due"):
+                name = str(pf.get(role) or role)
+                if name in items:
+                    continue
+                pool = [k for k in items if k not in used]
+                new = _guess(role, pool)
+                if not new:
+                    words = PRODUCT_WORDS[role]
+                    hits = [k for k in pool if any(w in k.lower() for w in words)]
+                    if role == "product_id":
+                        hits = [k for k in pool if norm(k).endswith("id") or "ref" in k.lower()]
+                    if role == "past_due":
+                        hits = [
+                            k
+                            for k in hits
+                            if "day" not in k.lower()
+                            and (items[k] or {}).get("type") in ("number", "integer", None)
+                        ]
+                    new = _one(hits)
+                if new:
+                    pf[role] = new
+                    used.add(new)
+                    notes.append(f"product_fields.{role}: {name!r} -> {new!r}")
+    if len(notes) > n_before:
+        spec["product_fields"] = pf
+    # outcome, reason, queue and question values
+    neg = spec.get("neg") if isinstance(spec.get("neg"), dict) else {}
+    ident = spec.get("identity") if isinstance(spec.get("identity"), dict) else {}
+    oc = spec.get("outcomes") if isinstance(spec.get("outcomes"), dict) else {}
+    notes += conform(oc, neg, ident, tools)
+    swap = str(ident.get("swap_hint") or "")
+    tv = tools.get("verify_identity")
+    if swap and tv:
+        rmap = _tf(spec, "verify_identity").get("response") or {}
+        hint = path_schema(tv.response_props, str(rmap.get("hint") or "hint"))
+        enum = [str(e) for e in (hint or {}).get("enum") or []] if isinstance(hint, dict) else []
+        new = match_enum(swap, enum) if enum and swap not in enum else ""
+        if new:
+            ident["swap_hint"] = new
+            notes.append(f"identity.swap_hint: {swap!r} -> {new!r}")
+    if notes:
+        old = spec.get("notes") if isinstance(spec.get("notes"), list) else []
+        spec["notes"] = old + ["auto-correct (tool API): " + n for n in notes]
+    return notes
 
 
 def _is_int(x: Any, lo: int | None = None) -> bool:
@@ -1052,6 +1300,9 @@ def extract(
         # would break it whatever the model read
         cb["business_days_only"] = True
         trace.note("spec override: callback.business_days_only false -> true")
+    # names and values the repair left unknown to the tool API: the one they stand for
+    for n in autocorrect(spec, tools, openapi):
+        trace.note("spec auto-correct: " + n)
     for w in warnings(spec, brief) + [p for p, hard in bindings(spec, tools) if not hard]:
         trace.note("spec warning: " + w)
     for n in spec.get("notes") or []:
