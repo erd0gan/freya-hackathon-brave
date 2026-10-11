@@ -185,6 +185,10 @@ def chat(
             )
             raise
         text, tin, tout, cost, err = _read(provider, out if isinstance(out, dict) else {})
+        if text is not None and not text.strip():
+            # a 200 with no text ({} or empty content) is a failed attempt too: the other
+            # provider gets the next one (review 11 Oct: the build stopped at parsing '')
+            text, err = None, "empty reply: " + json.dumps(out)[:200]
         if text is None:
             last = err
             trace.model_failed(

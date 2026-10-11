@@ -35,6 +35,7 @@ from fb.openapi_tools import (
     ToolDef,
     fixed_value,
     freya_tool,
+    leaf_paths,
     path_schema,
     request_hook,
     wire_format,
@@ -404,17 +405,41 @@ def conform(
     return notes
 
 
+# Names of a true/false field that says a write went through.
+SUCCESS_FLAGS = {"ok", "success", "succeeded", "successful", "recorded", "created", "accepted"}
+
+
 def success_field(t: ToolDef | None, ok_name: str) -> tuple[str, str]:
     """(response field, mode for negotiation_lib.call_ok) telling a write succeeded: the ok
     flag when there is one (or the response lists no fields), else a field only a success
     returns (promise_id), else the error field (empty on success)."""
     if has_flag(t, ok_name):
         return ok_name, "flag"
-    props = list(response_fields(t))
-    other = [k for k in props if "error" not in k.lower() and "message" not in k.lower()]
-    if other:
-        return other[0], "present"
-    errs = [k for k in props if "error" in k.lower()]
+    leaves = leaf_paths(response_fields(t))
+
+    def last(p: str) -> str:
+        return norm(p.split(".")[-1])
+
+    def is_obj(s: Any) -> bool:
+        return isinstance(s, dict) and (
+            s.get("type") == "object" or isinstance(s.get("properties"), dict)
+        )
+
+    # a true/false flag anywhere (result.success): an object being there proves nothing
+    # (review 11 Oct: {"result": {"success": false}} was read as recorded)
+    flags = [p for p, s in leaves.items() if last(p) in SUCCESS_FLAGS and not is_obj(s)]
+    if flags:
+        return min(flags, key=lambda p: p.count(".")), "flag"
+    # else a value only a success returns, an id first; never a status word ("failed")
+    scal = [
+        p
+        for p, s in leaves.items()
+        if not is_obj(s) and not re.search(r"error|message|status|state|reason|detail", p.lower())
+    ]
+    ids = [p for p in scal if last(p).endswith("id")]
+    if ids or scal:
+        return min(ids or scal, key=lambda p: p.count(".")), "present"
+    errs = [p for p, s in leaves.items() if "error" in p.lower() and not is_obj(s)]
     return (errs[0], "no_error") if errs else (ok_name, "flag")
 
 
@@ -703,7 +728,7 @@ HELD_POST = (
     "    if isinstance(result, dict):\n"
     "        result.pop('header', None)\n"
     "        d = result.get('data')\n"
-    "        e = d.get(ERR) or d.get('message') if isinstance(d, dict) else d\n"
+    "        e = _g(d, ERR) or _g(d, 'message') if isinstance(d, dict) else d\n"
     "        e = str(e or '').lower()\n"
     "        try:\n"
     "            sc = int(str(result.get('status_code') or 0))\n"
@@ -713,19 +738,26 @@ HELD_POST = (
     "            if not isinstance(d, dict):\n"
     "                d = dict()\n"
     "                result['data'] = d\n"
+    # the success field may be nested (result.success): set it where the mapping reads it
+    "            cur = d\n"
+    "            parts = str(OK).split('.')\n"
+    "            for k in parts[:-1]:\n"
+    "                if not isinstance(cur.get(k), dict):\n"
+    "                    cur[k] = dict()\n"
+    "                cur = cur[k]\n"
     "            if MODE == 'present':\n"
-    "                d[OK] = d.get(OK) or 'held'\n"
+    "                cur[parts[-1]] = cur.get(parts[-1]) or 'held'\n"
     "            elif MODE == 'no_error':\n"
-    "                d[OK] = ''\n"
+    "                cur[parts[-1]] = ''\n"
     "            else:\n"
-    "                d[OK] = True\n"
+    "                cur[parts[-1]] = True\n"
     "except Exception:\n"
     "    pass\n"
 )
 
 
 def held_post(field: str, mode: str, err: str) -> str:
-    return f"OK = {field!r}\nMODE = {mode!r}\nERR = {err!r}\n" + HELD_POST
+    return PATH_GET + f"OK = {field!r}\nMODE = {mode!r}\nERR = {err!r}\n" + HELD_POST
 
 
 # Needs NO_REASON, F_OUT, F_REASON, HANGUP (set by build()). When the customer hangs up, no

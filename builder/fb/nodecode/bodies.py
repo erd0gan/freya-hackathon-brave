@@ -13,7 +13,6 @@ vars['final_say'] = ''
 # promise is already recorded for this product", "callback already scheduled"): 'already' next
 # to a verb of holding. Not the call ("already closed") and not "date already passed".
 HELD_WORDS = (
-    "already has",
     "already exist",
     "already record",
     "already schedul",
@@ -22,15 +21,35 @@ HELD_WORDS = (
     "already creat",
     "already regist",
     "already made",
-    "already been",
     "already in place",
-    "already set",
+    "already on file",
+    "already has a promise",
+    "already has a callback",
+)
+# ...unless the text also says the write was turned down ("already been rejected"): a refusal
+# read as held would tell the customer a promise is recorded that the bank refused (review 11 Oct).
+NOT_HELD_WORDS = (
+    "reject",
+    "declin",
+    "denied",
+    "refus",
+    "invalid",
+    "not allowed",
+    "not permitted",
+    "expired",
+    "cancel",
+    "fail",
+    "passed",
+    "clos",
 )
 
 
 def held_expr(var: str) -> str:
     """Python expression: the lower-case error text in `var` says the write is already held."""
-    return f"(any(w in {var} for w in {HELD_WORDS!r}) and 'clos' not in {var})"
+    return (
+        f"(any(w in {var} for w in {HELD_WORDS!r}) "
+        f"and not any(w in {var} for w in {NOT_HELD_WORDS!r}))"
+    )
 
 
 # Before SETUP when the identity check starts: a request for a person made at the opening still
