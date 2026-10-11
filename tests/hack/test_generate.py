@@ -154,3 +154,39 @@ def test_identity_turn_cap_leaves_room_for_cut_turns():
     wf, _ = build(copy.deepcopy(SPEC_A), parse_openapi(OPENAPI))
     for name in ("identity", "identity2"):
         assert wf["nodes"][name]["max_node_turns"] >= 40
+
+
+def close_hook(wf):
+    fn = next(t for t in wf["tools"] if t["function"]["name"] == "close_call")
+    return fn["pre_process_code"]
+
+
+# talkative: the customer hung up, no finish step ran, close_call went out with outcome ""
+def test_hangup_after_a_recorded_promise_closes_as_promise():
+    wf, _ = build(copy.deepcopy(SPEC_A), parse_openapi(OPENAPI))
+    st = json.dumps({"p": [{"id": "p1", "status": "recorded"}]})
+    body = run_hook(
+        close_hook(wf), {"customer_id": "c1", "outcome": "", "reason": ""}, {"neg_state": st}
+    )
+    assert body == {"customer_id": "c1", "outcome": "promise"}
+
+
+def test_hangup_during_negotiation_closes_as_refused():
+    wf, _ = build(copy.deepcopy(SPEC_A), parse_openapi(OPENAPI))
+    st = json.dumps({"p": [{"id": "p1", "status": "open"}]})
+    body = run_hook(
+        close_hook(wf), {"customer_id": "c1", "outcome": "", "reason": ""}, {"neg_state": st}
+    )
+    assert (body["outcome"], body["reason"]) == ("no_promise", "refused")
+
+
+def test_hangup_before_the_account_closes_as_not_reached():
+    wf, _ = build(copy.deepcopy(SPEC_A), parse_openapi(OPENAPI))
+    body = run_hook(close_hook(wf), {"customer_id": "c1", "outcome": "", "reason": ""}, {})
+    assert (body["outcome"], body["reason"]) == ("not_reached", "unclear")
+
+
+def test_a_set_outcome_is_kept():
+    wf, _ = build(copy.deepcopy(SPEC_A), parse_openapi(OPENAPI))
+    body = run_hook(close_hook(wf), {"customer_id": "c1", "outcome": "paid", "reason": ""}, {})
+    assert body == {"customer_id": "c1", "outcome": "paid"}

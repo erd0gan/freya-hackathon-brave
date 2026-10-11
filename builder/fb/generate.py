@@ -341,13 +341,30 @@ def identity_hooks(
     return pre, post
 
 
+# Needs NO_REASON, F_OUT, F_REASON, HANGUP (set by build()). When the customer hangs up, no
+# finish step ran and the outcome is empty (the bank answered "unknown outcome"): take it from
+# the call's state instead. HANGUP: {"promise": o, "no_promise": [o, r], "unreached": [o, r]}.
 CLOSE_PRE = (
+    "import json\n"
     "try:\n"
     "    b = config.get('body')\n"
     "    if isinstance(b, dict):\n"
-    "        r = str(b.get('reason') or '').strip()\n"
-    "        if not r or r.startswith('{') or b.get('outcome') in NO_REASON:\n"
-    "            b.pop('reason', None)\n"
+    "        o = str(b.get(F_OUT) or '').strip()\n"
+    "        if not o or o.startswith('{'):\n"
+    "            try:\n"
+    "                st = json.loads(vars.get('neg_state') or '')\n"
+    "            except Exception:\n"
+    "                st = None\n"
+    "            ps = (st or {}).get('p') or [] if isinstance(st, dict) else []\n"
+    "            if any(isinstance(q, dict) and q.get('status') == 'recorded' for q in ps):\n"
+    "                b[F_OUT], b[F_REASON] = HANGUP['promise'], ''\n"
+    "            elif isinstance(st, dict):\n"
+    "                b[F_OUT], b[F_REASON] = HANGUP['no_promise']\n"
+    "            else:\n"
+    "                b[F_OUT], b[F_REASON] = HANGUP['unreached']\n"
+    "        r = str(b.get(F_REASON) or '').strip()\n"
+    "        if not r or r.startswith('{') or b.get(F_OUT) in NO_REASON:\n"
+    "            b.pop(F_REASON, None)\n"
     "except Exception:\n"
     "    pass\n"
 )
@@ -475,13 +492,18 @@ def build(spec: dict[str, Any], tools: dict[str, ToolDef]) -> tuple[dict[str, An
         ),
     )
     t_close = tools["close_call"]
-    no_reason = [o for o in (neg.get("outcomes") or {}).values()]
-    no_reason = [
-        o
-        for o in (neg.get("outcomes") or {}).values()
-        if o
-        in ((neg.get("outcomes") or {}).get("promise"), (neg.get("outcomes") or {}).get("paid"))
-    ]
+    neg_oc = neg.get("outcomes") or {}
+    no_reason = [o for o in neg_oc.values() if o in (neg_oc.get("promise"), neg_oc.get("paid"))]
+    hangup = {
+        "promise": neg_oc.get("promise") or "promise",
+        "no_promise": [
+            neg_oc.get("no_promise") or "no_promise",
+            (neg.get("reasons") or {}).get("refused") or "refused",
+        ],
+        "unreached": list((oc.get("unclear") or ["not_reached", "unclear"])[:2]),
+    }
+    f_out = role_field(t_close, "outcome", "result", "status") or "outcome"
+    f_reason = role_field(t_close, "reason", "code", "detail") or "reason"
     close_fn = freya_tool(
         t_close,
         "Record how the call ended.",
@@ -493,7 +515,10 @@ def build(spec: dict[str, Any], tools: dict[str, ToolDef]) -> tuple[dict[str, An
                 ("reason", "code", "detail"): "final_reason",
             },
         ),
-        pre_code="NO_REASON = " + _lit(no_reason) + "\n" + CLOSE_PRE,
+        pre_code=(
+            f"NO_REASON = {_lit(no_reason)}\nF_OUT = {f_out!r}\nF_REASON = {f_reason!r}\n"
+            f"HANGUP = {_lit(hangup)}\n" + CLOSE_PRE
+        ),
         extra_config={"alwaysRunsAt": ["end_of_call"]},
     )
 
