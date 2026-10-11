@@ -85,6 +85,28 @@ def _d(iso):
     return say_date(datetime.date.fromisoformat(iso)) if iso else ""
 
 
+def close_reason(neg, sem):
+    """close_call's reason for a semantic reason. `neg.reasons` holds add_note's values; when the
+    brief's close_call uses other values for the same reason, `neg.close_reasons` holds those
+    (review: add_note `refused`, close_call `declined_payment`)."""
+    return str(
+        (neg.get("close_reasons") or {}).get(sem) or (neg.get("reasons") or {}).get(sem) or sem
+    )
+
+
+def call_ok(value, mode="flag"):
+    """Did a write succeed, from the response field the workflow mapped. "flag": a true/false
+    field (ok); "present": a field only a success returns (promise_id); "no_error": an error
+    field, empty on success. A tool API without an ok field must not read as failed every
+    time (review: create_promise answering only promise_id)."""
+    v = str(value if value is not None else "").strip().lower()
+    if mode == "present":
+        return v not in ("", "false", "none", "null", "0")
+    if mode == "no_error":
+        return v in ("", "none", "null", "false")
+    return v == "true"
+
+
 def _line(neg, key, default=""):
     return str((neg.get("lines") or {}).get(key) or default)
 
@@ -167,7 +189,7 @@ def new_state(pf, neg, now):
             _line(neg, "no_account", "I am sorry, I cannot see your account details right now.")
         ]
         st["final_outcome"] = (neg.get("outcomes") or {}).get("no_promise", "no_promise")
-        st["final_reason"] = (neg.get("reasons") or {}).get("service_error", "service_error")
+        st["final_reason"] = close_reason(neg, "service_error")
         return st
     st["say"] = present_text(st, neg)
     st["last_ask"] = st["say"]
@@ -579,7 +601,7 @@ def _finish(st, neg):
     s = left[0]
     if _pol(neg, "no_promise_reason") == "priority":
         s = next((x for x in _pol(neg, "reason_priority") if x in left), left[0])
-    st["final_reason"] = rs.get(s, s)
+    st["final_reason"] = close_reason(neg, s)
 
 
 def _transfer(st, what, neg):
@@ -611,6 +633,27 @@ DAY_NUMBER = re.compile(
 )
 
 
+# Words that move a weekday to another week ("next Friday", "the following Tuesday").
+MOVE_WORDS = re.compile(r"\b(next|following|after|week)\b", re.I)
+
+
+def _only_product(st, r):
+    """The one product a yes to "all of them today?" is about, or None for all of them: a
+    product is named, "all" is not said, and the words name no other open product ("Yes, the
+    credit card only." is the card; "the card and the loan" is both)."""
+    j = r.get("product")
+    if j is None or r.get("all") or not 0 <= j < len(st["p"]):
+        return None
+    raw = str(r.get("raw") or "").lower()
+    for i, q in enumerate(st["p"]):
+        if i == j or q["status"] != "open":
+            continue
+        words = [w for w in re.findall(r"[a-z]{4,}", str(q.get("name") or "").lower())]
+        if any(w not in ("ending", "account") and re.search(r"\b" + w + r"\b", raw) for w in words):
+            return None
+    return j
+
+
 def _yes_to_offered_day(p, r):
     """'Yes, that Tuesday works' to our 'Tuesday 27 October': the weekday alone was read as the
     nearest Tuesday (20 Oct) and read back wrong (talkative A PUB-07). A yes that names only the
@@ -620,6 +663,8 @@ def _yes_to_offered_day(p, r):
         return
     if DAY_NUMBER.search(str(r.get("date_text") or "")):
         return
+    if MOVE_WORDS.search(str(r.get("date_text") or "")):
+        return  # "Yes, next Friday" to "Friday 16 October" names another Friday (review)
     try:
         same = (
             datetime.date.fromisoformat(r["date"]).weekday()
@@ -874,8 +919,9 @@ def step(st, r, neg, cal, now, cfg):
     multi = len(st["p"]) > 1
     if kind == "yes":
         if phase == "ask_today":
-            for q in st["p"]:
-                if q["status"] == "open":
+            only = _only_product(st, r)
+            for j, q in enumerate(st["p"]):
+                if q["status"] == "open" and (only is None or j == only):
                     res = check_promise_date(cal.get("today_iso"), q["deadline"], now, cfg)
                     d = (
                         cal.get("today_iso")
@@ -1086,6 +1132,12 @@ def last_customer_text(v):
 ALL_WORDS = re.compile(r"\b(both|all of them|all (two|three|four|five|2|3|4|5)( of them)?)\b", re.I)
 # A refusal in the same message ("the card tomorrow, but I am not paying the loan"): an offer
 # that names no product must not go to every product.
+# "I cannot pay (it) today": a no to today, not to a product.
+TODAY_REFUSAL = re.compile(
+    r"\b(i\s+)?(cannot|can't|can not|won't|will not|am not able to|couldn't|could not)\s+"
+    r"(pay|make)(\s+\w+){0,3}?\s+today\b",
+    re.I,
+)
 REFUSAL_WORDS = re.compile(r"\b(not|never|refuse|won't|can't|cannot|don't)\b|n't\b", re.I)
 
 
@@ -1093,6 +1145,12 @@ REFUSAL_WORDS = re.compile(r"\b(not|never|refuse|won't|can't|cannot|don't)\b|n't
 STOP_WORDS = re.compile(
     r"\b(do not|don't|dont) want to (talk|speak|continue)|stop calling|leave me alone|"
     r"not interested|hang(ing)? up|goodbye\b",
+    re.I,
+)
+# Refusing to answer a security question, whole even without an end mark.
+REFUSE_ANSWER = re.compile(
+    r"\b(won't|will not|not going to|refuse to|don't want to|do not want to)\s+"
+    r"(give|tell|say|answer|share)\b|\bnot (giving|telling|sharing)\b",
     re.I,
 )
 # Asking what the call is about instead of answering a security question (a refusal to answer).
@@ -1134,7 +1192,7 @@ def read_reply(v, today):
     codes = re.findall(r"p([1-9])", prod)
     pi = int(codes[0]) - 1 if codes else None
     raw = last_customer_text(v)
-    mixed = bool(raw and REFUSAL_WORDS.search(raw))
+    mixed = bool(raw and REFUSAL_WORDS.search(TODAY_REFUSAL.sub(" ", raw)))
     allp = str(v.get("all_products") or "").strip().lower() in ("yes", "true", "all")
     if raw and ALL_WORDS.search(raw) and not mixed:
         # "both" in "I cannot pay both" is no day for all of them
@@ -1160,6 +1218,7 @@ def read_reply(v, today):
         "cut_kind": cut_kind,
         "question": str(v.get("has_question") or "").strip().lower() in ("yes", "true"),
         "said_yes": said_yes,
+        "raw": raw,
         "date_text": str(v.get("said_date_text") or ""),
     }
 
@@ -1219,7 +1278,10 @@ def pop_note(v, check=False):
         return
     v["note_retry"] = ""
     if notes:
-        notes.pop(0)
+        gone = notes.pop(0)
+        if check and not ok:
+            st["failed_notes"] = list(st.get("failed_notes") or []) + [gone]
+            v["failed_notes"] = ",".join(str(x[0]) + ":" + str(x[1]) for x in st["failed_notes"])
     st["notes"] = notes
     v["neg_state"] = json.dumps(st)
     v["note_count"] = str(len(notes))

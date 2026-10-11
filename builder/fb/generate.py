@@ -212,6 +212,20 @@ def has_flag(t: ToolDef | None, name: str) -> bool:
     return not isinstance(props, dict) or not props or name in props
 
 
+def success_field(t: ToolDef | None, ok_name: str) -> tuple[str, str]:
+    """(response field, mode for negotiation_lib.call_ok) telling a write succeeded: the ok
+    flag when there is one (or the response lists no fields), else a field only a success
+    returns (promise_id), else the error field (empty on success)."""
+    if has_flag(t, ok_name):
+        return ok_name, "flag"
+    props = list(((t.response if t else None) or {}).get("properties") or {})
+    other = [k for k in props if "error" not in k.lower() and "message" not in k.lower()]
+    if other:
+        return other[0], "present"
+    errs = [k for k in props if "error" in k.lower()]
+    return (errs[0], "no_error") if errs else (ok_name, "flag")
+
+
 def q(s: str) -> str:
     return s.replace('"', "'")
 
@@ -561,7 +575,9 @@ def build(spec: dict[str, Any], tools: dict[str, ToolDef]) -> tuple[dict[str, An
         "promise": neg_oc.get("promise") or "promise",
         "no_promise": [
             neg_oc.get("no_promise") or "no_promise",
-            (neg.get("reasons") or {}).get("refused") or "refused",
+            (neg.get("close_reasons") or {}).get("refused")
+            or (neg.get("reasons") or {}).get("refused")
+            or "refused",
         ],
         "unreached": list((oc.get("unclear") or ["not_reached", "unclear"])[:2]),
     }
@@ -986,14 +1002,17 @@ def build(spec: dict[str, Any], tools: dict[str, ToolDef]) -> tuple[dict[str, An
     nodes["decide"] = code_node(
         "decide", snippet(bodies.DECIDE, cfg, on_error=bodies.NEG_ERROR), after()
     )
+    rec_field, rec_mode = success_field(t_pr, resp("create_promise", "ok"))
     nodes["record"] = api_node(
         "record",
         promise_fn,
         [tr("after_record", "always")],
-        [{"path": "data." + resp("create_promise", "ok"), "variable": "rec_ok"}],
+        [{"path": "data." + rec_field, "variable": "rec_ok"}],
     )
     nodes["after_record"] = code_node(
-        "after_record", snippet(bodies.AFTER_RECORD, cfg, on_error=bodies.NEG_ERROR), after()
+        "after_record",
+        snippet(bodies.AFTER_RECORD, {**cfg, "rec_mode": rec_mode}, on_error=bodies.NEG_ERROR),
+        after(),
     )
     # a failed transfer is tried once more, then closed as a service error, not `transferred`
     if has_flag(t_tr, resp("transfer_to_agent", "ok")):
@@ -1003,7 +1022,7 @@ def build(spec: dict[str, Any], tools: dict[str, ToolDef]) -> tuple[dict[str, An
         )
         nodes["after_transfer"] = code_node(
             "after_transfer",
-            snippet(bodies.AFTER_TRANSFER, cfg, LIB_CALENDAR),
+            snippet(bodies.AFTER_TRANSFER, cfg),
             [tr("transfer", "one more try", eq("transfer_next", "retry")), tr("wrap", "always")],
         )
         # before verification: no notes are possible, straight to the goodbye
@@ -1012,7 +1031,7 @@ def build(spec: dict[str, Any], tools: dict[str, ToolDef]) -> tuple[dict[str, An
         )
         nodes["after_transfer_pre"] = code_node(
             "after_transfer_pre",
-            snippet(bodies.AFTER_TRANSFER, cfg, LIB_CALENDAR),
+            snippet(bodies.AFTER_TRANSFER, cfg),
             [
                 tr("transfer_pre", "one more try", eq("transfer_next", "retry")),
                 tr("goodbye", "always"),

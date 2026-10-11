@@ -62,7 +62,7 @@ AFTER_RECORD = """
 neg = CFG.get('neg') or dict()
 cal = calendar_facts(vars.get('now'), CFG)
 st = load_state(vars)
-ok = str(vars.get('rec_ok') or '').strip().lower() == 'true'
+ok = call_ok(vars.get('rec_ok'), CFG.get('rec_mode') or 'flag')
 record_result(st, ok, neg, cal)
 if st.get('action') == 'record':
     vars['rec_ok'] = ''
@@ -79,7 +79,7 @@ neg = CFG.get('neg') or dict()
 vars['neg_action'] = 'finish'
 vars['neg_say'] = ''
 vars['final_outcome'] = (neg.get('outcomes') or dict()).get('no_promise', 'no_promise')
-vars['final_reason'] = (neg.get('reasons') or dict()).get('service_error', 'service_error')
+vars['final_reason'] = close_reason(neg, 'service_error')
 vars['note_count'] = '0'
 vars['final_say'] = str((neg.get('lines') or dict()).get('goodbye') or 'Goodbye.')
 """
@@ -99,8 +99,15 @@ elif tries < 2:
     vars['transfer_next'] = 'retry'
 else:
     vars['transfer_next'] = 'failed'
-    vars['final_outcome'] = (neg.get('outcomes') or dict()).get('no_promise', 'no_promise')
-    vars['final_reason'] = (neg.get('reasons') or dict()).get('service_error', 'service_error')
+    st = load_state(vars) or dict()
+    held = st.get('recorded') or [q for q in st.get('p') or [] if q.get('status') == 'recorded']
+    if held:
+        # a promise the bank holds stays the outcome when the transfer does not happen
+        vars['final_outcome'] = (neg.get('outcomes') or dict()).get('promise', 'promise')
+        vars['final_reason'] = ''
+    else:
+        vars['final_outcome'] = (neg.get('outcomes') or dict()).get('no_promise', 'no_promise')
+        vars['final_reason'] = close_reason(neg, 'service_error')
     vars['final_say'] = (
         str((neg.get('lines') or dict()).get('transfer_failed') or
             'I am sorry, I could not connect you.')
@@ -197,8 +204,9 @@ def decline_check(var: str) -> str:
     customer's own words are whole and refuse, end the talk or ask what the call is about."""
     return (
         "raw = last_customer_text(vars)\n"
-        "real = (not raw) or (not is_cut(raw) and bool(REFUSAL_WORDS.search(raw) "
-        "or STOP_WORDS.search(raw) or ABOUT_WORDS.search(raw)))\n"
+        # a clear refusal or wish to stop is whole without a full stop ("I won't give you that")
+        "real = (not raw) or bool(STOP_WORDS.search(raw) or REFUSE_ANSWER.search(raw)) "
+        "or (not is_cut(raw) and bool(REFUSAL_WORDS.search(raw) or ABOUT_WORDS.search(raw)))\n"
         "vars['decline_real'] = 'yes' if real else 'no'\n"
         f"if not real:\n    vars[{var!r}] = 'unclear'\n"
     )

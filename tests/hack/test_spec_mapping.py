@@ -205,10 +205,16 @@ def test_transfer_reason_not_in_the_enum():
 
 def test_no_promise_reason_not_in_the_enum():
     codes = [c for c in CLOSE_CODES if c != "dispute"]
-    # notes on and 'dispute' is a valid add_note reason: one value cannot meet both enums
-    assert problems(api_change=reason_enum(codes)) == []
-    out = problems(lambda s: s["neg"].update(notes=False), reason_enum(codes))
-    assert len(out) == 1 and out[0].startswith("neg.reasons.dispute: 'dispute'")
+    # notes on or off: close_call would get a value outside its enum (review: this passed
+    # with notes on); a separate close value fixes it
+    for notes in (True, False):
+        out = problems(lambda s, n=notes: s["neg"].update(notes=n), reason_enum(codes))
+        assert len(out) == 1 and out[0].startswith("neg.reasons.dispute: 'dispute'")
+        assert "neg.close_reasons.dispute" in out[0]
+    fixed = problems(
+        lambda s: s["neg"].update(close_reasons={"dispute": codes[0]}), reason_enum(codes)
+    )
+    assert fixed == []
 
 
 def test_no_reason_enum_no_reason_check():

@@ -16,6 +16,17 @@ class ToolField:
     enum: list[str] = field(default_factory=list)
     required: bool = False
     format: str = ""
+    default: Any = None
+
+
+def fixed_value(f: ToolField) -> Any:
+    """A value the tool API itself fixes for a field: its `default`, or the only value of a
+    one-value enum. None when the API leaves it open."""
+    if f.default is not None:
+        return f.default
+    if len(f.enum) == 1:
+        return f.enum[0]
+    return None
 
 
 @dataclass
@@ -68,6 +79,7 @@ def parse_openapi(spec: dict[str, Any]) -> dict[str, ToolDef]:
                         enum=[str(e) for e in fs.get("enum") or []],
                         required=fname in required,
                         format=str(fs.get("format", "")),
+                        default=fs.get("default"),
                     )
                 )
             ok = ((op.get("responses") or {}).get("200") or {}).get("content") or {}
@@ -111,6 +123,10 @@ def freya_tool(
         }
         if f.name in bake:
             leaf["default"] = "{{" + bake[f.name] + "}}"
+        elif f.required and fixed_value(f) is not None:
+            # a required field no role fills (currency: GBP): the API's own value. An
+            # api_request node has no model that could fill a "{{name}}" default.
+            leaf["default"] = fixed_value(f)
         else:
             leaf["default"] = "{{" + model_names.get(f.name, f.name) + "}}"
             desc = " ".join(x for x in (f.description, field_notes.get(f.name, "")) if x)

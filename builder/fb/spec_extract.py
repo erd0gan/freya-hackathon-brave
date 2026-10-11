@@ -18,7 +18,7 @@ from typing import Any
 from fb.generate import find_field
 from fb.llm import chat, parse_json
 from fb.nodecode.embed import namespace
-from fb.openapi_tools import ToolDef
+from fb.openapi_tools import ToolDef, fixed_value
 from fb.trace import Trace
 
 POLICY_DEFAULTS: dict[str, Any] = namespace()["POLICY_DEFAULTS"]
@@ -176,6 +176,11 @@ SCHEMA = {
             "dispute": "...",
             "service_error": "...",
             "paid": "reason used in a note for an already-paid product",
+        },
+        "close_reasons": {
+            "_": "only when close_call's reason values differ from add_note's for the same "
+            "reason: the close_call value per key of reasons (refused, hardship, dispute, "
+            "service_error); else leave it out",
         },
         "queues": {"restructuring": "...", "human": "...", "support": "..."},
         "transfer_reasons": {"restructuring": "...", "human": "...", "support": "..."},
@@ -421,7 +426,11 @@ def bindings(spec: dict[str, Any], tools: dict[str, ToolDef]) -> list[tuple[str,
         if not t:
             continue
         bound = {_bind(spec, t, cands) for cands in roles} - {""}
-        loose = [f.name for f in t.fields if f.required and f.name not in bound]
+        loose = [
+            f.name
+            for f in t.fields
+            if f.required and f.name not in bound and fixed_value(f) is None
+        ]
         if not loose:
             continue
         missing = [cands[0] for cands in roles if not _bind(spec, t, cands)]
@@ -439,8 +448,9 @@ def bindings(spec: dict[str, Any], tools: dict[str, ToolDef]) -> list[tuple[str,
         else:
             out.append(
                 (
-                    f"{tool}: required field(s) {loose} play no role the workflow fills; "
-                    "the agent's model is left to fill them",
+                    f"{tool}: required field(s) {loose} play no role the workflow fills and "
+                    "the tool API gives no default or single value for them; a call from a "
+                    "workflow step (no model) sends them empty",
                     False,
                 )
             )
@@ -464,19 +474,18 @@ def close_reasons(spec: dict[str, Any], tools: dict[str, ToolDef]) -> list[str]:
     for k, v in (neg.get("transfer_reasons") or {}).items():
         if v and v not in allowed:
             bad.append(f"neg.transfer_reasons.{k}: {v!r} is not a close_call reason {allowed}")
-    t_note = tools.get("add_note")
-    fn = t_note.field(_bind(spec, t_note, ("reason", "code"))) if t_note else None
-    note_reasons = list(fn.enum) if fn else []
     rs = neg.get("reasons") or {}
+    cr = neg.get("close_reasons") or {}
     for k in CLOSE_REASON_KEYS:
-        v = rs.get(k)
-        # The same value is the note reason: with notes on and a valid note reason, a close
-        # reason enum that differs cannot be met by one value; the note enum wins.
-        if not v or v in allowed or (neg.get("notes") and v in note_reasons):
+        # what negotiation_lib.close_reason sends: neg.close_reasons first, then neg.reasons
+        v = cr.get(k) or rs.get(k)
+        if not v or v in allowed:
             continue
         bad.append(
-            f"neg.reasons.{k}: {v!r} is not a close_call reason {allowed} (it is the close "
-            "reason when no promise is recorded)"
+            f"neg.reasons.{k}: {v!r} is not a close_call reason {allowed}; it is the close "
+            "reason when no promise is recorded. If add_note and close_call use different "
+            f"values for it, keep the add_note value in neg.reasons.{k} and set "
+            f"neg.close_reasons.{k} to the close_call value"
         )
     return bad
 
