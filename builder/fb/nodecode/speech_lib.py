@@ -101,8 +101,14 @@ _VAGUE = [
     "middle of",
     "mid ",
 ]
+# A self-correction: what follows replaces what came before ('the 21st, no, the 20th').
+# A bare 'no' counts only at the start or after a pause mark, and not in 'no problem',
+# 'no more than', 'no to Monday' (a negation, read by the weekday rule).
 _CORRECTION = re.compile(
-    r"\b(?:sorry|i mean|no wait|wait|actually|rather|correction|make that|scratch that)\b"
+    r"\b(?:sorry|i mean|i meant|no wait|wait|actually|or rather|rather|correction|make that"
+    r"|make it|scratch that|oops|my bad|let me correct that)\b"
+    r"|(?:^|[,.;:!?])\s*no\b(?!\s+(?:problem|worries|way|idea|money|more|less|later|earlier"
+    r"|sooner|longer|chance|need|to|i can'?t|i cannot)\b)"
 )
 
 
@@ -180,13 +186,18 @@ def _norm_text(text):
 _NUMWORD = "|".join(list(_UNITS) + list(_TENS) + list(_ORD) + ["hundred", "thousand"])
 
 
-def _last_segment(s):
-    """After 'sorry, I mean ...' the last part that holds a value wins."""
+def _last_segment(s, more=""):
+    """After 'sorry, I mean ...' the last part that holds a value wins. `more`: extra words
+    that count as a value (dates: month names, 'week')."""
     parts = _CORRECTION.split(s)
+    rx = r"\d|\b(?:" + _NUMWORD + "|" + "|".join(_WDAYS) + r"|today|tomorrow" + more + r")\b"
     for p in reversed(parts):
-        if re.search(r"\d|\b(?:" + _NUMWORD + "|" + "|".join(_WDAYS) + r"|today|tomorrow)\b", p):
+        if re.search(rx, p):
             return p
     return s
+
+
+_DATE_WORDS = "|" + "|".join(_MONTHS) + "|week|fortnight|month"
 
 
 def _month_of(word):
@@ -205,8 +216,10 @@ def _safe_date(y, m, d):
 
 def parse_spoken_date(text, today):
     """-> (iso or '', 'vague' | 'date' | 'none'). `today` is a datetime.date."""
-    # a correction ('..., sorry I mean tomorrow') wins over everything said before it
-    iso = re.findall(r"\b(\d{4})-(\d{1,2})-(\d{1,2})\b", _last_segment(str(text or "").lower()))
+    # a correction ('..., sorry I mean tomorrow', 'the 21st, no, the 20th') wins over
+    # everything said before it; split before the commas are dropped (', no,' is the mark)
+    seg = _last_segment(str(text or "").lower().replace("’", "'"), _DATE_WORDS)
+    iso = re.findall(r"\b(\d{4})-(\d{1,2})-(\d{1,2})\b", seg)
     if iso:
         y, mo, dd = iso[-1]
         d = _safe_date(int(y), int(mo), int(dd))
@@ -214,7 +227,7 @@ def parse_spoken_date(text, today):
     raw = _norm_text(text)
     if not raw:
         return "", "none"
-    s = _last_segment(raw)
+    s = _norm_text(seg)
     if "day after tomorrow" in s:
         return (today + datetime.timedelta(days=2)).isoformat(), "date"
     if "tomorrow" in s:
@@ -323,11 +336,35 @@ def _point_digits(s):
     return out
 
 
+_CUR = r"(?:pounds?|quid|euros?|dollars?|bucks|eur|gbp|usd)"
+_SUB = r"(?:pence|pennies|cents?|p)"
+
+
+def _amount_groups(s):
+    """The separate numbers in `s`, after the number words are read: [(token index, value)]
+    and the tokens."""
+    s = re.sub(r"(\d)([a-z])", r"\1 \2", s.replace("-", " "))
+    toks = re.findall(r"\d+(?:\.\d+)?|[a-z']+", _words_to_number_tokens(s))
+    nums = [(k, float(t)) for k, t in enumerate(toks) if re.fullmatch(r"\d+(?:\.\d+)?", t)]
+    return nums, toks
+
+
 def parse_amount(text):
     """'637.50', '637,50', 'six hundred and thirty-seven fifty', 'two thousand one hundred
-    twenty-five pounds and ten pence', 'two hundred point zero five' -> float, or None."""
+    twenty-five pounds and ten pence', 'two hundred point zero five' -> float, or None.
+    Separate numbers are never glued together: after a correction ('400, no, 450') the last
+    one wins; two amounts without one ('200 or maybe 300', 'between 100 and 200') are None,
+    an amount that cannot be read, so the caller asks again instead of guessing. The only
+    pair read as one amount is pounds and pence ('210 pounds 50', 'six hundred thirty seven
+    fifty'). Thousands written with a comma or a space ('1,320', '1 320') are one number."""
     raw = str(text or "").lower().replace("’", "'")
+    raw = re.sub(r"[£€$]", " ", raw)
     raw = re.sub(r"(\d),(\d{2})(?!\d)", r"\1.\2", raw)
+    raw = re.sub(
+        r"\b(\d{1,3})((?:[ ,]\d{3})+)(?![\d,])",
+        lambda m: m.group(1) + re.sub(r"[ ,]", "", m.group(2)),
+        raw,
+    )
     if not raw.strip():
         return None
     s = _last_segment(raw)
@@ -342,39 +379,23 @@ def parse_amount(text):
                 return round(whole + float("0." + digits), len(digits))
             except Exception:
                 return None
-    m = re.search(r"(\d[\d ,]*\d|\d)(?:[.,](\d{1,2}))?(?!\d)", s)
-    if m and not re.search(
-        r"[a-z]", re.sub(r"(pounds?|euros?|dollars?|eur|gbp|usd|and|cents?|pence|p\b)", "", s)
-    ):
-        whole = re.sub(r"[ ,]", "", m.group(1))
-        frac = m.group(2) or ""
-        try:
-            return float(whole + ("." + frac if frac else ""))
-        except Exception:
-            return None
-    s2 = re.sub(r"\b(pounds?|euros?|dollars?)\b", " | ", s)
-    s2 = re.sub(r"\b(cents?|pence|p)\b", " ", s2)
-    s2 = re.sub(r"\bpoint\b", " | ", s2)
-    parts = [p for p in s2.split("|")]
-    nums = []
-    for p in parts:
-        t = _words_to_number_tokens(p.replace("-", " "))
-        found = re.findall(r"\d+(?:\.\d+)?", t)
-        if found:
-            nums.append(found)
-    if not nums:
-        return None
     try:
-        whole = float(nums[0][0]) if len(nums[0]) == 1 else float("".join(nums[0]))
-        if len(nums) > 1:
-            cents = nums[1][0]
-            if "point" in s and len(cents) == 1:
-                return whole + float("0." + cents)
-            return whole + float(cents) / 100.0
-        if len(nums[0]) == 2 and float(nums[0][1]) < 100:
-            # 'six hundred thirty seven fifty' -> 637.50
-            return float(nums[0][0]) + float(nums[0][1]) / 100.0
-        return whole
+        nums, toks = _amount_groups(s)
+        if len(nums) == 1:
+            return nums[0][1]
+        if len(nums) != 2:
+            return None
+        (i, a), (j, b) = nums
+        glue = toks[i + 1 : j]
+        nxt = toks[j + 1] if j + 1 < len(toks) else ""
+        if b >= 100 or b != int(b):
+            return None
+        # pounds and pence: '210 pounds 50', '200 pounds and 5 pence', '100 and 50 pence',
+        # 'six hundred thirty seven fifty' (nothing between the two numbers)
+        cur = bool(glue) and re.fullmatch(_CUR, glue[0]) and all(g == "and" for g in glue[1:])
+        if cur or not glue or (glue == ["and"] and re.fullmatch(_SUB, nxt)):
+            return round(a + b / 100.0, 2)
+        return None
     except Exception:
         return None
 
