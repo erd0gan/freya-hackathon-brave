@@ -270,3 +270,35 @@ def test_a_spec_without_questions_publishes_nothing(monkeypatch, tmp_path):
 def test_a_clean_spec_still_ends_ok(monkeypatch, tmp_path):
     rc, log, _ = run_build(monkeypatch, tmp_path, spec_with())
     assert rc == 0 and "status=ok " in log.splitlines()[-1] + " "
+
+
+# ---------------------------------------------------------------- 4. plan shorter than attempts
+def three_attempts(s):
+    s["bands"][1]["attempts"] = 3
+
+
+def test_plan_shorter_than_the_attempts_is_reported_and_capped():
+    out = check(spec_with(three_attempts), parse_openapi(OPENAPI), BRIEF, OPENAPI)
+    assert any(p.startswith("attempt_plan has 2 step(s) but a band has 3") for p in out), out
+    bands = to_generator(spec_with(three_attempts))["cfg"]["bands"]
+    assert [b["attempts"] for b in bands] == [1, 2]
+
+
+def test_a_full_plan_keeps_the_attempts():
+    def plan3(s):
+        three_attempts(s)
+        s["attempt_plan"].append({"amount": "full", "date": "deadline"})
+
+    assert check(spec_with(plan3), parse_openapi(OPENAPI), BRIEF, OPENAPI) == []
+    assert [b["attempts"] for b in to_generator(spec_with(plan3))["cfg"]["bands"]] == [1, 3]
+
+
+def test_the_engine_never_repeats_a_refused_offer_with_a_short_plan():
+    from fb.harness.engine_sim import simulate
+    from test_engine import CASES
+
+    case = next(c for c in CASES.values() if c["id"] == "PUB-10")
+    cfg = to_generator(spec_with(three_attempts))["cfg"]
+    r = simulate(case, [{"kind": "no"}] * 5, cfg)
+    offers = [s for s in r.says if "Could you pay" in s]
+    assert len(offers) == 2 and len(set(offers)) == 2, r.says

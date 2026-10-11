@@ -778,6 +778,14 @@ def structure(spec: dict[str, Any]) -> list[str]:
     plan = spec.get("attempt_plan") or []
     if not plan:
         bad.append("attempt_plan is empty")
+    most = max((b.get("attempts") for b in bands if _is_int(b.get("attempts"), 0)), default=0)
+    if plan and len(plan) < most:
+        bad.append(
+            f"attempt_plan has {len(plan)} step(s) but a band has {most} persuasion attempts: "
+            "give one step per attempt, in order (an attempt past the plan would repeat an "
+            "offer the customer refused, so the builder caps a band's attempts at the plan's "
+            "length)"
+        )
     for i, s in enumerate(plan):
         if s.get("amount") not in ("current", "full", "floor") or s.get("date") not in (
             "attempt1",
@@ -1019,8 +1027,14 @@ def to_generator(spec: dict[str, Any]) -> dict[str, Any]:
     neg.setdefault("attempt_plan", s.get("attempt_plan") or [])
     if s.get("attempt_plan"):
         neg["attempt_plan"] = s["attempt_plan"]
+    # negotiation_lib takes step min(used, len(plan)): an attempt past the plan repeats the
+    # last offer, one the customer already refused (A31). A plan shorter than a band's attempts
+    # (structure() reports it to the repair round) caps the attempts instead; extending the
+    # plan would need offers the brief does not give. No plan: the engine's two-step default.
+    steps = len(neg.get("attempt_plan") or []) or 2
     bands = []
     for b in s.get("bands") or []:
+        att = b.get("attempts")
         bands.append(
             {
                 "name": b.get("name"),
@@ -1029,7 +1043,7 @@ def to_generator(spec: dict[str, Any]) -> dict[str, Any]:
                 "deadline_business_days": b.get("deadline_days"),
                 "deadline_days": b.get("deadline_days"),
                 "deadline_unit": b.get("deadline_unit") or "business",
-                "attempts": b.get("attempts"),
+                "attempts": min(att, steps) if _is_int(att, 0) else att,
             }
         )
     cal = s.get("calendar") or {}
