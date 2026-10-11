@@ -12,6 +12,13 @@ workflow as sent if the export fails. The trace's END line says how far the run 
 (status=ok only when the chat smoke test passed; smoke=passed|failed|skipped). Spec problems
 left after the repair round do not stop the build (status ok_spec_problems, the problems in
 the trace) unless the spec cannot make a workflow at all.
+
+Beside the main extraction a second one runs in the background (BUILDER_OBSERVER=0 turns it
+off): where the two readings differ is logged as "uncertainty:" lines, and only the words not
+to say before the identity check are merged (their union). After validation the brief's rules
+are mapped to the spec and workflow (fb.proof, "proof:" lines). Every run ends by writing
+submission/<brief>.manifest.json (inputs, hashes, checks, Freya ids, model cost), named in the
+END line. None of these can stop or change the build.
 """
 
 from __future__ import annotations
@@ -27,6 +34,7 @@ import time
 import urllib.error
 import urllib.parse
 import urllib.request
+from collections import Counter
 from pathlib import Path
 
 HERE = Path(__file__).resolve().parent
@@ -62,8 +70,21 @@ import freya  # noqa: E402
 from fb.generate import build  # noqa: E402
 from fb.openapi_tools import parse_openapi  # noqa: E402
 from fb.spec_extract import blocking, check, extract, to_generator, warnings  # noqa: E402
-from fb.trace import Trace  # noqa: E402
+from fb.trace import Trace, redact  # noqa: E402
 from fb.validate import Policy, validate  # noqa: E402
+
+try:  # the cross-check and the proof map only add trace lines: never a reason not to build
+    from fb import proof
+    from fb.spec_extract import (
+        OBSERVER_RESERVE_S,
+        OBSERVER_WAIT_MAX_S,
+        extract_observer,
+        observe,
+    )
+except Exception:  # pragma: no cover
+    proof = None  # type: ignore[assignment]
+    extract_observer = observe = None  # type: ignore[assignment]
+    OBSERVER_RESERVE_S, OBSERVER_WAIT_MAX_S = 300.0, 120.0
 
 
 def git_commit() -> str:
@@ -248,6 +269,7 @@ def keep_previous_run(slot: str) -> None:
         ROOT / "traces" / f"{slot}.log",
         ROOT / "submission" / f"{slot}.spec.json",
         ROOT / "submission" / f"{slot}.workflow.json",
+        ROOT / "submission" / f"{slot}.manifest.json",
     ]
     old = [f for f in files if f.exists()]
     if not old:
@@ -257,6 +279,130 @@ def keep_previous_run(slot: str) -> None:
     dest.mkdir(parents=True, exist_ok=True)
     for f in old:
         f.replace(dest / f.name)
+
+
+def _sha_text(text: str) -> str:
+    return hashlib.sha256(text.encode("utf-8")).hexdigest()
+
+
+def _spec_counts(spec: dict | None) -> dict:
+    s = spec if isinstance(spec, dict) else {}
+    neg = s.get("neg") if isinstance(s.get("neg"), dict) else {}
+    ident = s.get("identity") if isinstance(s.get("identity"), dict) else {}
+    cal = s.get("calendar") if isinstance(s.get("calendar"), dict) else {}
+
+    def n(x: object) -> int:
+        return len(x) if isinstance(x, list | dict) else 0
+
+    return {
+        "identity_factors": n(ident.get("questions")),
+        "bands": n(s.get("bands")),
+        "holidays": n(cal.get("holidays")),
+        "attempt_plan": n(s.get("attempt_plan")),
+        "outcomes": n(s.get("outcomes")),
+        "neg_outcomes": n(neg.get("outcomes")),
+        "neg_reasons": n(neg.get("reasons")),
+        "queues": n(neg.get("queues")),
+        "forbidden_before_verify": n(s.get("forbidden_before_verify")),
+        "lines": n(s.get("lines")),
+        "notes": n(s.get("notes")),
+    }
+
+
+def write_manifest(trace: Trace, slot: str, facts: dict, end: dict) -> str:
+    """submission/<slot>.manifest.json: what this run read, built, checked and published, for a
+    reader who has only the files. No secrets (the text goes through the trace's redaction).
+    Returns its path relative to the repo, or '' when it could not be written (a trace note)."""
+    try:
+        path = ROOT / "submission" / f"{slot}.manifest.json"
+        path.parent.mkdir(parents=True, exist_ok=True)
+        out = Path(facts["out_path"]) if facts.get("out_path") else None
+        written = out is not None and out.exists()
+        data = {
+            "slot": slot,
+            "status": end.get("status"),
+            "started_utc": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime(trace.t0)),
+            "duration_s": round(trace.elapsed(), 1),
+            "commit": facts.get("commit"),
+            "inputs": facts.get("inputs") or {},
+            "spec": facts.get("spec") or {},
+            "observer": facts.get("observer") or {},
+            "validator": facts.get("validator") or {},
+            "proof_map": facts.get("proof_map") or {},
+            "workflow_sha256": facts.get("workflow_sha256"),
+            "export": {
+                "mode": end.get("export") or facts.get("export_mode") or "none",
+                "file": out.name if written and out else None,
+                "sha256": sha256(out) if written and out else None,
+                "check": end.get("export_check"),
+            },
+            "freya": facts.get("freya") or {},
+            "smoke": end.get("smoke") or facts.get("smoke") or "not run",
+            "model": {
+                "calls": trace.model_calls,
+                "cost_usd": round(trace.cost_usd, 4),
+                "failures": trace.model_failures,
+            },
+        }
+        path.write_text(redact(json.dumps(data, indent=1, default=str)), encoding="utf-8")
+        try:
+            return str(path.relative_to(ROOT)).replace("\\", "/")
+        except ValueError:
+            return str(path)
+    except Exception as e:
+        try:
+            trace.note(f"manifest not written: {type(e).__name__}: {str(e)[:200]}")
+        except Exception:
+            pass
+        return ""
+
+
+def finish(trace: Trace, slot: str, facts: dict | None, **info: object) -> None:
+    """The trace's END line, with the manifest written right before it."""
+    if facts is not None:
+        path = write_manifest(trace, slot, facts, dict(info))
+        if path:
+            info["manifest"] = path
+    trace.end(**info)
+
+
+def log_proof(trace: Trace, brief: str, spec: dict, gen: dict, wf: dict, facts: dict) -> None:
+    """The brief's rules against the spec and the workflow (fb.proof). Lines only."""
+    try:
+        if proof is None:
+            return
+        units = proof.proof_map(brief, spec, gen, wf)
+        for line in proof.trace_lines(units):
+            trace.note(line)
+        facts["proof_map"] = proof.summary(units)
+    except Exception as e:
+        trace.note(f"proof map failed: {type(e).__name__}: {str(e)[:200]}")
+
+
+def start_observer(trace: Trace, brief: str, openapi: dict, tools: dict, deadline: float):
+    try:
+        if extract_observer is None:
+            return None
+        # `extract` of this module: a test's stand-in reaches the cross-check too
+        return extract_observer(brief, openapi, tools, trace, deadline=deadline, extract_fn=extract)
+    except Exception as e:
+        trace.note(f"uncertainty: observer not started: {type(e).__name__}: {str(e)[:200]}")
+        return None
+
+
+def join_observer(
+    trace: Trace, observer, spec: dict, brief: str, openapi: dict, deadline: float
+) -> dict:
+    if observer is None or observe is None:
+        return {"status": "off"}
+    try:
+        left = deadline - time.monotonic() - OBSERVER_RESERVE_S
+        return observe(
+            trace, observer, spec, brief, openapi, max(0.0, min(left, OBSERVER_WAIT_MAX_S))
+        )
+    except Exception as e:
+        trace.note(f"uncertainty: observer skipped: {type(e).__name__}: {str(e)[:200]}")
+        return {"status": "error"}
 
 
 def main(argv: list[str]) -> int:
@@ -272,30 +418,66 @@ def main(argv: list[str]) -> int:
     t0 = time.monotonic()
     deadline = t0 + BUDGET_S - EXPORT_RESERVE_S
     freya.api = bounded_api(t0 + BUDGET_S - END_MARGIN_S)
+    facts: dict = {
+        "commit": git_commit(),
+        "inputs": {
+            "brief": str(brief_path),
+            "brief_sha256": sha256(brief_path),
+            "tool_api": str(api_path),
+            "tool_api_sha256": sha256(api_path),
+        },
+    }
     trace.start(
         brief=brief_path,
         tool_api=api_path,
-        commit=git_commit(),
-        brief_sha256=sha256(brief_path),
-        tool_api_sha256=sha256(api_path),
+        commit=facts["commit"],
+        brief_sha256=facts["inputs"]["brief_sha256"],
+        tool_api_sha256=facts["inputs"]["tool_api_sha256"],
     )
     try:
-        return run(trace, brief_path, api_path, slot, deadline)
+        return run(trace, brief_path, api_path, slot, deadline, facts)
     except Exception as e:  # the trace always gets its end line
-        trace.end(status=f"error: {type(e).__name__}: {str(e)[:300]}")
+        finish(trace, slot, facts, status=f"error: {type(e).__name__}: {str(e)[:300]}")
         return 1
 
 
-def run(trace: Trace, brief_path: Path, api_path: Path, slot: str, deadline: float) -> int:
+def run(
+    trace: Trace,
+    brief_path: Path,
+    api_path: Path,
+    slot: str,
+    deadline: float,
+    facts: dict | None = None,
+) -> int:
+    if facts is None:
+        facts = {
+            "commit": None,
+            "inputs": {
+                "brief": str(brief_path),
+                "brief_sha256": sha256(brief_path),
+                "tool_api": str(api_path),
+                "tool_api_sha256": sha256(api_path),
+            },
+        }
     brief = brief_path.read_text(encoding="utf-8")
     openapi = json.loads(api_path.read_text(encoding="utf-8"))
     tools = parse_openapi(openapi)
     trace.note(f"brief: {len(brief)} chars; tools: {', '.join(sorted(tools))}")
 
+    observer = start_observer(trace, brief, openapi, tools, deadline)
     spec = extract(brief, openapi, tools, trace, deadline=deadline)
+    facts["observer"] = join_observer(trace, observer, spec, brief, openapi, deadline)
     (ROOT / "submission").mkdir(exist_ok=True)
     (ROOT / "submission" / f"{slot}.spec.json").write_text(json.dumps(spec, indent=1))
     problems = check(spec, tools, brief, openapi)
+    try:
+        facts["spec"] = {
+            "counts": _spec_counts(spec),
+            "problems": list(problems),
+            "warnings": warnings(spec, brief),
+        }
+    except Exception as e:
+        facts["spec"] = {"error": f"{type(e).__name__}: {str(e)[:200]}"}
     for p in problems:
         trace.note(f"spec error: {p}")
     if problems:
@@ -304,7 +486,9 @@ def run(trace: Trace, brief_path: Path, api_path: Path, slot: str, deadline: flo
         # workflow at all (no identity questions, no bands).
         hard = blocking(spec)
         if hard:
-            trace.end(status=f"spec invalid ({'; '.join(hard)}), nothing published")
+            finish(
+                trace, slot, facts, status=f"spec invalid ({'; '.join(hard)}), nothing published"
+            )
             return 1
         trace.note(f"spec checks: {len(problems)} problems left, building anyway")
     else:
@@ -320,7 +504,7 @@ def run(trace: Trace, brief_path: Path, api_path: Path, slot: str, deadline: flo
         if gen is None:
             for line in spec_summary(spec, None, brief):
                 trace.note(line)
-        trace.end(status=f"generation failed: {type(e).__name__}: {str(e)[:300]}")
+        finish(trace, slot, facts, status=f"generation failed: {type(e).__name__}: {str(e)[:300]}")
         return 1
     policy.call_vars |= {str(v) for v in (gen.get("call_variables") or {}).values() if v}
     rep = validate(wf, tools, policy)
@@ -330,16 +514,28 @@ def run(trace: Trace, brief_path: Path, api_path: Path, slot: str, deadline: flo
         f"workflow: {len(wf['nodes'])} steps, {count_tools(wf)} tools, "
         f"{len(json.dumps(wf))} bytes; validator {rep.summary()}"
     )
+    try:
+        facts["validator"] = {
+            "errors": len(rep.errors),
+            "warnings": len(rep.warnings),
+            "codes": dict(sorted(Counter(f"{i.level}:{i.code}" for i in rep.issues).items())),
+        }
+        facts["workflow_sha256"] = _sha_text(json.dumps(wf, sort_keys=True, ensure_ascii=False))
+    except Exception as e:
+        trace.note(f"manifest facts: {type(e).__name__}: {str(e)[:200]}")
+    log_proof(trace, brief, spec, gen, wf, facts)
     if not rep.ok:
-        trace.end(status="invalid workflow, nothing published")
+        finish(trace, slot, facts, status="invalid workflow, nothing published")
         return 1
     out = ROOT / "submission" / f"{slot}.workflow.json"
+    facts["out_path"] = str(out)
 
     def write_local(why: str) -> None:
         # the submission is the workflow file: with the platform down it is still written
         out.parent.mkdir(parents=True, exist_ok=True)
         out.write_text(json.dumps({"updated_at": None, "workflow": wf}, indent=1))
         trace.freya(f"{why}: wrote the workflow as built -> {out.relative_to(ROOT)}")
+        facts["export_mode"] = "local"
 
     try:
         freya.validate_workflow(f"{slot} dry run", wf)
@@ -349,7 +545,7 @@ def run(trace: Trace, brief_path: Path, api_path: Path, slot: str, deadline: flo
         if re.search(r"-> 4\d\d:", str(e)):
             # the platform read the workflow and refused it
             write_local("dry run refused")
-            trace.end(status="dry run refused, nothing published")
+            finish(trace, slot, facts, status="dry run refused, nothing published")
             return 1
         # the platform did not answer: saving tries again (it validates too)
     try:
@@ -357,12 +553,18 @@ def run(trace: Trace, brief_path: Path, api_path: Path, slot: str, deadline: flo
     except Exception as e:
         trace.freya(f"save_workflow FAILED: {type(e).__name__}: {str(e)[:500]}")
         write_local("save failed")
-        trace.end(status="save failed, local file written")
+        finish(trace, slot, facts, status="save failed, local file written")
         return 1
     trace.freya(
         f"save_workflow slot={slot} -> workflow_id={saved['workflow_id']} "
         f"agent_id={saved['agent_id']} version={saved.get('version', 1)} (published)"
     )
+    try:
+        facts["freya"] = {
+            k: saved.get(k) for k in ("workflow_id", "agent_id", "version") if k in saved
+        }
+    except Exception:
+        pass
     if deadline - time.monotonic() > SMOKE_RESERVE_S:
         result = smoke(
             trace,
@@ -395,7 +597,10 @@ def run(trace: Trace, brief_path: Path, api_path: Path, slot: str, deadline: flo
     status = "ok_spec_problems" if problems else "ok"
     status += "" if result == "passed" else f"_smoke_{result}"
     status += "" if export == "platform" else "_export_failed"
-    trace.end(
+    finish(
+        trace,
+        slot,
+        facts,
         status=status,
         smoke=result,
         export=export,

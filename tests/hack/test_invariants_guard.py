@@ -44,6 +44,10 @@ NEW_CODES = {
     "data_before_verify",
     "no_verify_node",
     "validator_internal",
+    "llm_write_arg",
+    "model_write_arg",
+    "unfilled_required",
+    "enum_literal",
 }
 
 
