@@ -115,6 +115,17 @@ def test_unclear_after_floor_offer_does_not_repeat_it():
     assert r.says[2] == "Sorry, I did not catch that. Can you do that?"
 
 
+# talkative A PUB-06: cut off 20-30 times in a row on "Can you do that?" while wanting Friday;
+# from the second unusable turn the re-ask leaves room for another day, still without the amount
+def test_cut_streak_after_offer_opens_a_counter_day_and_friday_is_recorded():
+    U = {"kind": "unclear"}
+    seq = [{"kind": "too_much"}, U, U, {"kind": "offer", "date": "this Friday"}, Y, BYE]
+    r = simulate(CASES["PUB-06"], seq, CFG_A)
+    assert r.says[3].endswith("Can you do that, or is another day better for you?")
+    assert "637.50" not in r.says[3]
+    assert r.score["pass"], (r.score["failed"], r.says)
+
+
 # talkative B PUB-13: "both" in the customer's words, all_products not extracted. The loan must
 # get its own latest date (23 Oct), not attempt 1 on its own.
 def test_both_in_the_words_applies_to_all_products():

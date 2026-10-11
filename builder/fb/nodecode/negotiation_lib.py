@@ -208,6 +208,13 @@ def _short(st, neg):
             neg, "support_offer", "Would you like me to connect you with our customer support team?"
         )
     if phase == "offer":
+        # From the second unusable turn in a row, leave room for a counter-day: a customer who
+        # wants another day was cut off 20-30 times in a row on "Can you do that?" (PUB-06,
+        # talkative) until the call ran out of time.
+        if int(st.get("unclear_run") or 0) >= 2:
+            return _line(
+                neg, "offer_day_question", "Can you do that, or is another day better for you?"
+            )
         return "Can you do that?"
     if len(st.get("p") or []) > 1:
         return _line(neg, "multi_today_question", "Can you pay all of them today?")
