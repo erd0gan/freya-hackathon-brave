@@ -44,6 +44,8 @@ sys.path.insert(0, str(HERE))
 BUDGET_S = 30 * 60
 EXPORT_RESERVE_S = 3 * 60
 SMOKE_RESERVE_S = 60
+# The smoke test's whole time, retries included.
+SMOKE_MAX_S = 150
 # Kept back from the budget for the trace's last lines and a local copy of the workflow.
 END_MARGIN_S = 20
 # The kit client's own timeout per HTTP call.
@@ -215,6 +217,7 @@ def bounded_api(hard_deadline: float):
             wait = min(wait * 2, 30.0)
         return out.get("data", {}).get("result", out) if isinstance(out, dict) else out
 
+    api.bounded = True  # type: ignore[attr-defined]
     return api
 
 
@@ -565,18 +568,9 @@ def run(
         }
     except Exception:
         pass
-    if deadline - time.monotonic() > SMOKE_RESERVE_S:
-        result = smoke(
-            trace,
-            saved["workflow_id"],
-            gen.get("call_variables") or {},
-            gen.get("forbidden_before_verify") or [],
-            str(gen.get("bank_name") or ""),
-        )
-    else:
-        trace.test("chat smoke skipped: not enough time left")
-        result = "skipped"
-    # A saved workflow is always written out: the platform's export, else what was saved.
+    # A saved workflow is always written out first: the platform's export, else what was saved.
+    # (11 Oct: the chat route kept answering 504 and the smoke test's retries ran 14 minutes; the
+    # export after it would have had no time left.)
     try:
         freya.export_workflow(saved["workflow_id"], str(out))
         trace.freya(f"export_workflow -> {out.relative_to(ROOT)}")
@@ -594,6 +588,27 @@ def run(
         except Exception as e:  # a check of the file never changes or removes it
             trace.test(f"export check crashed: {type(e).__name__}: {str(e)[:200]}")
             export_check = "crashed"
+    if deadline - time.monotonic() > SMOKE_RESERVE_S:
+        # the smoke test gets its own short clock: retries of a slow chat route never eat the
+        # rest of the budget
+        full_api = freya.api
+        if getattr(full_api, "bounded", False):
+            freya.api = bounded_api(
+                min(time.monotonic() + SMOKE_MAX_S, deadline + EXPORT_RESERVE_S - END_MARGIN_S)
+            )
+        try:
+            result = smoke(
+                trace,
+                saved["workflow_id"],
+                gen.get("call_variables") or {},
+                gen.get("forbidden_before_verify") or [],
+                str(gen.get("bank_name") or ""),
+            )
+        finally:
+            freya.api = full_api
+    else:
+        trace.test("chat smoke skipped: not enough time left")
+        result = "skipped"
     status = "ok_spec_problems" if problems else "ok"
     status += "" if result == "passed" else f"_smoke_{result}"
     status += "" if export == "platform" else "_export_failed"

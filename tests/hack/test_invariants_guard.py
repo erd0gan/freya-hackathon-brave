@@ -357,7 +357,7 @@ def load_build():
 SPEC_AB = json.loads((HERE / "fixtures" / "spec_ab_extracted.json").read_text())
 
 
-def run_build(monkeypatch, tmp_path, export_edit=None, export_raises=False):
+def run_build(monkeypatch, tmp_path, export_edit=None, export_raises=False, before_run=None):
     from fb.trace import Trace
 
     b = load_build()
@@ -382,6 +382,8 @@ def run_build(monkeypatch, tmp_path, export_edit=None, export_raises=False):
     monkeypatch.setattr(b.freya, "save_workflow", save)
     monkeypatch.setattr(b.freya, "api", lambda *a, **k: {"response": "Hello."})
     monkeypatch.setattr(b.freya, "export_workflow", export)
+    if before_run:
+        before_run(b)
     log = tmp_path / "t.log"
     rc = b.run(
         Trace(log, echo=False),

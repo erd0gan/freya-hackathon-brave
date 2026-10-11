@@ -66,3 +66,37 @@ def test_retries_stop_at_the_budget(monkeypatch):
     except RuntimeError as e:
         assert "no time left" in str(e)
     assert len(calls) == 1
+
+
+def test_export_comes_before_the_smoke_test_and_the_smoke_test_has_its_own_clock(
+    monkeypatch, tmp_path
+):
+    """11 Oct: the chat route answered 504 for 14 minutes and the smoke test's retries ran
+    with the whole budget; the export after it would have had no time left."""
+    from test_invariants_guard import run_build
+
+    order, clocks = [], []
+
+    def patch(b):
+        real, export = b.bounded_api, b.freya.export_workflow
+
+        def bounded(hard):
+            clocks.append(hard - time.monotonic())
+            return real(hard)
+
+        def export_first(wid, path):
+            order.append("export")
+            return export(wid, path)
+
+        def smoke(*a, **k):
+            order.append("smoke")
+            return "failed"
+
+        monkeypatch.setattr(b, "bounded_api", bounded)
+        monkeypatch.setattr(b.freya, "api", real(time.monotonic() + 600))
+        monkeypatch.setattr(b.freya, "export_workflow", export_first)
+        monkeypatch.setattr(b, "smoke", smoke)
+
+    rc, _, out = run_build(monkeypatch, tmp_path, before_run=patch)
+    assert rc == 0 and order == ["export", "smoke"] and out.exists()
+    assert clocks and max(clocks) <= build.SMOKE_MAX_S + 1
