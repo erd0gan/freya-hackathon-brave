@@ -1,5 +1,6 @@
 """Ledger scoring with the kit's own score.py, plus the case-level k/n report (a case counts
-only when every repetition passes), plus a golden tool sequence per case for self-checks."""
+only when every repetition passes), plus a golden tool sequence per case for self-checks.
+Every replayed case is also reviewed by fb.harness.review (brief rules on the tool calls)."""
 
 from __future__ import annotations
 
@@ -8,6 +9,7 @@ from pathlib import Path
 from typing import Any
 
 from fb.harness.bank import Bank
+from fb.harness.review import as_dicts, review_call
 
 KIT_SCORE = Path(__file__).resolve().parents[3] / "kit" / "tools" / "score.py"
 NOT_REACHED = ("not_reached", "no_contact", "unreached")
@@ -24,16 +26,24 @@ def _kit_score() -> Any:
 score_ledger = _kit_score()
 
 
-def case_report(results: dict[str, list[bool]]) -> dict[str, Any]:
-    """results: case id -> pass per repetition. A case passes only with all reps passing."""
+def case_report(
+    results: dict[str, list[bool]], findings: dict[str, list[Any]] | None = None
+) -> dict[str, Any]:
+    """results: case id -> pass per repetition. A case passes only with all reps passing.
+    findings (optional): case id -> review findings of its runs (Finding or dict); a critical
+    finding fails the case too."""
     rows = []
     for cid, passes in results.items():
+        found = [f if isinstance(f, dict) else vars(f) for f in (findings or {}).get(cid, [])]
+        crit = sum(f.get("severity") == "critical" for f in found)
         rows.append(
             {
                 "id": cid,
                 "passes": sum(passes),
                 "runs": len(passes),
-                "pass": bool(passes) and all(passes),
+                "critical": crit,
+                "findings": found,
+                "pass": bool(passes) and all(passes) and not crit,
             }
         )
     n = sum(r["pass"] for r in rows)
@@ -41,10 +51,14 @@ def case_report(results: dict[str, list[bool]]) -> dict[str, Any]:
 
 
 def format_report(rep: dict[str, Any]) -> str:
-    lines = [
-        f"{'PASS' if r['pass'] else 'FAIL'} {r['id']} {r['passes']}/{r['runs']}"
-        for r in rep["rows"]
-    ]
+    lines = []
+    for r in rep["rows"]:
+        line = f"{'PASS' if r['pass'] else 'FAIL'} {r['id']} {r['passes']}/{r['runs']}"
+        if r.get("critical"):
+            line += f" ({r['critical']} critical review findings)"
+        lines.append(line)
+        for f in r.get("findings") or []:
+            lines.append(f"    {f['severity']} {f['rule']} turn {f['turn']}: {f['evidence']}")
     lines.append(f"{rep['passed']} / {rep['total']} cases pass every run")
     return "\n".join(lines)
 
@@ -88,9 +102,13 @@ def golden_calls(case: dict[str, Any], customer_id: str) -> list[tuple[str, dict
 
 
 def replay(
-    bank: Bank, case: dict[str, Any], calls: list[tuple[str, dict[str, Any]]] | None = None
+    bank: Bank,
+    case: dict[str, Any],
+    calls: list[tuple[str, dict[str, Any]]] | None = None,
+    review_cfg: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
-    """Open a session, run the calls (golden by default), score the ledger."""
+    """Open a session, run the calls (golden by default), score the ledger and review its
+    calls (`review`: findings as dicts; review_cfg as in fb.harness.review)."""
     v = bank.open_session(case)
     cid = v["customer_id"]
     for tool, body in calls if calls is not None else golden_calls(case, cid):
@@ -98,4 +116,5 @@ def replay(
         if status >= 500:  # briefs: a failed write is tried once more
             bank.call(cid, tool, {**body, "customer_id": cid})
     led = bank.ledger(cid)
-    return {"customer_id": cid, "ledger": led, **score_ledger(case, led)}
+    review = as_dicts(review_call([], led["calls"], review_cfg))
+    return {"customer_id": cid, "ledger": led, "review": review, **score_ledger(case, led)}

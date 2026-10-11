@@ -16,6 +16,8 @@ the trace) unless the spec cannot make a workflow at all.
 
 from __future__ import annotations
 
+import dataclasses
+import hashlib
 import json
 import os
 import re
@@ -59,9 +61,9 @@ sys.path.insert(0, str(ROOT / "kit"))
 import freya  # noqa: E402
 from fb.generate import build  # noqa: E402
 from fb.openapi_tools import parse_openapi  # noqa: E402
-from fb.spec_extract import blocking, check, extract, to_generator  # noqa: E402
+from fb.spec_extract import blocking, check, extract, to_generator, warnings  # noqa: E402
 from fb.trace import Trace  # noqa: E402
-from fb.validate import validate  # noqa: E402
+from fb.validate import Policy, validate  # noqa: E402
 
 
 def git_commit() -> str:
@@ -79,6 +81,68 @@ def git_commit() -> str:
         return commit + ("-dirty" if dirty else "")
     except OSError:
         return "unknown"
+
+
+def sha256(path: Path) -> str:
+    try:
+        return hashlib.sha256(path.read_bytes()).hexdigest()
+    except OSError as e:
+        return f"unreadable({type(e).__name__})"
+
+
+def spec_summary(spec: dict, gen: dict | None, brief: str) -> list[str]:
+    """Short lines on what the spec says: enough to see from the trace alone what was built.
+    Never raises (a summary never stops the build)."""
+    try:
+        return _spec_summary(spec, gen, brief)
+    except Exception as e:
+        return [f"spec summary failed: {type(e).__name__}: {str(e)[:200]}"]
+
+
+def _spec_summary(spec: dict, gen: dict | None, brief: str) -> list[str]:
+    s = spec if isinstance(spec, dict) else {}
+    cfg = (gen or {}).get("cfg") or {}
+    qs = (s.get("identity") or {}).get("questions") or []
+    fields = [str(q.get("field")) for q in qs if isinstance(q, dict)]
+    bands = cfg.get("bands") or s.get("bands") or []
+    hol = cfg.get("holidays") or (s.get("calendar") or {}).get("holidays") or []
+    neg = cfg.get("neg") or s.get("neg") or {}
+    outs = s.get("outcomes") or {}
+    warns = warnings(s, brief)
+    band_txt = ", ".join(
+        f"{b.get('name')} {b.get('min_days_late')}-{b.get('max_days_late')}d x{b.get('attempts')}"
+        for b in bands
+        if isinstance(b, dict)
+    )
+    return [
+        f"spec summary: identity factors={fields}; bands={len(bands)} ({band_txt}); "
+        f"holidays={len(hol)}; call variables={sorted((s.get('call_variables') or {}).values())}",
+        f"spec summary: close outcomes={sorted(map(str, (neg.get('outcomes') or {}).values()))} "
+        f"reasons={sorted(map(str, (neg.get('reasons') or {}).values()))} "
+        f"other endings={sorted(outs)}; spec warnings={len(warns)}"
+        + (f" ({'; '.join(warns)[:300]})" if warns else ""),
+    ]
+
+
+def check_export(trace: Trace, out: Path, tools: dict, policy: Policy) -> str:
+    """Validate the file the platform exported (what is scored), in export mode. Logged only:
+    the file is kept whatever the result."""
+    try:
+        exported = json.loads(out.read_text(encoding="utf-8"))
+    except (OSError, ValueError) as e:
+        trace.test(f"export check skipped: {type(e).__name__}: {str(e)[:200]}")
+        return "skipped"
+    rep = validate(exported, tools, dataclasses.replace(policy, exported=True))
+    for i in rep.issues:
+        trace.test(f"export check: {i}")
+    if rep.ok:
+        trace.test(f"export check: the exported workflow validates ({rep.summary()})")
+        return "ok"
+    trace.test(
+        f"EXPORT CHECK FAILED: {rep.summary()} in {out.name}; the file is kept as exported, "
+        "read the lines above"
+    )
+    return f"{len(rep.errors)}_errors"
 
 
 def count_tools(wf: dict) -> int:
@@ -208,7 +272,13 @@ def main(argv: list[str]) -> int:
     t0 = time.monotonic()
     deadline = t0 + BUDGET_S - EXPORT_RESERVE_S
     freya.api = bounded_api(t0 + BUDGET_S - END_MARGIN_S)
-    trace.start(brief=brief_path, tool_api=api_path, commit=git_commit())
+    trace.start(
+        brief=brief_path,
+        tool_api=api_path,
+        commit=git_commit(),
+        brief_sha256=sha256(brief_path),
+        tool_api_sha256=sha256(api_path),
+    )
     try:
         return run(trace, brief_path, api_path, slot, deadline)
     except Exception as e:  # the trace always gets its end line
@@ -240,14 +310,21 @@ def run(trace: Trace, brief_path: Path, api_path: Path, slot: str, deadline: flo
     else:
         trace.note("spec checks: 0 errors")
 
+    gen = None
     try:
         gen = to_generator(spec)
+        for line in spec_summary(spec, gen, brief):
+            trace.note(line)
         wf, policy = build(gen, tools)
     except Exception as e:
+        if gen is None:
+            for line in spec_summary(spec, None, brief):
+                trace.note(line)
         trace.end(status=f"generation failed: {type(e).__name__}: {str(e)[:300]}")
         return 1
+    policy.call_vars |= {str(v) for v in (gen.get("call_variables") or {}).values() if v}
     rep = validate(wf, tools, policy)
-    for i in rep.errors:
+    for i in rep.issues:
         trace.note(f"validator: {i}")
     trace.note(
         f"workflow: {len(wf['nodes'])} steps, {count_tools(wf)} tools, "
@@ -308,6 +385,13 @@ def run(trace: Trace, brief_path: Path, api_path: Path, slot: str, deadline: flo
         out.write_text(json.dumps({**ids, "updated_at": None, "workflow": wf}, indent=1))
         trace.freya(f"wrote the saved workflow as sent -> {out.relative_to(ROOT)}")
         export = "local"
+    export_check = "skipped"
+    if export == "platform":
+        try:
+            export_check = check_export(trace, out, tools, policy)
+        except Exception as e:  # a check of the file never changes or removes it
+            trace.test(f"export check crashed: {type(e).__name__}: {str(e)[:200]}")
+            export_check = "crashed"
     status = "ok_spec_problems" if problems else "ok"
     status += "" if result == "passed" else f"_smoke_{result}"
     status += "" if export == "platform" else "_export_failed"
@@ -315,6 +399,7 @@ def run(trace: Trace, brief_path: Path, api_path: Path, slot: str, deadline: flo
         status=status,
         smoke=result,
         export=export,
+        export_check=export_check,
         workflow_id=saved["workflow_id"],
         agent_id=saved["agent_id"],
     )

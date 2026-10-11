@@ -9,14 +9,24 @@ and scope (only the tools, URLs, fields and enum values of the OpenAPI file).
 
 from __future__ import annotations
 
+import ast
+import base64
+import binascii
 import json
+import re
 import sys
+import zlib
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any
 from urllib.parse import urlparse
 
 from fb.openapi_tools import ToolDef, parse_openapi
+
+try:
+    from fb.nodecode.embed import CODE_BUDGET, CODE_HARD_CAP
+except ImportError:  # the validator stays usable without the node-code package
+    CODE_BUDGET, CODE_HARD_CAP = 30_000, 36_000
 
 NODE_TYPES = {"conversation", "api_request", "code", "end_call"}
 OTHER_NODE_TYPES = {
@@ -62,7 +72,79 @@ API_PARAM_KEYS = {"url", "method", "headers", "body", "connect_retries"}
 HOOK_HANDLERS = {"__function__:api_call"}
 LIFECYCLE_POINTS = {"start_of_call", "end_of_call"}
 PREVIOUS = "__previous__"
-EXPORT_NULLABLE = {"max_turn_transition", "passthrough_default_transition"}
+# The platform's export writes null for unset optional node fields.
+EXPORT_NULLABLE = {"max_turn_transition", "passthrough_default_transition", "max_node_turns"}
+
+# code_exec takes at most 131072 bytes of code and data together; the data (variables and the
+# whole conversation) needs room too (~1.3 KB per customer turn, see fb/nodecode/embed.py).
+# Over CODE_MAX a ~45-turn call (the longest seen) no longer fits: an error. Between
+# CODE_HARD_CAP and CODE_MAX the agent still works for ~70 turns minus 1 per 1.3 KB: a warning,
+# since stopping the build there would publish nothing for a workflow that mostly works.
+CODE_DATA_LIMIT = 131_072
+CODE_DATA_RESERVE = 60_000
+CODE_MAX = CODE_DATA_LIMIT - CODE_DATA_RESERVE
+
+# The phone agent may call only the bank's tool API (kit/README.md, Rules): code nodes and
+# hooks must not reach the network or start processes.
+FORBIDDEN_MODULES = {
+    "socket",
+    "ssl",
+    "select",
+    "selectors",
+    "urllib",
+    "urllib2",
+    "urllib3",
+    "http",
+    "httplib",
+    "httpx",
+    "requests",
+    "aiohttp",
+    "asyncio",
+    "ftplib",
+    "smtplib",
+    "poplib",
+    "imaplib",
+    "telnetlib",
+    "nntplib",
+    "xmlrpc",
+    "websocket",
+    "websockets",
+    "pycurl",
+    "subprocess",
+    "multiprocessing",
+    "pty",
+    "ctypes",
+    "importlib",
+}
+FORBIDDEN_OS_CALLS = re.compile(
+    r"^(system|popen|fork|forkpty|kill|exec\w*|spawn\w*|posix_spawn\w*)$"
+)
+DYNAMIC_CALLS = {"eval", "exec", "compile"}
+# Names a snippet gets from the platform: code nodes `vars`, hooks `vars` and `config`.
+SNIPPET_INPUTS = {"vars", "config"}
+
+# Call variables of the kit's cases (public-test-set.json, kit/README.md).
+KIT_CALL_VARS = {"customer_id", "first_name", "last_name", "full_name", "title", "now"}
+# Variables a node reachable before the identity check may show in its text: the
+# customer's name, and the lines the workflow sets for those nodes (a closing line, the
+# callback offer and its window).
+PRE_VERIFY_OK = KIT_CALL_VARS | {
+    "final_say",
+    "final_outcome",
+    "final_reason",
+    "cb_say",
+    "callback_window_text",
+}
+# Variable names that carry account data (amounts, dates, products, the negotiation).
+DEBT_VAR = re.compile(
+    r"past_due|amount|balance|floor|deadline|days_late|arrear|instal|minimum_pay|debt|owed"
+    r"|product|neg_say|neg_state|^final_(?!say$|outcome$|reason$)",
+    re.I,
+)
+# Keys the platform adds after a tool or code node runs (tools-and-code.md).
+AUTO_SUFFIXES = ("_response", "_status_code", "_success_count", "_failure_count")
+PLACEHOLDER = re.compile(r"\{\{\s*([^{}\s]+)\s*\}\}")
+IDENT = re.compile(r"^[A-Za-z_][\w.\-]*$")
 
 
 @dataclass
@@ -94,6 +176,12 @@ class Policy:
     )
     verified_values: set[str] = field(default_factory=lambda: {"true", "True", "verified"})
     close_tool: str = "close_call"
+    # The tool that checks identity; a workflow holding a gated tool must also hold this one.
+    verify_tool: str = "verify_identity"
+    # Variables passed with the call (spec call_variables); the kit's names are always known.
+    call_vars: set[str] = field(default_factory=lambda: set(KIT_CALL_VARS))
+    # Code (node or hook) bigger than this is an error; see CODE_MAX.
+    code_error_bytes: int = CODE_MAX
     # Nodes allowed to hold the promise tool; empty means "any gated node".
     promise_tool: str = "create_promise"
     promise_nodes: set[str] = field(default_factory=set)
@@ -128,6 +216,27 @@ class Report:
         return f"{len(self.errors)} errors, {len(self.warnings)} warnings"
 
 
+_BLOB = re.compile(r"b64decode\(\s*['\"]([A-Za-z0-9+/=\s]+)['\"]")
+
+
+def _packed_blobs(src: str) -> list[str]:
+    """The base64 parts of `exec(zlib.decompress(base64.b64decode('...')) ...)` (embed.packed)."""
+    if "zlib.decompress" not in src:
+        return []
+    return _BLOB.findall(src)
+
+
+def _unpack(blob: str) -> str | None:
+    try:
+        return zlib.decompress(base64.b64decode(blob)).decode("utf-8")
+    except (binascii.Error, zlib.error, UnicodeDecodeError, ValueError):
+        return None
+
+
+def placeholders(text: Any) -> set[str]:
+    return set(PLACEHOLDER.findall(text)) if isinstance(text, str) else set()
+
+
 class _V:
     def __init__(self, wf: dict[str, Any], tools: dict[str, ToolDef], policy: Policy) -> None:
         self.wf = wf
@@ -137,6 +246,9 @@ class _V:
         self.nodes: dict[str, Any] = wf.get("nodes") if isinstance(wf.get("nodes"), dict) else {}
         gn = wf.get("global_nodes")
         self.globals: dict[str, Any] = gn if isinstance(gn, dict) else {}
+        # Names any code node or hook may write (string constants of the code, packed parts
+        # included): a generous set, used only for warnings about undefined variables.
+        self.code_names: set[str] = set()
 
     def err(self, code: str, where: str, msg: str) -> None:
         self.r.issues.append(Issue("error", code, where, msg))
@@ -144,8 +256,18 @@ class _V:
     def warn(self, code: str, where: str, msg: str) -> None:
         self.r.issues.append(Issue("warn", code, where, msg))
 
+    def guarded(self, where: str, fn: Any, *args: Any) -> None:
+        """Run a check that must never stop the build by crashing on a shape it did not
+        expect: a crash is a warning."""
+        try:
+            fn(*args)
+        except Exception as e:
+            self.warn("validator_internal", where, f"{fn.__name__}: {type(e).__name__}: {e}")
+
     # ---------------------------------------------------------------- integrity
     def nulls(self, x: Any, path: str) -> None:
+        if self.p.exported and path == "agent_config":
+            return  # the platform's own config block, never sent by the builder
         if x is None:
             if self.p.exported and path.rsplit(".", 1)[-1] in EXPORT_NULLABLE:
                 return
@@ -263,6 +385,12 @@ class _V:
                     self.err("turn_cap", where, "conversation node without max_turn_transition")
             elif mtt not in self.nodes:
                 self.err("bad_target", where, f"max_turn_transition {mtt!r} is not a node")
+            elif mtt == key:
+                self.err(
+                    "turn_cap_self",
+                    where,
+                    "max_turn_transition points to the node itself: the turn cap never ends it",
+                )
             if (
                 not n.get("tools")
                 and n.get("task_message")
@@ -380,12 +508,82 @@ class _V:
             return
         if "{{" in src or "}}" in src:
             self.err("code_braces", where, "code contains '{{' or '}}'")
+        size = len(src.encode("utf-8"))
+        if size > self.p.code_error_bytes:
+            self.err(
+                "code_size",
+                where,
+                f"{size} bytes of code; over {self.p.code_error_bytes} the call's data no longer "
+                f"fits in code_exec's {CODE_DATA_LIMIT} bytes in a long call",
+            )
+        elif size > CODE_HARD_CAP:
+            self.warn(
+                "code_size",
+                where,
+                f"{size} bytes of code, over the {CODE_HARD_CAP} cap: a long call may run out "
+                f"of code_exec's {CODE_DATA_LIMIT} bytes",
+            )
+        elif size > CODE_BUDGET and not _packed_blobs(src):
+            self.warn("code_size", where, f"{size} bytes of code, over the {CODE_BUDGET} budget")
         try:
-            compile(src, where, "exec")
+            tree = compile(src, where, "exec", ast.PyCF_ONLY_AST)
         except SyntaxError as e:
             self.err("code_syntax", where, f"line {e.lineno}: {e.msg}")
+            tree = None
+        if tree is not None:
+            self.guarded(where, self.scan_code, tree, where)
         if "try:" not in src:
             self.warn("code_try", where, "snippet is not wrapped in try/except")
+
+    def scan_code(self, tree: ast.AST, where: str, depth: int = 0) -> None:
+        """No network, no process, no code built from call data (the agent may call only the
+        bank's tool API). A packed library part (embed.packed) is unpacked and scanned too.
+        Collects the names the code may write as variables."""
+        for x in ast.walk(tree):
+            if isinstance(x, ast.Constant) and isinstance(x.value, str):
+                if IDENT.match(x.value) and len(x.value) <= 80:
+                    self.code_names.add(x.value)
+            elif isinstance(x, ast.keyword) and x.arg:
+                self.code_names.add(x.arg)
+            if isinstance(x, (ast.Import, ast.ImportFrom)):
+                mods = [a.name for a in x.names] if isinstance(x, ast.Import) else [x.module or ""]
+                for m in mods:
+                    top = m.split(".")[0]
+                    if top in FORBIDDEN_MODULES:
+                        self.err("code_forbidden", where, f"imports {m!r} (network or process)")
+                    elif top == "os" and isinstance(x, ast.ImportFrom):
+                        bad = [a.name for a in x.names if FORBIDDEN_OS_CALLS.match(a.name)]
+                        if bad:
+                            self.err("code_forbidden", where, f"imports os.{bad[0]}")
+            elif isinstance(x, ast.Attribute) and isinstance(x.value, ast.Name):
+                if x.value.id == "os" and FORBIDDEN_OS_CALLS.match(x.attr):
+                    self.err("code_forbidden", where, f"uses os.{x.attr} (starts a process)")
+            elif isinstance(x, ast.Call) and isinstance(x.func, ast.Name):
+                fn = x.func.id
+                if fn == "__import__":
+                    self.err("code_forbidden", where, "uses __import__")
+                elif fn in DYNAMIC_CALLS:
+                    self.dynamic_call(x, fn, where, depth)
+
+    def dynamic_call(self, call: ast.Call, fn: str, where: str, depth: int) -> None:
+        arg = call.args[0] if call.args else None
+        names = {n.id for n in ast.walk(arg) if isinstance(n, ast.Name)} if arg else set()
+        if names & SNIPPET_INPUTS:
+            self.err("code_forbidden", where, f"{fn}() of code built from call data")
+            return
+        blobs = _packed_blobs(ast.unparse(call)) if names <= {"zlib", "base64"} else []
+        if not blobs:
+            self.warn("code_dynamic", where, f"{fn}() of code the validator cannot read")
+            return
+        for blob in blobs:
+            inner = _unpack(blob)
+            if inner is None or depth > 2:
+                self.warn("code_dynamic", where, f"{fn}() of a packed part that does not unpack")
+                continue
+            try:
+                self.scan_code(ast.parse(inner), where + " (packed)", depth + 1)
+            except SyntaxError as e:
+                self.err("code_syntax", where + " (packed)", f"line {e.lineno}: {e.msg}")
 
     # ---------------------------------------------------------------- tools / scope
     def tool(self, t: dict[str, Any], where: str, placement: str) -> None:
@@ -591,16 +789,27 @@ class _V:
                     f"nodes.{k}",
                     f"{sorted(bad)} reachable before identity is verified",
                 )
+            self.guarded(f"nodes.{k}", self.exposure, self.nodes[k], f"nodes.{k}", True)
         for gk, g in self.globals.items():
             bad = self.tool_names(g) & self.p.gated_tools
-            if bad and not self.is_gate(g.get("condition")):
+            if not self.is_gate(g.get("condition")):
                 excl = set(g.get("excluded_nodes") or [])
-                if pre - excl:
+                if bad and pre - excl:
                     self.err(
                         "gated_global",
                         f"global_nodes.{gk}",
                         f"{sorted(bad)} reachable before verification",
                     )
+                if pre - excl:
+                    self.guarded(gk, self.exposure, g, f"global_nodes.{gk}", False)
+        holders = [n for n in [*self.nodes.values(), *self.globals.values()] if isinstance(n, dict)]
+        gated = set().union(*(self.tool_names(n) for n in holders)) & self.p.gated_tools
+        if gated and not any(self.p.verify_tool in self.tool_names(n) for n in holders):
+            self.err(
+                "no_verify_node",
+                "nodes",
+                f"{sorted(gated)} present but no node holds {self.p.verify_tool}",
+            )
         if self.p.promise_nodes:
             for k, n in self.nodes.items():
                 if self.p.promise_tool in self.tool_names(n) and k not in self.p.promise_nodes:
@@ -627,6 +836,110 @@ class _V:
                     f"{close} in a node as well as lifecycle: may run twice",
                 )
 
+    @staticmethod
+    def texts(n: dict[str, Any]) -> list[tuple[str, str]]:
+        """(field, text) of what a node puts in front of the model or says aloud."""
+        out = []
+        if isinstance(n.get("task_message"), str):
+            out.append(("task_message", n["task_message"]))
+        oe = n.get("on_enter")
+        if isinstance(oe, dict):
+            out += [(f"on_enter.{k}", v) for k, v in oe.items() if isinstance(v, str)]
+        props = (((n.get("terminal") or {}).get("function") or {}).get("parameters") or {}).get(
+            "properties"
+        ) or {}
+        msg = (props.get("spoken_message") or {}).get("default")
+        if isinstance(msg, str):
+            out.append(("terminal.spoken_message", msg))
+        return out
+
+    def exposure(self, n: dict[str, Any], where: str, certain: bool) -> None:
+        """Account data in the text of a node reachable before identity is verified."""
+        given = set(self.p.call_vars) | set(self.wf.get("test_variables") or {})
+        workflow_set, _ = self.set_by_workflow()
+        for fld, text in self.texts(n):
+            for var in sorted(placeholders(text)):
+                if var in PRE_VERIFY_OK or var.startswith("system.") or not DEBT_VAR.search(var):
+                    continue
+                msg = f"{fld} shows {{{{{var}}}}} before identity is verified"
+                # an error only for a variable the workflow itself fills (code, mapping): a
+                # call variable or a name nothing sets is not known to hold account data
+                own = var in workflow_set or var.split(".")[0] in workflow_set
+                if certain and own and var not in given:
+                    self.err("data_before_verify", where, msg)
+                else:
+                    self.warn("data_before_verify", where, msg)
+
+    def set_by_workflow(self) -> tuple[set[str], set[str]]:
+        """(names the workflow writes: code, extraction, response_mapping; the platform's
+        automatic result keys of its tools and nodes)."""
+        defined = set(self.code_names)
+        auto: set[str] = set()
+        holders = [("nodes", k, n) for k, n in self.nodes.items()]
+        holders += [("global_nodes", k, n) for k, n in self.globals.items()]
+        tools = list(self.wf.get("tools") or [])
+        for _, k, n in holders:
+            if not isinstance(n, dict):
+                continue
+            auto.add(k)
+            defined |= {x.get("name") for x in n.get("extraction_schema") or [] if x.get("name")}
+            for m in n.get("response_mapping") or []:
+                if isinstance(m, dict) and m.get("variable"):
+                    defined.add(m["variable"])
+            tools += (n.get("tools") or []) + (n.get("pre_actions") or [])
+        for t in tools:
+            if not isinstance(t, dict):
+                continue
+            auto.add(str((t.get("function") or {}).get("name") or ""))
+            for m in t.get("response_mapping") or []:
+                if isinstance(m, dict) and m.get("variable"):
+                    defined.add(m["variable"])
+        return defined, {f"{a}{s}" for a in auto for s in AUTO_SUFFIXES}
+
+    def variables(self) -> None:
+        """Conditions and texts that read a variable nothing defines (warnings: a call
+        variable or a platform key the validator does not know may still be set)."""
+        defined, auto_keys = self.set_by_workflow()
+        defined |= set(self.p.call_vars) | set(self.wf.get("test_variables") or {})
+        holders = [("nodes", k, n) for k, n in self.nodes.items()]
+        holders += [("global_nodes", k, n) for k, n in self.globals.items()]
+
+        def known(var: str) -> bool:
+            base = var.split(".")[0]
+            return (
+                var in defined
+                or base in defined
+                or base in auto_keys
+                or base in ("system", "call", "extractor")
+            )
+
+        def conds(c: Any, where: str) -> None:
+            if not isinstance(c, dict):
+                return
+            for s in c.get("conditions") or []:
+                conds(s, where)
+            v = c.get("variable")
+            if isinstance(v, str) and v and not known(v):
+                self.warn("undefined_var", where, f"condition reads {v!r}, which nothing sets")
+
+        for kind, k, n in holders:
+            if not isinstance(n, dict):
+                continue
+            where = f"{kind}.{k}"
+            conds(n.get("condition"), where + ".condition")
+            for i, t in enumerate(n.get("transitions") or []):
+                if isinstance(t, dict):
+                    conds(t.get("condition"), f"{where}.transitions[{i}]")
+            for fld, text in self.texts(n):
+                for var in sorted(placeholders(text)):
+                    if not known(var):
+                        self.warn(
+                            "undefined_var", where, f"{fld} shows {{{{{var}}}}}, which nothing sets"
+                        )
+        for var in sorted(placeholders(self.wf.get("system_prompt"))):
+            if not known(var):
+                self.warn("undefined_var", "system_prompt", f"{{{{{var}}}}} is never set")
+
     def run(self) -> Report:
         self.nulls(self.wf, "")
         self.top()
@@ -639,6 +952,7 @@ class _V:
             if isinstance(n, dict):
                 self.node(k, n, is_global=True)
         self.graph()
+        self.guarded("workflow", self.variables)
         return self.r
 
 
