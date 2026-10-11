@@ -156,6 +156,61 @@ def test_amount_price_style_with_a_range(text, lo, hi, want):
     assert NS["parse_amount"](text, lo, hi) == want
 
 
+# ---- 5. clock times: past / to, British 'half five', corrections; a day number is no time
+@pytest.mark.parametrize(
+    "text,want",
+    [
+        ("ten to five", "16:50"),
+        ("twenty past ten", "10:20"),
+        ("ten past eleven", "11:10"),
+        ("five past two", "14:05"),
+        ("ten to eleven", "10:50"),
+        ("quarter to one", "12:45"),
+        ("quarter past two", "14:15"),
+        ("half five", "17:30"),
+        ("half past ten", "10:30"),
+        ("twenty five to three", "14:35"),
+        ("4, no, 5", "17:00"),
+        ("midday", "12:00"),
+        ("noon", "12:00"),
+        ("tomorrow, the 15th", ""),
+        ("15th of October", ""),
+        ("the fifteenth", ""),
+        ("Thursday the 15th at 11", "11:00"),
+        ("October 15 at 2", "14:00"),
+        ("at 11", "11:00"),
+        ("11 am", "11:00"),
+        ("eleven o'clock", "11:00"),
+        ("from 2 to 4", "14:00"),
+        # unchanged
+        ("nine am", "09:00"),
+        ("eight pm", "20:00"),
+        ("two thirty in the afternoon", "14:30"),
+        ("14:30", "14:30"),
+        ("eleven", "11:00"),
+    ],
+)
+def test_parse_spoken_time(text, want):
+    assert NS["parse_spoken_time"](text) == want
+
+
+def test_callback_day_text_with_a_day_number_is_no_time():
+    from fb.nodecode import bodies
+    from test_fixes import run
+
+    def cb(day, time):
+        v = {"now": "2026-10-14T10:00"}
+        run(bodies.SETUP_TP, v)
+        v["cb_day_text"], v["cb_time_text"] = day, time
+        run(bodies.CB_CHECK, v)
+        return v
+
+    v = cb("Thursday the 15th at 11", "")
+    assert (v["cb_state"], v["cb_date"], v["cb_time"]) == ("ok", "2026-10-15", "11:00")
+    v = cb("tomorrow, the 15th", "")
+    assert v["cb_state"] == "partial" and v["cb_pending_time"] == ""
+
+
 # ---- 3. dates of birth and years in words, corrections, pieces
 @pytest.mark.parametrize(
     "said,iso",

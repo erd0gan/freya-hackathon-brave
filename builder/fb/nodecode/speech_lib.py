@@ -535,41 +535,54 @@ def parse_amount(text, lo=None, hi=None):
 
 
 def parse_spoken_time(text, day_start=10, day_end=19):
-    """'around eleven', '11am', 'half past two', '14:30', 'two thirty in the afternoon' ->
-    'HH:MM', or ''. A bare hour that cannot be a working hour as said (1 to 7) is read as
-    afternoon; 'morning' / 'afternoon' / 'evening' / am / pm decide when given."""
+    """'around eleven', '11am', 'half past two', '14:30', 'two thirty in the afternoon',
+    'ten to five', 'twenty past ten', 'half five' (half past five) -> 'HH:MM', or ''. A bare
+    hour that cannot be a working hour as said (1 to 7) is read as afternoon; 'morning' /
+    'afternoon' / 'evening' / am / pm decide when given. A day of the month is no time ('the
+    15th', '15 October'): the callback check also reads the day text for a time."""
     raw = str(text or "").lower().replace(".", " ").replace("-", " ")
     if not raw.strip():
         return ""
-    s = re.sub(r"(\d)([a-z])", r"\1 \2", _last_segment(raw))
-    if "noon" in s and "after" not in s:
+    s = re.sub(r"(\d)\s*(?:st|nd|rd|th)\b", r"\1th", _last_segment(raw))
+    s = re.sub(r"(\d)(?!th\b)([a-z])", r"\1 \2", s)
+    if re.search(r"\bmidday\b", s) or ("noon" in s and "after" not in s):
         return "12:00"
     pm = bool(re.search(r"\b(pm|p m|afternoon|evening|tonight)\b", s))
     am = bool(re.search(r"\b(am|a m|morning)\b", s))
-    s = re.sub(r"\b(o'?clock|oclock|ish|around|about|at|by|maybe)\b", " ", s)
+    s = re.sub(r"\b(o'?clock|oclock|ish|around|about|at|by|maybe|minutes?)\b", " ", s)
     t = _words_to_number_tokens(s)
+    # days, not times: 'the 15th', '15th of October', 'October 15', 'the 20', a year
+    months = "|".join(_MONTHS)
+    t = re.sub(r"\bthe\s+\d{1,2}\b", " ", t)  # before the ordinals: 'the 15th 11' keeps 11
+    t = re.sub(r"\b\d{1,2}th\b(?:\s+of\s+[a-z]+)?", " ", t)
+    t = re.sub(r"\b\d{1,2}\s+(?:of\s+)?(?:" + months + r")\b", " ", t)
+    t = re.sub(r"\b(?:" + months + r")\s+\d{1,2}\b", " ", t)
+    t = re.sub(r"\b(?:19|20)\d{2}\b|\b\d+\s+(?:days?|weeks?)\b", " ", t)
+    t = re.sub(r"\s+", " ", t)
     hour, minute = None, 0
-    m = re.search(r"\b(\d{1,2})[:h ](\d{2})\b", t)
+    m = re.search(r"\b(\d{1,2})[:h](\d{2})\b", t)
+    past = re.search(r"\b(half|quarter|\d{1,2}) past (\d{1,2})\b", t)
+    to = re.search(r"(?<!from )(?<!between )\b(quarter|5|10|20|25) to (\d{1,2})\b", t)
+    half = re.search(r"\bhalf (\d{1,2})\b", t)
     if m and int(m.group(2)) < 60:
         hour, minute = int(m.group(1)), int(m.group(2))
+    elif past and (not past.group(1).isdigit() or 1 <= int(past.group(1)) <= 30):
+        minute = dict(half=30, quarter=15).get(past.group(1)) or int(past.group(1))
+        hour = int(past.group(2))
+    elif to:
+        # 'ten to five' is 4:50; 'quarter to one' is 12:45 (not 0:45)
+        hour = (int(to.group(2)) - 1) % 12 or 12
+        minute = 60 - (15 if to.group(1) == "quarter" else int(to.group(1)))
+    elif half:
+        hour, minute = int(half.group(1)), 30  # British 'half five' is half past five
     else:
-        m = re.search(r"\bhalf past (\d{1,2})\b", t)
-        q = re.search(r"\bquarter past (\d{1,2})\b", t)
-        q2 = re.search(r"\bquarter to (\d{1,2})\b", t)
-        if m:
-            hour, minute = int(m.group(1)), 30
-        elif q:
-            hour, minute = int(q.group(1)), 15
-        elif q2:
-            hour, minute = int(q2.group(1)) - 1, 45
+        m = re.search(r"\b(\d{1,2}) (\d{2})\b", t)
+        if m and int(m.group(2)) < 60 and int(m.group(1)) <= 23:
+            hour, minute = int(m.group(1)), int(m.group(2))
         else:
-            m = re.search(r"\b(\d{1,2}) (\d{2})\b", t)
-            if m and int(m.group(2)) < 60 and int(m.group(1)) <= 23:
-                hour, minute = int(m.group(1)), int(m.group(2))
-            else:
-                m = re.search(r"\b(\d{1,2})\b", t)
-                if m:
-                    hour = int(m.group(1))
+            m = re.search(r"\b(\d{1,2})\b", t)
+            if m:
+                hour = int(m.group(1))
     if hour is None or hour > 23:
         return ""
     if (pm and hour < 12) or (not am and 1 <= hour <= 7):
