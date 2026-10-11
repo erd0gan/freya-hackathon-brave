@@ -172,7 +172,7 @@ SCHEMA = {
         "outcomes": {"promise": "...", "paid": "...", "transferred": "...", "no_promise": "..."},
         "reasons": {
             "refused": "...",
-            "hardship": "...",
+            "hardship": "... ('' when the tool API has no value for it; same for the others)",
             "dispute": "...",
             "service_error": "...",
             "paid": "reason used in a note for an already-paid product",
@@ -319,6 +319,8 @@ def check(
             bad.append(f"neg.outcomes.{k}: {v!r} is not a close_call outcome {outs}")
     if neg.get("notes") and note_reasons:
         for k, v in (neg.get("reasons") or {}).items():
+            if v == "" and k not in note_reasons:
+                continue  # add_note has no value for this reason: none is required
             if v not in note_reasons:
                 bad.append(f"neg.reasons.{k}: {v!r} is not an add_note reason {note_reasons}")
     for k, v in (neg.get("queues") or {}).items():
@@ -563,14 +565,23 @@ def responses(
         swap = str((spec.get("identity") or {}).get("swap_hint") or "")
         if tool == "verify_identity" and swap:
             want.append("hint")
+        others = {str(rmap.get(r) or r) for r in want if r != "ok"}
         for role in want:
             name = str(rmap.get(role) or role)
             if name in top:
                 continue
             if role == "ok" and not any(
-                isinstance(x, dict) and x.get("type") == "boolean" for x in top.values()
+                isinstance(x, dict) and x.get("type") == "boolean" and k not in others
+                for k, x in top.items()
             ):
                 continue  # no flag the spec could name: not a spec problem, the build goes on
+            if (
+                tool == "verify_identity"
+                and role == "all_verified"
+                and role not in top
+                and str(rmap.get("verified") or "verified") in top
+            ):
+                continue  # no such flag: the identity hook counts the verified answers itself
             what = {
                 "ok": "says the call was carried out (true/false)",
                 "hint": "carries the hint, or set identity.swap_hint to '' if the tool has none",
@@ -661,8 +672,8 @@ def structure(spec: dict[str, Any]) -> list[str]:
             spans.append((lo, hi, name))
         if not _is_int(b.get("deadline_days"), 0):
             bad.append(f"band {name!r}: deadline_days must be a whole number >= 0")
-        if not _is_int(b.get("attempts"), 1):
-            bad.append(f"band {name!r}: attempts must be a whole number >= 1")
+        if not _is_int(b.get("attempts"), 0):
+            bad.append(f"band {name!r}: attempts must be a whole number >= 0")
         if b.get("deadline_unit", "business") not in ("business", "calendar"):
             bad.append(f"band {name!r}: deadline_unit must be business or calendar")
     spans.sort()
@@ -691,9 +702,19 @@ def structure(spec: dict[str, Any]) -> list[str]:
     for k, allowed in ENUMS.items():
         if k in neg and neg.get(k) not in allowed:
             bad.append(f"neg.{k} must be one of {list(allowed)}")
+    # A reason the tool API has no value for (an add_note enum without hardship) is '': only
+    # refused, the reason of every product left without a promise, must be named.
+    rs = neg.get("reasons")
+    if not isinstance(rs, dict) or any(
+        not isinstance(rs.get(x), str) for x in ("hardship", "dispute", "service_error")
+    ):
+        bad.append(
+            "neg.reasons needs a value for each of ['refused', 'hardship', 'dispute', "
+            "'service_error'] ('' when the tool API has no value for one)"
+        )
     for k, keys in (
         ("outcomes", ("promise", "paid", "transferred", "no_promise")),
-        ("reasons", ("refused", "hardship", "dispute", "service_error")),
+        ("reasons", ("refused",)),
         ("queues", ("restructuring", "human", "support")),
     ):
         got = neg.get(k)
@@ -971,6 +992,10 @@ def to_generator(spec: dict[str, Any]) -> dict[str, Any]:
     if paid:
         cr["paid"] = paid
     neg["close_reasons"] = cr
+    # a reason the tool API has no value for is '': left out, the engine uses the semantic key
+    neg["reasons"] = {
+        k: v for k, v in (neg.get("reasons") or {}).items() if isinstance(v, str) and v.strip()
+    }
     neg.setdefault("attempt_plan", s.get("attempt_plan") or [])
     if s.get("attempt_plan"):
         neg["attempt_plan"] = s["attempt_plan"]

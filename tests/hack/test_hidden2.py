@@ -112,3 +112,100 @@ def test_transfer_without_a_reason_sends_none():
     assert "vars['final_reason'] = ''" in code_of(wf, "pre_transfer")
     body = run_hook(close_hook(wf), {"customer_id": "c1", "outcome": "transferred", "reason": ""})
     assert body == {"customer_id": "c1", "outcome": "transferred"}
+
+
+# ---------------------------------------------------------------- 3a. variants check() accepted
+def ok200(o, tool):
+    return o["paths"]["/" + tool]["post"]["responses"]["200"]["content"]["application/json"][
+        "schema"
+    ]
+
+
+def api_with(change):
+    o = copy.deepcopy(OPENAPI)
+    change(o)
+    return o
+
+
+def verify_tool(wf):
+    return next(
+        t for t in wf["nodes"]["identity"]["tools"] if t["function"]["name"] == "verify_identity"
+    )
+
+
+def run_post(src, data, v):
+    result = {"status": "success", "data": dict(data)}
+    exec(compile(src, "post", "exec"), {"vars": v, "result": result})
+    return result["data"]
+
+
+def test_verify_without_ok_passes_and_reads_wrong_answers_as_wrong():
+    o = api_with(lambda o: ok200(o, "verify_identity")["properties"].pop("ok"))
+    assert check(spec_with(), parse_openapi(o), BRIEF, o) == []
+    post = verify_tool(workflow(spec_with(), o))["post_process_code"]
+    v = {"id_last_field": "date_of_birth"}
+    d = run_post(post, {"verified": False, "wrong_answers_left": 2}, v)
+    assert d["what_to_do_next"].startswith("That answer is not correct")
+    d = run_post(post, {"verified": True, "wrong_answers_left": 3}, v)
+    assert d["what_to_do_next"].startswith("Correct. Now ask")
+    # nothing judged (an error answer): unreadable, ask again
+    d = run_post(post, {"error": "unreadable date", "wrong_answers_left": 3}, v)
+    assert d["what_to_do_next"].startswith("The answer could not be read")
+
+
+def test_verify_with_ok_unchanged():
+    post = verify_tool(workflow(spec_with()))["post_process_code"]
+    v = {"id_last_field": "date_of_birth"}
+    d = run_post(post, {"ok": False, "error": "x", "wrong_answers_left": 3}, v)
+    assert d["what_to_do_next"].startswith("The answer could not be read")
+    d = run_post(post, {"ok": True, "verified": False, "wrong_answers_left": 2}, v)
+    assert d["what_to_do_next"].startswith("That answer is not correct")
+
+
+def test_verify_without_all_verified_counts_the_answers():
+    from fb.validate import validate
+
+    o = api_with(lambda o: ok200(o, "verify_identity")["properties"].pop("all_verified"))
+    assert check(spec_with(), parse_openapi(o), BRIEF, o) == []
+    wf, policy = build(to_generator(spec_with()), parse_openapi(o))
+    assert validate(wf, parse_openapi(o), policy).ok
+    post = verify_tool(wf)["post_process_code"]
+    v = {"id_last_field": "date_of_birth"}
+    d = run_post(post, {"ok": True, "verified": True, "wrong_answers_left": 3}, v)
+    assert d["what_to_do_next"].startswith("Correct. Now ask") and "id_all_ok" not in v
+    v["id_last_field"] = "phone_last4"
+    d = run_post(post, {"ok": True, "verified": True, "wrong_answers_left": 3}, v)
+    assert d["what_to_do_next"].startswith("Both answers are correct")
+    assert v["id_all_ok"] == "true"
+    route = wf["nodes"]["identity"]["transitions"][0]
+    assert route["target_node"] == "account"
+    assert {"variable": "id_all_ok", "operator": "equals", "operand": "true"} in route["condition"][
+        "conditions"
+    ]
+    # the kit API (it has all_verified) keeps the plain route
+    kit = workflow(spec_with())["nodes"]["identity"]["transitions"][0]["condition"]
+    assert all(c["variable"] != "id_all_ok" for c in kit["conditions"])
+    # neither flag: still a problem
+    o2 = api_with(lambda o: [ok200(o, "verify_identity")["properties"].pop(k) for k in
+                             ("all_verified", "verified")])  # fmt: skip
+    assert any("all_verified" in p for p in check(spec_with(), parse_openapi(o2), BRIEF, o2))
+
+
+def test_band_without_persuasion_attempts_is_valid():
+    s = spec_with(lambda s: s["bands"][0].update(attempts=0))
+    assert check(s, parse_openapi(OPENAPI), BRIEF, OPENAPI) == []
+
+
+def test_note_reason_the_tool_has_no_value_for_is_not_required():
+    def no_hardship(o):
+        sch = o["paths"]["/add_note"]["post"]["requestBody"]["content"]["application/json"]
+        sch["schema"]["properties"]["reason"]["enum"] = ["refused", "dispute", "service_error"]
+
+    o = api_with(no_hardship)
+    s = spec_with(lambda s: s["neg"]["reasons"].update(hardship="", paid=""))
+    assert check(s, parse_openapi(o), BRIEF, o) == []
+    # an empty value the tool does have a value for is still reported
+    s = spec_with(lambda s: s["neg"]["reasons"].update(dispute=""))
+    assert any("neg.reasons.dispute" in p for p in check(s, parse_openapi(o), BRIEF, o))
+    neg = to_generator(spec_with(lambda s: s["neg"]["reasons"].update(hardship="")))["cfg"]["neg"]
+    assert "hardship" not in neg["reasons"]

@@ -264,10 +264,15 @@ def _lit(x: Any) -> str:
 
 
 def identity_hooks(
-    spec: dict[str, Any], f_field: str = "field", f_answer: str = "answer"
+    spec: dict[str, Any],
+    f_field: str = "field",
+    f_answer: str = "answer",
+    count_verified: bool = False,
 ) -> tuple[str, str]:
     """verify_identity hooks. `f_field` / `f_answer`: the tool's names for the question
-    discriminator and the answer (bound from the spec; hidden tool APIs can rename them)."""
+    discriminator and the answer (bound from the spec; hidden tool APIs can rename them).
+    `count_verified`: the response has no all-verified flag; the post hook counts the
+    questions answered right and sets it (and vars['id_all_ok']) when every one is."""
     ident = spec.get("identity") or {}
     qs = ident.get("questions") or []
     kinds = {x["field"]: x.get("kind", "text") for x in qs}
@@ -330,6 +335,22 @@ def identity_hooks(
     hook = pre[len(LIB_CALENDAR) :]
     used = subset(LIB_CALENDAR, hook)
     pre = "# Library functions this hook uses (from builder/fb/nodecode/*_lib.py)\n" + used + hook
+    r_ok, r_ver = resp("verify_identity", "ok"), resp("verify_identity", "verified")
+    r_all = resp("verify_identity", "all_verified")
+    count = (
+        (
+            "            if _t(_d.get(" + repr(r_ver) + ")) and _last:\n"
+            "                _done = [f for f in str(vars.get('id_ok_fields') or '').split(',') if f]\n"
+            "                if _last not in _done:\n"
+            "                    _done.append(_last)\n"
+            "                vars['id_ok_fields'] = ','.join(_done)\n"
+            "                if all(f in _done for f in _order):\n"
+            "                    _d[" + repr(r_all) + "] = True\n"
+            "                    vars['id_all_ok'] = 'true'\n"
+        )
+        if count_verified
+        else ""
+    )
     post = (
         "try:\n"
         + "    _order = "
@@ -356,6 +377,16 @@ def identity_hooks(
         + "                _inc = str(vars.get('id_incomplete') or '')\n"
         + "            except Exception:\n"
         + "                _inc = ''\n"
+        # without an ok field, an answer is unreadable only when the bank judged nothing
+        + "            _okv = _d.get("
+        + repr(r_ok)
+        + ")\n"
+        + "            _unread = (not _t(_okv)) if _okv is not None else (_d.get("
+        + repr(r_ver)
+        + ") is None and _d.get("
+        + repr(r_all)
+        + ") is None)\n"
+        + count
         + "            if _inc == 'yes':\n"
         + "                _m = 'The year is not complete yet. Do not repeat the question: ask only "
         + "for the rest of the year.'\n"
@@ -368,19 +399,17 @@ def identity_hooks(
         + repr(swap_say + " This does not count as a wrong answer.")
         + "\n"
         + "            elif _t(_d.get("
-        + repr(resp("verify_identity", "all_verified"))
+        + repr(r_all)
         + ")):\n"
         + "                _m = 'Both answers are correct. Thank the customer in a few words.'\n"
-        + "            elif not _t(_d.get("
-        + repr(resp("verify_identity", "ok"))
-        + ")) and _left != '0':\n"
+        + "            elif _unread and _left != '0':\n"
         + "                _m = 'The answer could not be read. Ask for it again.'\n"
         + "            elif _left == '0':\n"
         + "                _m = "
         + repr("The identity check has failed. Do not ask anything else. " + failed)
         + "\n"
         + "            elif _t(_d.get("
-        + repr(resp("verify_identity", "verified"))
+        + repr(r_ver)
         + ")):\n"
         + "                _nxt = [f for f in _order if f != _last]\n"
         + "                _i = _order.index(_last) + 1 if _last in _order else len(_order)\n"
@@ -517,8 +546,13 @@ def build(spec: dict[str, Any], tools: dict[str, ToolDef]) -> tuple[dict[str, An
 
     # ---- tools
     t_ver = tools["verify_identity"]
+    # a verify_identity response with no all-verified flag: the hook counts the answers
+    count_verified = not has_flag(t_ver, resp("verify_identity", "all_verified"))
     pre_id, post_id = identity_hooks(
-        spec, role_field(t_ver, "field", "question"), role_field(t_ver, "answer", "value")
+        spec,
+        role_field(t_ver, "field", "question"),
+        role_field(t_ver, "answer", "value"),
+        count_verified,
     )
     field_desc = "Which question this answer is for. " + " ".join(
         f"'{x['field']}' for: {x.get('ask', '')}" for x in questions
@@ -826,6 +860,10 @@ def build(spec: dict[str, Any], tools: dict[str, ToolDef]) -> tuple[dict[str, An
         "exactly as said. Empty if the last message has no answer.",
     )
     verified = eq("verify_identity_response.data." + resp("verify_identity", "all_verified"), *TRUE)
+    if count_verified:
+        verified["conditions"].append(
+            {"variable": "id_all_ok", "operator": "equals", "operand": "true"}
+        )
     locked = eq(
         "verify_identity_response.data." + resp("verify_identity", "wrong_answers_left"), "0"
     )
@@ -1251,7 +1289,8 @@ def build(spec: dict[str, Any], tools: dict[str, ToolDef]) -> tuple[dict[str, An
         "tools": [close_fn],
     }
     policy = Policy(
-        verified_vars={"verify_identity_response.data." + resp("verify_identity", "all_verified")},
+        verified_vars={"verify_identity_response.data." + resp("verify_identity", "all_verified")}
+        | ({"id_all_ok"} if count_verified else set()),
         promise_nodes={"record"},
         bounded_loops={
             "record",
