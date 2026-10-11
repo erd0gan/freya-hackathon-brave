@@ -297,14 +297,51 @@ def parse_spoken_date(text, today):
     return "", "none"
 
 
+def _point_digits(s):
+    """The words after 'point' read as a digit sequence: 'zero five' -> '05', 'five zero'
+    -> '50', 'two five' -> '25', 'twenty five' -> '25', '05' -> '05'. Stops at the first
+    word that is not a digit; '' when the part does not start with one."""
+    toks = s.replace("-", " ").split()
+    out = ""
+    i = 0
+    while i < len(toks):
+        t = toks[i]
+        if re.fullmatch(r"\d+", t):
+            out += t
+        elif t in _UNITS:
+            out += str(_UNITS[t])
+        elif t in _TENS:
+            nxt = toks[i + 1] if i + 1 < len(toks) else ""
+            if nxt in _UNITS and 0 < _UNITS[nxt] < 10:
+                out += str(_TENS[t] + _UNITS[nxt])
+                i += 1
+            else:
+                out += str(_TENS[t])
+        else:
+            break
+        i += 1
+    return out
+
+
 def parse_amount(text):
     """'637.50', '637,50', 'six hundred and thirty-seven fifty', 'two thousand one hundred
-    twenty-five pounds and ten pence' -> float, or None."""
+    twenty-five pounds and ten pence', 'two hundred point zero five' -> float, or None."""
     raw = str(text or "").lower().replace("’", "'")
     raw = re.sub(r"(\d),(\d{2})(?!\d)", r"\1.\2", raw)
     if not raw.strip():
         return None
     s = _last_segment(raw)
+    if re.search(r"\bpoint\b", s):
+        # a spoken decimal point: what follows is a digit sequence, not a number
+        # ('point zero five' is .05, not .5); only when a number stands on both sides
+        left, right = re.split(r"\bpoint\b", s, maxsplit=1)
+        digits = _point_digits(re.sub(r"\b(pounds?|euros?|dollars?|eur|gbp|usd)\b", " ", right))
+        whole = parse_amount(left) if digits else None
+        if whole is not None:
+            try:
+                return round(whole + float("0." + digits), len(digits))
+            except Exception:
+                return None
     m = re.search(r"(\d[\d ,]*\d|\d)(?:[.,](\d{1,2}))?(?!\d)", s)
     if m and not re.search(
         r"[a-z]", re.sub(r"(pounds?|euros?|dollars?|eur|gbp|usd|and|cents?|pence|p\b)", "", s)
