@@ -17,3 +17,6 @@ runs/
 docs/research-talkative/raw/
 docs/research-talkative/compare/raw/
 .claude/
+
+# The final case pack: never committed (nothing from the final case may be in the builder)
+FINAL_BRIEF/
