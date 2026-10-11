@@ -542,6 +542,10 @@ def responses(
             name = str(rmap.get(role) or role)
             if name in top:
                 continue
+            if role == "ok" and not any(
+                isinstance(x, dict) and x.get("type") == "boolean" for x in top.values()
+            ):
+                continue  # no flag the spec could name: not a spec problem, the build goes on
             what = {
                 "ok": "says the call was carried out (true/false)",
                 "hint": "carries the hint, or set identity.swap_hint to '' if the tool has none",
@@ -951,7 +955,10 @@ def to_generator(spec: dict[str, Any]) -> dict[str, Any]:
             "start": cb.get("start") or "10:00",
             "end": cb.get("end") or "19:00",
             "include_today": cb.get("include_today", True),
-            "business_days_ahead": cb.get("business_days_ahead") or 1,
+            # 0 is a value (only today), not a missing one
+            "business_days_ahead": (
+                cb["business_days_ahead"] if _is_int(cb.get("business_days_ahead"), 0) else 1
+            ),
             "business_days_only": cb.get("business_days_only", True),
         },
         "product_fields": {k: v for k, v in pf.items() if k != "list" and v},

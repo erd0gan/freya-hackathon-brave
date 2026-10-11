@@ -205,6 +205,13 @@ def bake(t: ToolDef, roles: dict[tuple[str, ...], str]) -> dict[str, str]:
     return out
 
 
+def has_flag(t: ToolDef | None, name: str) -> bool:
+    """The tool's 200 response has field `name`, or lists no fields at all (unknown). A success
+    check is wired only then: a flag that never comes would read every call as failed."""
+    props = ((t.response if t else None) or {}).get("properties")
+    return not isinstance(props, dict) or not props or name in props
+
+
 def q(s: str) -> str:
     return s.replace('"', "'")
 
@@ -936,40 +943,49 @@ def build(spec: dict[str, Any], tools: dict[str, ToolDef]) -> tuple[dict[str, An
         "after_record", snippet(bodies.AFTER_RECORD, cfg, on_error=bodies.NEG_ERROR), after()
     )
     # a failed transfer is tried once more, then closed as a service error, not `transferred`
-    tr_ok = [{"path": "data." + resp("transfer_to_agent", "ok"), "variable": "transfer_ok"}]
-    nodes["transfer"] = api_node("transfer", transfer_fn, [tr("after_transfer", "always")], tr_ok)
-    nodes["after_transfer"] = code_node(
-        "after_transfer",
-        snippet(bodies.AFTER_TRANSFER, cfg, LIB_CALENDAR),
-        [tr("transfer", "one more try", eq("transfer_next", "retry")), tr("wrap", "always")],
-    )
-    # before verification: no notes are possible, straight to the goodbye
-    nodes["transfer_pre"] = api_node(
-        "transfer_pre", transfer_fn, [tr("after_transfer_pre", "always")], tr_ok
-    )
-    nodes["after_transfer_pre"] = code_node(
-        "after_transfer_pre",
-        snippet(bodies.AFTER_TRANSFER, cfg, LIB_CALENDAR),
-        [
-            tr("transfer_pre", "one more try", eq("transfer_next", "retry")),
-            tr("goodbye", "always"),
-        ],
-    )
+    if has_flag(t_tr, resp("transfer_to_agent", "ok")):
+        tr_ok = [{"path": "data." + resp("transfer_to_agent", "ok"), "variable": "transfer_ok"}]
+        nodes["transfer"] = api_node(
+            "transfer", transfer_fn, [tr("after_transfer", "always")], tr_ok
+        )
+        nodes["after_transfer"] = code_node(
+            "after_transfer",
+            snippet(bodies.AFTER_TRANSFER, cfg, LIB_CALENDAR),
+            [tr("transfer", "one more try", eq("transfer_next", "retry")), tr("wrap", "always")],
+        )
+        # before verification: no notes are possible, straight to the goodbye
+        nodes["transfer_pre"] = api_node(
+            "transfer_pre", transfer_fn, [tr("after_transfer_pre", "always")], tr_ok
+        )
+        nodes["after_transfer_pre"] = code_node(
+            "after_transfer_pre",
+            snippet(bodies.AFTER_TRANSFER, cfg, LIB_CALENDAR),
+            [
+                tr("transfer_pre", "one more try", eq("transfer_next", "retry")),
+                tr("goodbye", "always"),
+            ],
+        )
+    else:
+        nodes["transfer"] = api_node("transfer", transfer_fn, [tr("wrap", "always")])
+        nodes["transfer_pre"] = api_node("transfer_pre", transfer_fn, [tr("goodbye", "always")])
     notes_on = bool(neg.get("notes")) and note_fn is not None
     wrap_routes = [tr("goodbye", "always")]
     if notes_on:
         wrap_routes.insert(0, tr("note", "a note to add", gt("note_count", 0)))
     nodes["wrap"] = code_node("wrap", bodies.WRAP, wrap_routes)
     if notes_on:
+        note_check = has_flag(t_note, resp("add_note", "ok"))
         nodes["note"] = api_node(
             "note",
             note_fn,
             [tr("after_note", "always")],
-            [{"path": "data." + resp("add_note", "ok"), "variable": "note_ok"}],
+            [{"path": "data." + resp("add_note", "ok"), "variable": "note_ok"}]
+            if note_check
+            else [],
         )
         nodes["after_note"] = code_node(
             "after_note",
-            snippet(bodies.AFTER_NOTE, {**cfg, "note_check": True}),
+            snippet(bodies.AFTER_NOTE, {**cfg, "note_check": note_check}),
             [tr("note", "another note", gt("note_count", 0)), tr("goodbye", "always")],
         )
 

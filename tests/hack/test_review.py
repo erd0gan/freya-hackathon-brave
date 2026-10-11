@@ -296,3 +296,30 @@ def test_real_refusals_still_count():
     assert decline("I don't want to talk about this.")[0] == "yes"
     assert decline("What is this about?")[0] == "yes"
     assert decline("Why do you need that?")[0] == "yes"
+
+
+# a tool without a success flag gets no success check (every call would read as failed)
+def test_tools_without_ok_flag_build_without_success_checks():
+    import copy
+    import json as _json
+
+    from fb.generate import build
+    from fb.openapi_tools import parse_openapi
+    from fb.validate import validate
+    from spec_fixtures import SPEC_B
+
+    from conftest import KIT
+
+    o = _json.loads((KIT / "tools" / "openapi.json").read_text())
+    for path in ("/transfer_to_agent", "/add_note"):
+        r = o["paths"][path]["post"]["responses"]["200"]["content"]["application/json"]
+        r["schema"] = {"type": "object", "properties": {"queued": {"type": "string"}}}
+    tools = parse_openapi(o)
+    wf, policy = build(copy.deepcopy(SPEC_B), tools)
+    assert validate(wf, tools, policy).ok
+    n = wf["nodes"]
+    assert "after_transfer" not in n and n["transfer"]["transitions"][-1]["target_node"] == "wrap"
+    assert n["note"]["response_mapping"] == []
+    assert "'note_check': False" in str(n["after_note"]) or '"note_check": false' in str(
+        n["after_note"]
+    )
