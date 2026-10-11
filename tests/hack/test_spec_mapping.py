@@ -277,15 +277,20 @@ def test_candidate_names_still_bind():
     assert problems(api_change=rename_field("transfer_to_agent", "queue", "team")) == []
 
 
-def test_required_field_without_a_role_is_only_a_warning():
+def test_required_field_without_a_role_asks_for_a_constant():
+    # a workflow step sends add_note: nothing would fill a required text, the bank rejects
+    # every note. The repair round is asked for the brief's constant (tool_fields.extras).
     def text_required(o):
         body(o, "add_note")["required"].append("text")
 
-    assert problems(api_change=text_required) == []
+    out = problems(api_change=text_required)
+    assert len(out) == 1 and "['text']" in out[0] and "tool_fields.add_note.extras" in out[0]
     o = copy.deepcopy(OPENAPI)
     text_required(o)
-    soft = bindings(SPEC, parse_openapi(o))
-    assert len(soft) == 1 and soft[0][1] is False and "['text']" in soft[0][0]
+    hard = bindings(SPEC, parse_openapi(o))
+    assert len(hard) == 1 and hard[0][1] is True
+    given = lambda s: s.update(tool_fields={"add_note": {"extras": {"text": "no promise"}}})  # noqa: E731
+    assert problems(given, text_required) == []
 
 
 # ---------------------------------------------------------------- build.py: budget and smoke

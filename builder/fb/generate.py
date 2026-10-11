@@ -24,11 +24,21 @@ Call variables are referenced as {{name}} (customer_id, title, last_name, first_
 from __future__ import annotations
 
 import copy
+import difflib
+import re
 from typing import Any
 
 from fb.nodecode import bodies
 from fb.nodecode.embed import LIB, LIB_CALENDAR, snippet, subset
-from fb.openapi_tools import ToolDef, freya_tool
+from fb.openapi_tools import (
+    FMT_VALUE,
+    ToolDef,
+    fixed_value,
+    freya_tool,
+    path_schema,
+    request_hook,
+    wire_format,
+)
 from fb.validate import Policy
 
 ALWAYS = {"operator": "always"}
@@ -207,6 +217,91 @@ def bake(t: ToolDef, roles: dict[tuple[str, ...], str]) -> dict[str, str]:
     return out
 
 
+# Names of the call's variables (spec call_variables): a required field no role binds is
+# filled from the call variable of the same name.
+_CV: list[str] = []
+DEFAULT_CALL_VARS = ["customer_id", "title", "first_name", "last_name", "now"]
+
+
+def norm(s: Any) -> str:
+    return re.sub(r"[^a-z0-9]", "", str(s).lower())
+
+
+def _words(s: Any) -> list[str]:
+    return [w for w in re.split(r"[^a-z0-9]+", str(s).lower()) if w]
+
+
+def match_enum(value: Any, allowed: list[str]) -> str:
+    """The value of `allowed` a stale literal stands for: itself, the same name written
+    otherwise (Not-Verified), its initials (date_of_birth -> dob), the only value sharing a word
+    with it (phone_last4 -> phone_tail), or one close spelling. '' when none or several fit."""
+    v = str(value or "")
+    if not v or not allowed:
+        return ""
+    if v in allowed:
+        return v
+    same = [a for a in allowed if norm(a) == norm(v)]
+    if len(same) == 1:
+        return same[0]
+    w = _words(v)
+    ini = [
+        a
+        for a in allowed
+        if (len(w) > 1 and norm(a) == "".join(x[0] for x in w))
+        or (len(_words(a)) > 1 and norm(v) == "".join(x[0] for x in _words(a)))
+    ]
+    if len(ini) == 1:
+        return ini[0]
+    # never across a negation: no_promise is not promise, not_verified is not not_reached
+    neg = lambda x: bool(set(_words(x)) & NEGATIONS)  # noqa: E731
+    pool = [a for a in allowed if neg(a) == neg(v)]
+    words = {x for x in w if len(x) > 2} - NEGATIONS
+    share = [a for a in pool if words & set(_words(a))]
+    if len(share) == 1:
+        return share[0]
+    close = difflib.get_close_matches(v, pool, n=2, cutoff=0.75)
+    if len(close) == 1:
+        return close[0]
+    return ""
+
+
+NEGATIONS = {"no", "not", "non", "none", "never", "without", "un"}
+
+
+def loose_fill(t: ToolDef, bound: set[str]) -> tuple[dict[str, str], dict[str, Any]]:
+    """Fields no role binds: the spec's constant (tool_fields.<tool>.extras, a value the
+    brief implies), else, for a required one the tool API does not fix itself (default,
+    one-value enum), the call variable of the same name. (bake, consts) for freya_tool."""
+    tf = _TF.get(t.name) if isinstance(_TF.get(t.name), dict) else {}
+    extras = tf.get("extras") if isinstance(tf.get("extras"), dict) else {}
+    by_var: dict[str, str] = {}
+    consts: dict[str, Any] = {}
+    for f in t.fields:
+        if f.name in bound:
+            continue
+        v = extras.get(f.name)
+        if v is not None and str(v).strip() and not isinstance(v, (dict, list)):
+            if f.enum:
+                v = match_enum(v, f.enum)
+            if v not in (None, ""):
+                consts[f.name] = v
+                continue
+        if not f.required or fixed_value(f) is not None:
+            continue
+        var = next((c for c in _CV if norm(c) == norm(f.name)), "")
+        if var:
+            by_var[f.name] = var
+    return by_var, consts
+
+
+def fill(t: ToolDef, roles: dict[tuple[str, ...], str], skip: tuple[str, ...] = ()) -> dict:
+    """freya_tool's bake and consts for a tool: its roles, then loose_fill (`skip`: fields
+    the model fills)."""
+    b = bake(t, roles)
+    by_var, consts = loose_fill(t, set(b) | set(skip))
+    return {"bake": {**b, **by_var}, "consts": consts}
+
+
 def response_fields(t: ToolDef | None) -> dict[str, Any]:
     """The 200 response's fields: $refs and allOf/oneOf/anyOf resolved when the tool came from
     parse_openapi (an allOf response read as plain `properties` listed nothing, and a missing
@@ -218,10 +313,95 @@ def response_fields(t: ToolDef | None) -> dict[str, Any]:
 
 
 def has_flag(t: ToolDef | None, name: str) -> bool:
-    """The tool's 200 response has field `name`, or lists no fields at all (unknown). A success
-    check is wired only then: a flag that never comes would read every call as failed."""
+    """The tool's 200 response has field `name` (a dotted path for a nested one:
+    result.verified), or lists no fields at all (unknown). A success check is wired only then:
+    a flag that never comes would read every call as failed."""
     props = response_fields(t)
-    return not props or name in props
+    return not props or name in props or path_schema(props, name) is not None
+
+
+# Reads a dotted response path in a hook (`_g(_d, 'result.verified')`); a hook gets it only
+# when a field it reads is nested.
+PATH_GET = (
+    "def _g(d, p):\n"
+    "    for k in str(p).split('.'):\n"
+    "        d = d.get(k) if isinstance(d, dict) else None\n"
+    "    return d\n\n\n"
+)
+
+
+def getter(name: str, obj: str = "_d") -> str:
+    """Source reading response field `name` from dict `obj` (a dotted name through PATH_GET)."""
+    return f"_g({obj}, {name!r})" if "." in name else f"{obj}.get({name!r})"
+
+
+# Stale enum literals mapped by conform (module state like _TF; build() resets it).
+FIXES: list[str] = []
+
+
+def _close_enums(tools: dict[str, ToolDef]) -> tuple[list[str], list[str]]:
+    t = tools.get("close_call")
+    if t is None:
+        return [], []
+    fo = t.field(role_field(t, "outcome", "result", "status"))
+    fr = t.field(role_field(t, "reason", "code", "detail"))
+    return (list(fo.enum) if fo else []), (list(fr.enum) if fr else [])
+
+
+def conform(
+    outcomes: dict[str, Any],
+    neg: dict[str, Any],
+    identity: dict[str, Any],
+    tools: dict[str, ToolDef],
+    where: str = "",
+) -> list[str]:
+    """Outcome, reason, queue and question literals the tool API's enums do not list (a spec
+    older than the tool file): each mapped in place to the enum value it stands for
+    (match_enum on the value, then on its key: neg.queues.human -> 'human'). Returns a note per
+    change; a literal no value fits stays (check() reports it)."""
+    notes: list[str] = []
+    outs, close_rs = _close_enums(tools)
+    t_tr, t_note, t_ver = (
+        tools.get(n) for n in ("transfer_to_agent", "add_note", "verify_identity")
+    )
+    fq = t_tr.field(role_field(t_tr, "queue", "team", "department", "desk")) if t_tr else None
+    fn = t_note.field(role_field(t_note, "reason", "code")) if t_note else None
+    fv = t_ver.field(role_field(t_ver, "field", "question")) if t_ver else None
+    queues, note_rs = (list(fq.enum) if fq else []), (list(fn.enum) if fn else [])
+
+    def fix(d: dict[str, Any], key: Any, allowed: list[str], label: str, i: int = -1) -> None:
+        cur = d[key][i] if i >= 0 else d[key]
+        if not allowed or not isinstance(cur, str) or not cur or cur in allowed:
+            return
+        new = match_enum(cur, allowed) or match_enum(key, allowed)
+        if new:
+            if i >= 0:
+                d[key][i] = new
+            else:
+                d[key] = new
+            notes.append(f"{where}{label}: {cur!r} is not in the tool API's enum; using {new!r}")
+
+    for k, v in list((outcomes or {}).items()):
+        if isinstance(v, list) and v:
+            fix(outcomes, k, outs, f"outcomes.{k}", 0)
+            if len(v) > 1:
+                fix(outcomes, k, close_rs, f"outcomes.{k} reason", 1)
+    for sub, allowed in (
+        ("outcomes", outs),
+        ("queues", queues),
+        ("transfer_reasons", close_rs),
+        ("close_reasons", close_rs),
+        ("reasons", note_rs if neg.get("notes") and note_rs else close_rs),
+    ):
+        d = neg.get(sub)
+        if isinstance(d, dict):
+            for k in list(d):
+                if k != "_":
+                    fix(d, k, allowed, f"neg.{sub}.{k}")
+    for x in (identity or {}).get("questions") or []:
+        if isinstance(x, dict) and fv is not None and "field" in x:
+            fix(x, "field", list(fv.enum), "identity question field")
+    return notes
 
 
 def success_field(t: ToolDef | None, ok_name: str) -> tuple[str, str]:
@@ -287,11 +467,14 @@ def identity_hooks(
     f_field: str = "field",
     f_answer: str = "answer",
     count_verified: bool = False,
+    answer_fmt: str = "",
 ) -> tuple[str, str]:
     """verify_identity hooks. `f_field` / `f_answer`: the tool's names for the question
     discriminator and the answer (bound from the spec; hidden tool APIs can rename them).
     `count_verified`: the response has no all-verified flag; the post hook counts the
-    questions answered right and sets it (and vars['id_all_ok']) when every one is."""
+    questions answered right and sets it (and vars['id_all_ok']) when every one is.
+    `answer_fmt`: the date format the tool API wants a date answer in (wire_format; '' for
+    ISO, what normalize_dob gives)."""
     ident = spec.get("identity") or {}
     qs = ident.get("questions") or []
     kinds = {x["field"]: x.get("kind", "text") for x in qs}
@@ -320,9 +503,13 @@ def identity_hooks(
         + "        if _k == 'date':\n"
         + "            _b["
         + repr(f_answer)
-        + "] = normalize_dob(_a, "
+        + "] = "
+        + ("fmt_value(" if answer_fmt else "")
+        + "normalize_dob(_a, "
         + repr(order_dm)
-        + ")\n"
+        + ")"
+        + (f", {answer_fmt!r})" if answer_fmt else "")
+        + "\n"
         # pieces: a year said in two parts ('19' ... '75'); a lone century is not an answer
         # yet. Sent unreadable on purpose: the bank does not count that as a wrong answer.
         + "            _ld = digits_from_speech(vars.get('id_last'))\n"
@@ -361,12 +548,13 @@ def identity_hooks(
     # only the calendar/speech functions the hook uses, readable (was the whole 30 KB library)
     hook = pre[len(LIB_CALENDAR) :]
     used = subset(LIB_CALENDAR, hook)
-    pre = "# Library functions this hook uses (from builder/fb/nodecode/*_lib.py)\n" + used + hook
+    pre = "# Library functions this hook uses (from builder/fb/nodecode/*_lib.py)\n" + used
+    pre += ("\n\n" + FMT_VALUE if answer_fmt else "") + hook
     r_ok, r_ver = resp("verify_identity", "ok"), resp("verify_identity", "verified")
     r_all = resp("verify_identity", "all_verified")
     count = (
         (
-            "            if _t(_d.get(" + repr(r_ver) + ")) and _last:\n"
+            "            if _t(" + getter(r_ver) + ") and _last:\n"
             "                _done = [f for f in str(vars.get('id_ok_fields') or '').split(',') if f]\n"
             "                if _last not in _done:\n"
             "                    _done.append(_last)\n"
@@ -380,6 +568,7 @@ def identity_hooks(
     )
     judged = [resp("verify_identity", k) for k in ("verified", "wrong_answers_left")]
     judged += [resp("verify_identity", k) for k in ("all_verified", "hint")]
+    nested = any("." in x for x in [*judged, r_ok])
     post = (
         "try:\n"
         + "    ID_FIELDS = "
@@ -391,7 +580,7 @@ def identity_hooks(
         + "    _asks = "
         + _lit(asks)
         + "\n"
-        + ID_DOWN
+        + (ID_DOWN.replace("_d.get(k)", "_g(_d, k)") if nested else ID_DOWN)
         + "    if isinstance(result, dict) and not _down:\n"
         + "        _d = result.get('data')\n"
         + "        if isinstance(_d, dict):\n"
@@ -401,38 +590,38 @@ def identity_hooks(
         + "                _last = str(vars.get('id_last_field') or '')\n"
         + "            except Exception:\n"
         + "                _last = ''\n"
-        + "            _left = str(_d.get("
-        + repr(resp("verify_identity", "wrong_answers_left"))
-        + "))\n"
+        + "            _left = str("
+        + getter(resp("verify_identity", "wrong_answers_left"))
+        + ")\n"
         + "            _inc = ''\n"
         + "            try:\n"
         + "                _inc = str(vars.get('id_incomplete') or '')\n"
         + "            except Exception:\n"
         + "                _inc = ''\n"
         # without an ok field, an answer is unreadable only when the bank judged nothing
-        + "            _okv = _d.get("
-        + repr(r_ok)
-        + ")\n"
-        + "            _unread = (not _t(_okv)) if _okv is not None else (_d.get("
-        + repr(r_ver)
-        + ") is None and _d.get("
-        + repr(r_all)
-        + ") is None)\n"
+        + "            _okv = "
+        + getter(r_ok)
+        + "\n"
+        + "            _unread = (not _t(_okv)) if _okv is not None else ("
+        + getter(r_ver)
+        + " is None and "
+        + getter(r_all)
+        + " is None)\n"
         + count
         + "            if _inc == 'yes':\n"
         + "                _m = 'The year is not complete yet. Do not repeat the question: ask only "
         + "for the rest of the year.'\n"
-        + "            elif _d.get("
-        + repr(resp("verify_identity", "hint"))
-        + ") == "
+        + "            elif "
+        + getter(resp("verify_identity", "hint"))
+        + " == "
         + repr(swap_hint)
         + ":\n"
         + "                _m = "
         + repr(swap_say + " This does not count as a wrong answer.")
         + "\n"
-        + "            elif _t(_d.get("
-        + repr(r_all)
-        + ")):\n"
+        + "            elif _t("
+        + getter(r_all)
+        + "):\n"
         + "                _m = 'Both answers are correct. Thank the customer in a few words.'\n"
         + "            elif _unread and _left != '0':\n"
         + "                _m = 'The answer could not be read. Ask for it again.'\n"
@@ -440,9 +629,9 @@ def identity_hooks(
         + "                _m = "
         + repr("The identity check has failed. Do not ask anything else. " + failed)
         + "\n"
-        + "            elif _t(_d.get("
-        + repr(r_ver)
-        + ")):\n"
+        + "            elif _t("
+        + getter(r_ver)
+        + "):\n"
         + "                _nxt = [f for f in _order if f != _last]\n"
         + "                _i = _order.index(_last) + 1 if _last in _order else len(_order)\n"
         + "                _rest = _order[_i:] or _nxt\n"
@@ -453,7 +642,7 @@ def identity_hooks(
         + "except Exception:\n"
         + "    pass\n"
     )
-    return pre, post
+    return pre, (PATH_GET + post if nested else post)
 
 
 # verify_identity post hook, first part: the service itself failed (a 5xx, no JSON body, an
@@ -675,15 +864,24 @@ def layout(nodes: dict[str, Any], start: str) -> None:
 
 # ---------------------------------------------------------------- the workflow
 def build(spec: dict[str, Any], tools: dict[str, ToolDef]) -> tuple[dict[str, Any], Policy]:
-    global _TF
+    global _TF, _CV
     _TF = spec.get("tool_fields") or {}
+    cv = spec.get("call_variables") or {}
+    _CV = [str(v) for v in cv.values() if v] if cv else list(DEFAULT_CALL_VARS)
+    # literals the tool API's enums no longer list: mapped on a copy, noted in FIXES
+    spec = copy.deepcopy(spec)
     cfg = spec["cfg"]
+    FIXES[:] = conform(
+        spec.get("outcomes") if isinstance(spec.get("outcomes"), dict) else {},
+        cfg.get("neg") if isinstance(cfg.get("neg"), dict) else {},
+        spec.get("identity") if isinstance(spec.get("identity"), dict) else {},
+        tools,
+    )
     neg = cfg.get("neg") or {}
     L = spec.get("lines") or {}
     oc = spec.get("outcomes") or {}
     bank = spec.get("bank_name") or "the bank"
     forbidden = ", ".join(f"'{w}'" for w in spec.get("forbidden_before_verify") or [])
-    cv = spec.get("call_variables") or {}
     cid = str(cv.get("customer_id") or "customer_id")
     if cv.get("title") and cv.get("last_name"):
         who_name = "{{" + str(cv["title"]) + "}} {{" + str(cv["last_name"]) + "}}"
@@ -718,12 +916,29 @@ def build(spec: dict[str, Any], tools: dict[str, ToolDef]) -> tuple[dict[str, An
     t_ver = tools["verify_identity"]
     # a verify_identity response with no all-verified flag: the hook counts the answers
     count_verified = not has_flag(t_ver, resp("verify_identity", "all_verified"))
+    d_order = str(ident.get("date_order") or "DMY")
     pre_id, post_id = identity_hooks(
         spec,
         role_field(t_ver, "field", "question"),
         role_field(t_ver, "answer", "value"),
         count_verified,
+        wire_format(t_ver.field(role_field(t_ver, "answer", "value")), "date", d_order),
     )
+    url_hook = request_hook(t_ver, {})
+    if url_hook:
+        pre_id = pre_id + "\n\n" + url_hook
+
+    def fmt_hook(t: ToolDef, roles: dict[tuple[str, ...], str]) -> str:
+        """request_hook for a call the workflow fills: each role's field converted when the
+        tool API names another format (kind = the role's first name: date, amount, time)."""
+        conv = {}
+        for cands in roles:
+            f = role_field(t, *cands)
+            how = wire_format(t.field(f), cands[0], d_order) if f else ""
+            if how:
+                conv[f] = how
+        return request_hook(t, conv)
+
     field_desc = "Which question this answer is for. " + " ".join(
         f"'{x['field']}' for: {x.get('ask', '')}" for x in questions
     )
@@ -731,7 +946,11 @@ def build(spec: dict[str, Any], tools: dict[str, ToolDef]) -> tuple[dict[str, An
         t_ver,
         "Check one security answer. CALL it every time the customer answers a security "
         "question, once per answer. After the result, follow its what_to_do_next.",
-        bake=bake(t_ver, {("customer_id",): cid}),
+        **fill(
+            t_ver,
+            {("customer_id",): cid},
+            (role_field(t_ver, "field", "question"), role_field(t_ver, "answer", "value")),
+        ),
         model_names={
             role_field(t_ver, "field", "question"): "id_field",
             role_field(t_ver, "answer", "value"): "id_answer",
@@ -749,25 +968,25 @@ def build(spec: dict[str, Any], tools: dict[str, ToolDef]) -> tuple[dict[str, An
     account_fn = freya_tool(
         t_acc,
         "Get the late products.",
-        bake=bake(t_acc, {("customer_id",): cid}),
+        **fill(t_acc, {("customer_id",): cid}),
         max_retries=1,
         model_filled=False,
+        pre_code=request_hook(t_acc, {}),
     )
     t_pr = tools["create_promise"]
     rec_field, rec_mode = success_field(t_pr, resp("create_promise", "ok"))
+    pr_roles = {
+        ("customer_id",): cid,
+        ("product_id", "product", "account", "ref"): "rec_product_id",
+        ("amount",): "rec_amount",
+        ("date", "day"): "rec_date",
+    }
     promise_fn = freya_tool(
         t_pr,
         "Record one promise.",
-        bake=bake(
-            t_pr,
-            {
-                ("customer_id",): cid,
-                ("product_id", "product", "account", "ref"): "rec_product_id",
-                ("amount",): "rec_amount",
-                ("date", "day"): "rec_date",
-            },
-        ),
+        **fill(t_pr, pr_roles),
         model_filled=False,
+        pre_code=fmt_hook(t_pr, pr_roles),
         post_code=held_post(rec_field, rec_mode, resp("create_promise", "error")),
     )
     t_note = tools.get("add_note")
@@ -775,7 +994,7 @@ def build(spec: dict[str, Any], tools: dict[str, ToolDef]) -> tuple[dict[str, An
         freya_tool(
             t_note,
             "Record why a product has no promise.",
-            bake=bake(
+            **fill(
                 t_note,
                 {
                     ("customer_id",): cid,
@@ -784,29 +1003,31 @@ def build(spec: dict[str, Any], tools: dict[str, ToolDef]) -> tuple[dict[str, An
                 },
             ),
             model_filled=False,
+            pre_code=request_hook(t_note, {}),
         )
         if t_note
         else None
     )
     t_cb = tools["schedule_callback"]
     cb_field, cb_mode = success_field(t_cb, resp("schedule_callback", "ok"))
+    cb_roles = {("customer_id",): cid, ("date", "day"): "cb_date", ("time", "hour"): "cb_time"}
     cb_fn = freya_tool(
         t_cb,
         "Book a callback.",
-        bake=bake(
-            t_cb, {("customer_id",): cid, ("date", "day"): "cb_date", ("time", "hour"): "cb_time"}
-        ),
+        **fill(t_cb, cb_roles),
         model_filled=False,
+        pre_code=fmt_hook(t_cb, cb_roles),
         post_code=held_post(cb_field, cb_mode, resp("schedule_callback", "error")),
     )
     t_tr = tools["transfer_to_agent"]
     transfer_fn = freya_tool(
         t_tr,
         "Hand the call to a person.",
-        bake=bake(
+        **fill(
             t_tr, {("customer_id",): cid, ("queue", "team", "department", "desk"): "transfer_queue"}
         ),
         model_filled=False,
+        pre_code=request_hook(t_tr, {}),
         post_code=held_post(
             resp("transfer_to_agent", "ok"), "flag", resp("transfer_to_agent", "error")
         ),
@@ -848,7 +1069,7 @@ def build(spec: dict[str, Any], tools: dict[str, ToolDef]) -> tuple[dict[str, An
     close_fn = freya_tool(
         t_close,
         "Record how the call ended.",
-        bake=bake(
+        **fill(
             t_close,
             {
                 ("customer_id",): cid,
@@ -859,7 +1080,8 @@ def build(spec: dict[str, Any], tools: dict[str, ToolDef]) -> tuple[dict[str, An
         pre_code=(
             f"NO_REASON = {_lit(no_reason)}\nF_OUT = {f_out!r}\nF_REASON = {f_reason!r}\n"
             f"HANGUP = {_lit(hangup)}\n" + CLOSE_PRE
-        ),
+        )
+        + ("\n\n" + request_hook(t_close, {}) if request_hook(t_close, {}) else ""),
         extra_config={"alwaysRunsAt": ["end_of_call"]},
         model_filled=False,
     )
