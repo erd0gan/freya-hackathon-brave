@@ -959,9 +959,15 @@ def read_reply(v, today):
     }
 
 
+# An enum variable is cleared to one of its values: the platform rejects '' ("variable
+# 'has_question' rejected by schema validation", every turn), so the last turn's value stayed and
+# a cut turn got "I do not have that information." again and again (talkative A PUB-05).
+REPLY_CLEAR = dict(reply_kind="unclear", all_products="no", about_product="none", has_question="no")
+
+
 def clear_reply(v):
     for k in REPLY_VARS:
-        v[k] = ""
+        v[k] = REPLY_CLEAR.get(k, "")
 
 
 def publish(v, st, neg):

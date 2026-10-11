@@ -595,21 +595,22 @@ def build(spec: dict[str, Any], tools: dict[str, ToolDef]) -> tuple[dict[str, An
         ),
         enum_var(
             "all_products",
-            ["yes"],
-            "yes when the customer's last message is about all of their products together.",
+            ["yes", "no"],
+            "yes when the customer's last message is about all of their products together. "
+            "no otherwise.",
         ),
         enum_var(
             "has_question",
-            ["yes"],
+            ["yes", "no"],
             "yes when the customer's last message asks the agent a question (for example "
             "whether it is a robot, for a discount, or about the account), even if it also "
-            "answers. Empty otherwise.",
+            "answers. no otherwise.",
         ),
         enum_var(
             "about_product",
-            ["p1", "p2", "p3"],
+            ["p1", "p2", "p3", "none"],
             "Which product the customer's last message is about when they name one: p1 is the "
-            "first product stated, p2 the second, p3 the third. Empty if not named.",
+            "first product stated, p2 the second, p3 the third. none if not named.",
         ),
     ]
 

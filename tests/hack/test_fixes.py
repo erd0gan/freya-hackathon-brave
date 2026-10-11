@@ -205,3 +205,30 @@ def test_support_offer_reask_is_short():
     r = simulate(CASES["PUB-05"], [{"kind": "hardship"}, U, U, N], CFG_A)
     assert sum("support team" in s for s in r.says) == 1
     assert r.says[2].endswith("Would you like that?")
+
+
+# the platform rejects '' for an enum variable, so the last turn's value stayed (stale
+# has_question): every clear value must be one of the extraction's enum values
+def test_reply_clear_values_are_enum_values():
+    import json as _json
+
+    from fb.generate import build
+    from fb.openapi_tools import parse_openapi
+    from spec_fixtures import SPEC_A
+
+    from conftest import KIT
+
+    wf, _ = build(SPEC_A, parse_openapi(_json.loads((KIT / "tools" / "openapi.json").read_text())))
+    enums = {
+        e["name"]: e.get("enum_values")
+        for n in wf["nodes"].values()
+        for e in n.get("extraction_schema") or []
+        if isinstance(e, dict) and e.get("enum_values")
+    }
+    v = {}
+    NS["clear_reply"](v)
+    for k, val in v.items():
+        if k in enums:
+            assert val in enums[k], (k, val, enums[k])
+    assert {"reply_kind", "has_question", "all_products", "about_product"} <= set(enums)
+    assert "other" in enums["tp_reply"]
