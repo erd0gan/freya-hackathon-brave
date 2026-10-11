@@ -254,6 +254,10 @@ def text_identity_hook():
         ("zero zero seven three", "0073"),  # C-01
         ("zero zero seven three, that's 0-0-7-3", "0073"),
         ("Zero zero seven three.", "0073"),  # C-03
+        ("My current postcode is ZX21, though I moved recently.", "ZX21"),  # R30
+        ("AB07 is all I can give you there, sorry.", "AB07"),  # R11
+        ("It is SW1A 1AA I think", "It is SW1A 1AA I think"),
+        ("My name is Mary Ann Smith", "My name is Mary Ann Smith"),
     ],
 )
 def test_a_spelled_code_is_sent_as_the_code(said, sent):
@@ -308,4 +312,5 @@ def test_answers_reach_the_negotiation_model():
                          "say": "A promise is not a renewal.", "source": "x"}]
 
     task = _ab_workflow(answers)["nodes"]["negotiate"]["task_message"]
-    assert 'If the customer asks whether the policy is renewed: "A promise is not a renewal."' in task
+    want = 'If the customer asks whether the policy is renewed: "A promise is not a renewal."'
+    assert want in task

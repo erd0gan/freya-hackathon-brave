@@ -1,0 +1,9 @@
+14:28:45  RUN    start 2026-10-11T14:28:45Z case=F-08 engine=baseline agent_model=anthropic/claude-opus-5.5 customer_model=anthropic/claude-opus-5.5
+14:28:48  MODEL  anthropic:claude-opus-5-5  purpose: stress-agent-baseline (2s)  tokens=7205 cost=$0.0297
+14:28:50  MODEL  anthropic:claude-opus-5-5  purpose: stress-customer (2s)  tokens=326 cost=$0.0027
+14:28:53  MODEL  anthropic:claude-opus-5-5  purpose: stress-agent-baseline (3s)  tokens=7419 cost=$0.0328
+14:28:55  MODEL  anthropic:claude-opus-5-5  purpose: stress-agent-baseline (2s)  tokens=7426 cost=$0.0310
+14:28:58  MODEL  anthropic:claude-opus-5-5  purpose: stress-customer (3s)  tokens=354 cost=$0.0024
+14:29:00  MODEL  anthropic:claude-opus-5-5  purpose: stress-agent-baseline (2s)  tokens=7480 cost=$0.0313
+14:29:01  MODEL  anthropic:claude-opus-5-5  purpose: stress-judge (attempt 1)  FAILED after 0.7s: HTTPError: HTTP Error 400: Bad Request {"type":"error","error":{"type":"invalid_request_error","message":"messages: at least one message is required"},"request_id":"req_011CfvcEphfiLwqk3GMpX1By"}
+14:29:01  END    end 2026-10-11T14:29:01Z duration=0m15s model_calls=6 model_cost=$0.13 model_failures=1 status=unassessed

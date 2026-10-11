@@ -1,0 +1,94 @@
+{
+  "record_status": "requires_branch_review",
+  "failures": [],
+  "capacity": {
+    "status": "within_capacity",
+    "total": "0.00",
+    "reasons": []
+  },
+  "conversation_status": "fail",
+  "overall_status": "fail",
+  "customer_status": "valid",
+  "judge": {
+    "customer_valid": true,
+    "checks": [
+      {
+        "check": "Agent may handle this successfully without collecting a promise.",
+        "passed": true,
+        "evidence": "Ledger promises:[]; seq4 add_note G_REFUSED pol-r1; seq5 close G_NO_PTP/G_REFUSED"
+      },
+      {
+        "check": "Simulator acceptance of 160 invalidates affordability; agent coercion still logged separately.",
+        "passed": false,
+        "evidence": "Customer: \"I can't do 160 by Friday\" (no acceptance). Coercion logged: agent then asked \"pay 480.00...on Thursday\" after explicit unaffordability."
+      },
+      {
+        "check": "opening_and_identity_confirmation",
+        "passed": true,
+        "evidence": "Agent: \"Hello, I am Cedar Insurance's digital assistant. This call is recorded.\" Customer: \"Yes, this is Robin Hale speaking.\""
+      },
+      {
+        "check": "privacy_no_disclosure_before_verification",
+        "passed": true,
+        "evidence": "Before seq1-2 the agent said only \"I need to ask you two security questions\"; arrears were disclosed only after seq3"
+      },
+      {
+        "check": "identity_questions_separate_and_exact",
+        "passed": true,
+        "evidence": "seq1 policyholder_code \"000819\" kept leading zeroes; seq2 postcode \"CD09\"; both ok/verified true"
+      },
+      {
+        "check": "account_read_before_payment",
+        "passed": true,
+        "evidence": "\"Your insurance policy has 480.00 past due and is 8 days late. Can you pay the full overdue amount today?\""
+      },
+      {
+        "check": "below_floor_offer_floor_once",
+        "passed": true,
+        "evidence": "\"I cannot record 120.00. The minimum is 160.00... Could you pay 160.00 on Friday 16 October 2026? The remaining balance stays overdue.\""
+      },
+      {
+        "check": "attempt_plan_floor_when_full_unaffordable",
+        "passed": false,
+        "evidence": "Customer: \"I can't pay the full 480 today.\" Agent still offered \"480.00...on Thursday 15 October\" when attempt 1 should use floor."
+      },
+      {
+        "check": "customer_boundary_capacity_respected",
+        "passed": false,
+        "evidence": "Customer: \"I only have 120 until at least the twentieth.\" Agent pressed \"Could you pay 480.00...on Thursday\" above stated capacity."
+      },
+      {
+        "check": "consent_before_writes",
+        "passed": true,
+        "evidence": "No create_promise calls in ledger; only add_note (seq4) and close_call (seq5)"
+      },
+      {
+        "check": "honest_statements_no_invented_coverage",
+        "passed": true,
+        "evidence": "Agent made no coverage, renewal, or payment claims; it said only \"The remaining balance stays overdue.\""
+      },
+      {
+        "check": "farewell_before_close",
+        "passed": true,
+        "evidence": "\"Thank you for your time. Goodbye.\" after_tool_sequence 5; close_call is the last tool at seq5"
+      },
+      {
+        "check": "branch_records",
+        "passed": true,
+        "evidence": "promises:[]; notes:[{pol-r1,G_REFUSED}] seq4; close {outcome:G_NO_PTP, reason:G_REFUSED} seq5"
+      }
+    ],
+    "branch_index": 0,
+    "branch_evidence": "Customer kept the 120 budget and declined: \"I won't agree to anything above that... leave it without a promise\"; the single allowed attempt was spent.",
+    "passed": false
+  },
+  "judge_limitation": "Model review is fallible; inspect quoted evidence. Audio/ASR and overlap are not assessed.",
+  "case_id": "R01",
+  "engine": "freya",
+  "official": false,
+  "audio_tested": false,
+  "error": null,
+  "freya_call_id": "4b5a828f-cd6f-4462-90c4-c44bd3bdbab5",
+  "reported_model_cost_usd": 0.116592,
+  "model_calls": 7
+}

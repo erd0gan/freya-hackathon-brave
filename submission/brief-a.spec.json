@@ -1,0 +1,279 @@
+{
+ "bank_name": "Freya Bank",
+ "notes": [
+  "Single source (Brief A): no memos or overriding documents, so no conflicts had to be resolved.",
+  "Opening: the brief gives no exact words, only content (digital assistant, Freya Bank, call is recorded). The line avoids the word 'recorded' and says 'we are recording this call'.",
+  "who_question: the brief writes {title} {last_name}. It is converted to call-variable syntax {{title}} {{last_name}}.",
+  "multi_today_question: Brief A covers one product only, so it gives no wording for several products. The single-product question is adapted to the plural.",
+  "Brief A never uses add_note, so neg.notes=false and notes_on_transfer=false. Reason values are still mapped to the matching add_note enum values.",
+  "close_call reasons use the same strings as add_note reasons (refused, hardship, dispute, service_error), so no close_reasons overrides are given. Rule 39 / the outcome table lists no reason for 'paid', so close_reasons.paid=''.",
+  "Rule 37: 'try once more' gives promise_attempts=2. After the second failure the agent says it could not record the promise and closes as no_promise/service_error, so record_failure='continue'. The brief names no queue for record failures; record_failure_queue is set to 'support' only as an unused placeholder.",
+  "Rule 32: hardship gets sympathy, no persuasion, and an offer of the customer support team. Yes leads to transfer to queue support and transferred/support; no leads to no_promise/hardship. So hardship='offer_support' and hardship_queue='support'.",
+  "Rule 42: offer help once, transfer to queue 'general' if the customer insists, so human_requests_to_transfer=2. Rule 45: 'says twice' gives stop_requests_to_close=2.",
+  "Brief is silent on the no-promise close reason with several products (it covers one product). Literal reading: the reason of the first unpaid product in get_account order (first_product). reason_priority follows the order of the outcome table (refused, hardship, dispute, service_error) and is only a fallback.",
+  "product_order is not set because the brief does not order products; get_account order is used.",
+  "Rule 30: attempt 1 is the full amount, or the floor if the customer already said the full amount is too much ('current'), on the last business day of this week. If today is that day, it is the last business day of next week. Attempt 2 (late band only) is the floor on the deadline.",
+  "Callback window: today or the next business day, 10:00-19:00 inclusive, later than now. Business days only. Ask once more after a time outside the window (reasks=1).",
+  "Forbidden-before-verify list: rule 1 names collections, debt, payment and the product. The product words and related terms (late, overdue, past due) are added as a literal reading of 'the product' and 'why you are calling'."
+ ],
+ "call_variables": {
+  "customer_id": "customer_id",
+  "title": "title",
+  "first_name": "first_name",
+  "last_name": "last_name",
+  "full_name": "",
+  "now": "now"
+ },
+ "lines": {
+  "opening": "Hello, this is Freya Bank's digital assistant calling, and we are recording this call.",
+  "who_question": "Am I speaking with {{title}} {{last_name}}?",
+  "ai_answer": "I am Freya Bank's digital assistant.",
+  "scam_answer": "You can verify this call by phoning Freya Bank's customer service number.",
+  "deceased": "I am sorry for your loss.",
+  "identity_intro": "First, I need to ask you two security questions.",
+  "identity_why": "These questions protect your account, so I need them before I can continue.",
+  "identity_failed": "I could not verify your identity. Please use the Freya Bank mobile app or visit a branch.",
+  "present_intro": "I am calling from the collections team about a late payment.",
+  "today_question": "Can you make this payment today?",
+  "multi_today_question": "Can you make these payments today?",
+  "confirm_question": "Do you confirm?",
+  "recorded": "You will receive a text message confirming this promise.",
+  "paid": "Thank you. Payments can take one business day to appear.",
+  "sympathy": "I am very sorry to hear that.",
+  "support_offer": "Would you like me to connect you with our customer support team?",
+  "help_first": "Before I transfer you, can I help you with this myself?",
+  "callback_booked": "Thank you, we will call back then.",
+  "goodbye": "Thank you for your time. Goodbye.",
+  "no_info": "I am sorry, I do not have that information.",
+  "cannot_change": "A recorded promise cannot be changed in this call, but you can change it in the mobile app.",
+  "transfer_human": "I am transferring you to a colleague now.",
+  "rest_overdue": "The rest stays overdue."
+ },
+ "forbidden_before_verify": [
+  "collections",
+  "debt",
+  "payment",
+  "credit card",
+  "personal loan",
+  "car loan",
+  "loan",
+  "card",
+  "late",
+  "overdue",
+  "past due"
+ ],
+ "identity": {
+  "questions": [
+   {
+    "field": "date_of_birth",
+    "ask": "Could you tell me your date of birth, please?",
+    "kind": "date"
+   },
+   {
+    "field": "phone_last4",
+    "ask": "Could you tell me the last four digits of the phone number on file?",
+    "kind": "digits"
+   }
+  ],
+  "swap_hint": "day_month_swapped",
+  "swap_instruction": "Could you say the month as a word, please?",
+  "date_order": "DMY"
+ },
+ "outcomes": {
+  "unclear": [
+   "not_reached",
+   "unclear"
+  ],
+  "callback": [
+   "not_reached",
+   "callback"
+  ],
+  "no_callback": [
+   "not_reached",
+   "no_callback"
+  ],
+  "wrong_number": [
+   "not_reached",
+   "wrong_number"
+  ],
+  "deceased": [
+   "not_reached",
+   "deceased"
+  ],
+  "failed": [
+   "not_verified",
+   "failed"
+  ],
+  "declined": [
+   "not_verified",
+   "declined"
+  ]
+ },
+ "callback": {
+  "start": "10:00",
+  "end": "19:00",
+  "include_today": true,
+  "business_days_ahead": 1,
+  "business_days_only": true,
+  "reasks": 1
+ },
+ "calendar": {
+  "holidays": [
+   "2026-10-26",
+   "2026-11-11",
+   "2026-11-26",
+   "2026-12-25",
+   "2027-01-01"
+  ],
+  "workdays": [
+   0,
+   1,
+   2,
+   3,
+   4
+  ]
+ },
+ "bands": [
+  {
+   "name": "early",
+   "min_days_late": 1,
+   "max_days_late": 7,
+   "deadline_days": 12,
+   "deadline_unit": "business",
+   "attempts": 1
+  },
+  {
+   "name": "late",
+   "min_days_late": 8,
+   "max_days_late": 45,
+   "deadline_days": 7,
+   "deadline_unit": "business",
+   "attempts": 2
+  }
+ ],
+ "attempt1": {
+  "rule": "last_business_day_of_week",
+  "n": 0
+ },
+ "attempt_plan": [
+  {
+   "amount": "current",
+   "date": "attempt1"
+  },
+  {
+   "amount": "floor",
+   "date": "deadline"
+  }
+ ],
+ "tool_fields": {
+  "verify_identity": {
+   "customer_id": "customer_id",
+   "field": "field",
+   "answer": "answer",
+   "response": {
+    "ok": "ok",
+    "verified": "verified",
+    "all_verified": "all_verified",
+    "wrong_answers_left": "wrong_answers_left",
+    "hint": "hint"
+   }
+  },
+  "get_account": {
+   "customer_id": "customer_id"
+  },
+  "create_promise": {
+   "customer_id": "customer_id",
+   "product_id": "product_id",
+   "amount": "amount",
+   "date": "date",
+   "response": {
+    "ok": "ok"
+   }
+  },
+  "add_note": {
+   "customer_id": "customer_id",
+   "product_id": "product_id",
+   "reason": "reason"
+  },
+  "schedule_callback": {
+   "customer_id": "customer_id",
+   "date": "date",
+   "time": "time",
+   "response": {
+    "ok": "ok"
+   }
+  },
+  "transfer_to_agent": {
+   "customer_id": "customer_id",
+   "queue": "queue"
+  },
+  "close_call": {
+   "customer_id": "customer_id",
+   "outcome": "outcome",
+   "reason": "reason"
+  }
+ },
+ "product_fields": {
+  "list": "products",
+  "product_id": "product_id",
+  "type": "type",
+  "past_due": "past_due",
+  "days_late": "days_late"
+ },
+ "floor_field": {
+  "credit_card": "minimum_payment",
+  "personal_loan": "instalment_amount",
+  "car_loan": "instalment_amount"
+ },
+ "product_names": {
+  "credit_card": "credit card ending {card_last4}",
+  "personal_loan": "personal loan",
+  "car_loan": "car loan"
+ },
+ "neg": {
+  "outcomes": {
+   "promise": "promise",
+   "paid": "paid",
+   "transferred": "transferred",
+   "no_promise": "no_promise"
+  },
+  "reasons": {
+   "refused": "refused",
+   "hardship": "hardship",
+   "dispute": "dispute",
+   "service_error": "service_error",
+   "paid": "paid"
+  },
+  "close_reasons": {
+   "paid": ""
+  },
+  "queues": {
+   "restructuring": "restructuring",
+   "human": "general",
+   "support": "support"
+  },
+  "transfer_reasons": {
+   "restructuring": "restructuring",
+   "human": "human",
+   "support": "support"
+  },
+  "notes": false,
+  "human_requests_to_transfer": 2,
+  "stop_requests_to_close": 2,
+  "promise_attempts": 2,
+  "record_failure": "continue",
+  "record_failure_queue": "support",
+  "hardship": "offer_support",
+  "hardship_queue": "support",
+  "no_promise_reason": "first_product",
+  "reason_priority": [
+   "refused",
+   "hardship",
+   "dispute",
+   "service_error"
+  ],
+  "notes_on_transfer": false,
+  "vague_date_asks": 1,
+  "floor_offers": 1
+ }
+}

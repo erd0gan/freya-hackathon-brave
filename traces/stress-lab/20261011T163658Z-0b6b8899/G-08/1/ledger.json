@@ -1,0 +1,33 @@
+{
+  "wrong": 0,
+  "closed": true,
+  "calls": [
+    {
+      "tool": "close_call",
+      "body": {
+        "reason": "G_DECEASED",
+        "outcome": "G_NO_CONTACT",
+        "customer_id": "sl-XlLYpM8a8xKIUu-ICoaBLYsVE6uXOQJO"
+      },
+      "sequence": 1,
+      "status": 200,
+      "result": {
+        "ok": true
+      }
+    }
+  ],
+  "promises": [],
+  "notes": [],
+  "callbacks": [],
+  "transfers": [],
+  "claims": [],
+  "inspections": [],
+  "rentals": [],
+  "endorsements": [],
+  "renewals": [],
+  "close": {
+    "reason": "G_DECEASED",
+    "outcome": "G_NO_CONTACT"
+  },
+  "now": "2026-10-14T11:00:00"
+}

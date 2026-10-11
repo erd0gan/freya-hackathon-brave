@@ -1,0 +1,21 @@
+{
+  "record_status": "fail",
+  "failures": [
+    "Closing outcome: expected E_PTP, got E_NO_CONTACT",
+    "Closing reason: expected None, got E_UNCLEAR",
+    "promises: expected [{'product_id': 'ref-X7', 'amount': '420.50', 'date': '2026-10-15'}], got []"
+  ],
+  "capacity": {
+    "status": "unknown"
+  },
+  "conversation_status": "not_reviewed",
+  "overall_status": "error",
+  "case_id": "E-01",
+  "engine": "freya",
+  "official": false,
+  "audio_tested": false,
+  "error": "LLMError: model call failed after 2 attempts: empty reply: {\"id\": \"gen-1791738034-MAEf69FMwnU6n3uouofr\", \"object\": \"chat.completion\", \"created\": 1791738034, \"model\": \"anthropic/claude-opus-5.5\", \"provider\": \"Claude Platform on AWS\", \"system_fingerprint\": null",
+  "freya_call_id": "926720c0-1fdf-4c6f-96da-4c9c3ee632ff",
+  "reported_model_cost_usd": 0.001764,
+  "model_calls": 1
+}

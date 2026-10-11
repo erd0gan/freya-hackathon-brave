@@ -1,0 +1,21 @@
+{
+  "record_status": "fail",
+  "failures": [
+    "Closing outcome: expected C_PTP, got C_NO_PTP",
+    "Closing reason: expected None, got C_REFUSED",
+    "promises: expected [{'product_id': 'asset-A', 'amount': '900.00', 'date': '2026-10-14'}], got []"
+  ],
+  "capacity": {
+    "status": "unknown"
+  },
+  "conversation_status": "not_reviewed",
+  "overall_status": "error",
+  "case_id": "C-02",
+  "engine": "freya",
+  "official": false,
+  "audio_tested": false,
+  "error": "Step budget exhausted; unfinished call retained",
+  "freya_call_id": "138f6b0e-f748-4c09-bfa0-196ad4e5d894",
+  "reported_model_cost_usd": 0.39709999999999995,
+  "model_calls": 40
+}

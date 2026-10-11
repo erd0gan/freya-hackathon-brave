@@ -22,6 +22,7 @@ NODECODE = ROOT / "builder" / "fb" / "nodecode"
 EN, TR = langpack.ENGINE_LINES["en"], langpack.ENGINE_LINES["tr"]
 # keys the engine builds at run time (negotiation_lib._sorry, _item, _transfer)
 DYNAMIC = {"sorry_1", "sorry_2", "sorry_3", "readback_item", "readback_item_deadline", "ack_item"}
+DYNAMIC |= {"readback_item_moved"}
 DYNAMIC |= {"transfer_" + w for w in ("human", "restructuring", "support")}
 # the 24 keys whose English line is the brief-neutral one, not the engine's own default
 NEUTRAL = {

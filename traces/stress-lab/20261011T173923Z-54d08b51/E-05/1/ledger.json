@@ -1,0 +1,146 @@
+{
+  "wrong": 0,
+  "closed": true,
+  "calls": [
+    {
+      "tool": "verify_identity",
+      "body": {
+        "response": "004271",
+        "challenge": "member_code",
+        "session_ref": "sl-nSiQHAT8aETp33MVWS-rbWiu3yf9UYTE"
+      },
+      "sequence": 1,
+      "status": 200,
+      "result": {
+        "status": "APPLIED",
+        "payload": {
+          "accepted": true,
+          "verified": true,
+          "wrong_answers": 0
+        }
+      }
+    },
+    {
+      "tool": "verify_identity",
+      "body": {
+        "response": "1988",
+        "challenge": "birth_year",
+        "session_ref": "sl-nSiQHAT8aETp33MVWS-rbWiu3yf9UYTE"
+      },
+      "sequence": 2,
+      "status": 200,
+      "result": {
+        "status": "APPLIED",
+        "payload": {
+          "accepted": true,
+          "verified": true,
+          "wrong_answers": 0
+        }
+      }
+    },
+    {
+      "tool": "get_account",
+      "body": {
+        "session_ref": "sl-nSiQHAT8aETp33MVWS-rbWiu3yf9UYTE"
+      },
+      "sequence": 3,
+      "status": 200,
+      "result": {
+        "status": "APPLIED",
+        "payload": {
+          "accepted": true,
+          "assets": [
+            {
+              "asset_ref": "asset-A",
+              "arrears_minor": 90000,
+              "floor_minor": 30000,
+              "type": "credit_card",
+              "display_name": "credit card",
+              "days_late": 4
+            },
+            {
+              "asset_ref": "asset-B",
+              "arrears_minor": 60000,
+              "floor_minor": 20000,
+              "type": "personal_loan",
+              "display_name": "personal loan",
+              "days_late": 4
+            }
+          ]
+        }
+      }
+    },
+    {
+      "tool": "create_promise",
+      "body": {
+        "due_on": "2026-10-14",
+        "asset_ref": "asset-A",
+        "session_ref": "sl-nSiQHAT8aETp33MVWS-rbWiu3yf9UYTE",
+        "amount_minor": 90000
+      },
+      "sequence": 4,
+      "status": 200,
+      "result": {
+        "status": "APPLIED",
+        "payload": {
+          "accepted": true
+        }
+      }
+    },
+    {
+      "tool": "add_note",
+      "body": {
+        "code": "E_REFUSED",
+        "asset_ref": "asset-B",
+        "session_ref": "sl-nSiQHAT8aETp33MVWS-rbWiu3yf9UYTE"
+      },
+      "sequence": 5,
+      "status": 200,
+      "result": {
+        "status": "APPLIED",
+        "payload": {
+          "accepted": true
+        }
+      }
+    },
+    {
+      "tool": "close_call",
+      "body": {
+        "disposition": "E_PTP",
+        "session_ref": "sl-nSiQHAT8aETp33MVWS-rbWiu3yf9UYTE"
+      },
+      "sequence": 6,
+      "status": 200,
+      "result": {
+        "status": "APPLIED",
+        "payload": {
+          "accepted": true
+        }
+      }
+    }
+  ],
+  "promises": [
+    {
+      "product_id": "asset-A",
+      "amount": "900.00",
+      "date": "2026-10-14"
+    }
+  ],
+  "notes": [
+    {
+      "product_id": "asset-B",
+      "reason": "E_REFUSED"
+    }
+  ],
+  "callbacks": [],
+  "transfers": [],
+  "claims": [],
+  "inspections": [],
+  "rentals": [],
+  "endorsements": [],
+  "renewals": [],
+  "close": {
+    "disposition": "E_PTP"
+  },
+  "now": "2026-10-14T11:00:00"
+}

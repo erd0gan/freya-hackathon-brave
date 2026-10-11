@@ -1,0 +1,36 @@
+{
+  "wrong": 0,
+  "closed": true,
+  "calls": [
+    {
+      "tool": "close_call",
+      "body": {
+        "detail": "E_UNCLEAR",
+        "disposition": "E_NO_CONTACT",
+        "session_ref": "sl-Vrwvo5m-wgd3hxhioV-G5djpqACSomhO"
+      },
+      "sequence": 1,
+      "status": 200,
+      "result": {
+        "status": "APPLIED",
+        "payload": {
+          "accepted": true
+        }
+      }
+    }
+  ],
+  "promises": [],
+  "notes": [],
+  "callbacks": [],
+  "transfers": [],
+  "claims": [],
+  "inspections": [],
+  "rentals": [],
+  "endorsements": [],
+  "renewals": [],
+  "close": {
+    "detail": "E_UNCLEAR",
+    "disposition": "E_NO_CONTACT"
+  },
+  "now": "2026-10-14T11:00:00"
+}

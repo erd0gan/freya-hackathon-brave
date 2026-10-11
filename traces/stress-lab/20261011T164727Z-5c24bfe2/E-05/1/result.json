@@ -1,0 +1,98 @@
+{
+  "record_status": "fail",
+  "failures": [
+    "Closing outcome: expected E_PTP, got E_XFER",
+    "Closing reason: expected None, got E_HUMAN",
+    "promises: expected [{'product_id': 'asset-A', 'amount': '900.00', 'date': '2026-10-14'}], got []",
+    "notes: expected [{'product_id': 'asset-B', 'reason': 'E_REFUSED'}], got []",
+    "transfers: expected [], got ['E_GENERAL']"
+  ],
+  "capacity": {
+    "status": "unknown"
+  },
+  "conversation_status": "fail",
+  "overall_status": "fail",
+  "customer_status": "valid",
+  "judge": {
+    "customer_valid": true,
+    "checks": [
+      {
+        "check": "Eski yes/amount/about_product boş turda tekrar uygulanmaz.",
+        "passed": false,
+        "evidence": "Not reached: the call ended in identity with no payment turns. Ledger promises:[] and notes:[]; no evidence exists to evaluate."
+      },
+      {
+        "check": "Loan persuasion offers are explicitly refused; the card amount is not copied to the loan.",
+        "passed": false,
+        "evidence": "Not reached: get_account was never called and no loan offers were made. Ledger calls seq1-4 contain no promise data."
+      },
+      {
+        "check": "identity_code_normalization",
+        "passed": false,
+        "evidence": "seq1 response \"zero zero four two seven one\", seq2 \"zero, zero, four, two, seven, one\"; the correct code 004271 was never sent as digits."
+      },
+      {
+        "check": "honest_verification_statement",
+        "passed": false,
+        "evidence": "The third \"that answer is not correct\" was said at after_tool_sequence 2 with no verify_identity call for that answer."
+      },
+      {
+        "check": "wrong_answer_count_handling",
+        "passed": true,
+        "evidence": "Ledger wrong:2, below the limit of 3. The call was not closed as NO_ID/FAILED."
+      },
+      {
+        "check": "privacy_no_disclosure_before_verification",
+        "passed": true,
+        "evidence": "Agent turns only cover the greeting, security questions and the transfer. No arrears, product or amount was mentioned."
+      },
+      {
+        "check": "human_request_immediate_transfer",
+        "passed": true,
+        "evidence": "Customer: \"transfer me to a person?\" -> seq3 transfer_to_agent E_GENERAL APPLIED/accepted, with no get_account call."
+      },
+      {
+        "check": "consent_before_writes",
+        "passed": true,
+        "evidence": "No create_promise calls. Ledger promises:[]."
+      },
+      {
+        "check": "no_notes_on_transfer",
+        "passed": true,
+        "evidence": "Ledger notes:[] after the transfer at seq3."
+      },
+      {
+        "check": "close_disposition_mapping",
+        "passed": true,
+        "evidence": "seq4 close_call disposition E_XFER, detail E_HUMAN, last tool, after the successful transfer."
+      },
+      {
+        "check": "opening_and_identity_confirmation",
+        "passed": true,
+        "evidence": "Agent: \"Hello, I am Vector Bank's digital assistant. This call is recorded.\" Customer: \"Yes, this is Alex Rowan speaking.\""
+      },
+      {
+        "check": "customer_boundary_stability",
+        "passed": true,
+        "evidence": "The customer consistently gave 004271 and asked for an alternative or a person, consistent with the card's identity_answers."
+      },
+      {
+        "check": "branch_records",
+        "passed": true,
+        "evidence": "branch_rules null, so no branch applies. Ledger promises:[], notes:[], transfers:[\"E_GENERAL\"]."
+      }
+    ],
+    "branch_index": null,
+    "branch_evidence": "branch_rules is null; no branching pilot.",
+    "passed": false
+  },
+  "judge_limitation": "Model review is fallible; inspect quoted evidence. Audio/ASR and overlap are not assessed.",
+  "case_id": "E-05",
+  "engine": "freya",
+  "official": false,
+  "audio_tested": false,
+  "error": null,
+  "freya_call_id": "bd2b92c6-ea4c-4b5e-8766-9c7b147242c9",
+  "reported_model_cost_usd": 0.070896,
+  "model_calls": 6
+}

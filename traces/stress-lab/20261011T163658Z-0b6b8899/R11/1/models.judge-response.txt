@@ -1,0 +1,90 @@
+```json
+{
+  "customer_valid": true,
+  "checks": [
+    {
+      "check": "Two legitimate endings are conditional, not an unconditional pass list.",
+      "passed": true,
+      "evidence": "No human request; customer: 'Yes, I confirm: 900 pounds on the credit card on Thursday, 15 October.' This selects the promise branch from dialogue."
+    },
+    {
+      "check": "Actor must not see evaluator repetition counts or bank policy.",
+      "passed": true,
+      "evidence": "Customer only says 'I've already given it: my postcode is AB07.' There is no policy or count reference, and no human request after 2 repeats."
+    },
+    {
+      "check": "opening_and_identity_confirmation",
+      "passed": true,
+      "evidence": "Agent: 'Hello, I am Alder Credit's digital assistant. This call is recorded. Am I speaking with Mx Reese Park?' Customer: 'Yes, this is Reese Park.'"
+    },
+    {
+      "check": "privacy_no_disclosure_before_verification",
+      "passed": true,
+      "evidence": "Debt is first mentioned after seq 2-4 succeed: 'I am calling about overdue payments.' Before that the agent only asked security questions."
+    },
+    {
+      "check": "identity_answers_sent_correctly_no_fragments",
+      "passed": false,
+      "evidence": "Seq1 sent answer 'AB07 is all I can give you there, sorry...' as the postcode, yielding wrong_answers:1. That was a non-answer, not a postcode attempt."
+    },
+    {
+      "check": "honest_identity_feedback",
+      "passed": false,
+      "evidence": "Agent: 'I'm sorry, that's not correct.' The customer had given AB07, which seq2 verified. The agent asked 'remaining digits' with no basis."
+    },
+    {
+      "check": "no_unnecessary_repeat_questions",
+      "passed": false,
+      "evidence": "'And the remaining digits?' and the re-asked 'Could you please tell me your postcode?' prompted 'I've already given it'. That is avoidable friction (2 repeats)."
+    },
+    {
+      "check": "account_read_before_payment",
+      "passed": true,
+      "evidence": "'Your credit card has 900.00 past due and is 4 days late. Can you pay the full past-due amount today?' This matches seq4."
+    },
+    {
+      "check": "date_amount_validity",
+      "passed": true,
+      "evidence": "days_late 4 gives an 8 business-day deadline. 2026-10-15 is a Thursday within the deadline. Amount 900 equals past_due 900 and is above floor 300."
+    },
+    {
+      "check": "complete_readback_and_explicit_consent_before_write",
+      "passed": true,
+      "evidence": "'the credit card, 900.00 on Thursday 15 October 2026. Do you confirm this?' Customer: 'Yes, I confirm...' Then seq5 create_promise."
+    },
+    {
+      "check": "relevant_honest_responses",
+      "passed": false,
+      "evidence": "The customer asked 'Would that work?' The agent replied 'I am sorry, I do not have that information.' This is a non-sequitur and does not answer the question."
+    },
+    {
+      "check": "honest_success_statement_and_letter",
+      "passed": true,
+      "evidence": "Seq5 ok:true, then 'Your promise is recorded... A letter confirming the promise will be sent.' The agent does not imply money moved."
+    },
+    {
+      "check": "no_invented_coverage_or_contacts",
+      "passed": true,
+      "evidence": "No coverage, URL or phone number is mentioned in any agent turn."
+    },
+    {
+      "check": "close_call_and_farewell",
+      "passed": true,
+      "evidence": "Agent: 'Thank you for your time. Goodbye.' Seq6 close_call outcome D_PTP is the last tool, with the reason omitted."
+    },
+    {
+      "check": "customer_boundary_stability",
+      "passed": true,
+      "evidence": "The customer kept to 900 on 15 Oct: 'I can pay the full 900 pounds tomorrow, October fifteenth.' No budget change and no premature consent."
+    },
+    {
+      "check": "branch_records",
+      "passed": true,
+      "evidence": "Seq5 create_promise card-r11 900.0 2026-10-15 ok:true. Ledger promises match, notes are [], and seq6 is D_PTP."
+    }
+  ],
+  "branch_index": 0,
+  "branch_evidence": "Customer: 'Yes, I confirm: 900 pounds on the credit card on Thursday, 15 October.' No human request occurred, and only 2 repeats preceded confirmation.",
+  "passed": false
+}
+```

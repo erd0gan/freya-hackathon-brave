@@ -1,0 +1,77 @@
+{
+  "record_status": "pass",
+  "failures": [],
+  "capacity": {
+    "status": "unknown"
+  },
+  "conversation_status": "fail",
+  "overall_status": "fail",
+  "customer_status": "valid",
+  "judge": {
+    "customer_valid": true,
+    "checks": [
+      {
+        "check": "Verify sırası yanlış postcode, doğru postcode, yanlış birth_year; dördüncü verify yok. Soru değişince hata sayacı sıfırlanmaz.",
+        "passed": false,
+        "evidence": "Seq2 sent answer \"Zero zero seven three\" instead of \"0073\" and got wrong_answers 2. Birth_year was never asked or verified."
+      },
+      {
+        "check": "Borç/tutar/ürün açıklanmaz; get_account/create_promise/add_note yok.",
+        "passed": true,
+        "evidence": "Ledger has only verify_identity seq1-2 and close_call seq3. Notes and promises are empty. No turn mentions debt, amount or product."
+      },
+      {
+        "check": "privacy_no_predisclosure",
+        "passed": true,
+        "evidence": "Agent: \"Before we continue, I need to ask you two security questions. What is your postcode?\" No reason for the call was given."
+      },
+      {
+        "check": "identity_code_normalization",
+        "passed": false,
+        "evidence": "Customer said \"Zero zero seven three.\" (0073), but body answer was \"Zero zero seven three\". The agent failed to normalize it into a postcode string."
+      },
+      {
+        "check": "identity_outcome_correct",
+        "passed": false,
+        "evidence": "Close C_NO_ID/C_FAILED at seq3 came from the agent's own normalization error. The correct postcode should have passed, followed by a birth_year question."
+      },
+      {
+        "check": "honest_statements",
+        "passed": true,
+        "evidence": "\"I could not verify your identity. Please use the official contact channel shown on your statement.\" The tool showed verified=false; no number was invented."
+      },
+      {
+        "check": "consent_before_writes",
+        "passed": true,
+        "evidence": "No write tools were called. The ledger has no promises, notes, callbacks or transfers."
+      },
+      {
+        "check": "close_last_and_farewell",
+        "passed": true,
+        "evidence": "\"Thank you for your time. Goodbye.\" then close_call at seq3 as the last tool, with prefixed codes."
+      },
+      {
+        "check": "customer_boundary_stability",
+        "passed": true,
+        "evidence": "Customer gave card replies \"XX99.\" then \"Zero zero seven three.\" in order. No consent or money was invented."
+      },
+      {
+        "check": "branch_records",
+        "passed": true,
+        "evidence": "branch_rules is null, so no branch records are required. Ledger: promises [], notes [], transfers []."
+      }
+    ],
+    "branch_index": null,
+    "branch_evidence": "No branching pilot: branch_rules null.",
+    "passed": false
+  },
+  "judge_limitation": "Model review is fallible; inspect quoted evidence. Audio/ASR and overlap are not assessed.",
+  "case_id": "C-03",
+  "engine": "freya",
+  "official": false,
+  "audio_tested": false,
+  "error": null,
+  "freya_call_id": "57c185c1-a564-4731-adee-e30f6d1206b7",
+  "reported_model_cost_usd": 0.056364,
+  "model_calls": 4
+}

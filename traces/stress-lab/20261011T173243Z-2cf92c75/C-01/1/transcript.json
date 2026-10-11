@@ -1,0 +1,121 @@
+[
+  {
+    "role": "customer",
+    "content": "Hello?"
+  },
+  {
+    "role": "agent",
+    "content": "Hello, I am Meridian Bank's digital assistant. This call is recorded. Am I speaking with Mx Alex Rowan?",
+    "after_tool_sequence": 0
+  },
+  {
+    "role": "customer",
+    "content": "Yes, I am Alex Rowan.",
+    "after_tool_sequence": 0
+  },
+  {
+    "role": "agent",
+    "content": "First, I need to confirm your identity. What is your postcode?",
+    "after_tool_sequence": 0
+  },
+  {
+    "role": "customer",
+    "content": "Sure, it's 0073.",
+    "after_tool_sequence": 0
+  },
+  {
+    "role": "agent",
+    "content": "What is your year of birth?",
+    "after_tool_sequence": 1
+  },
+  {
+    "role": "customer",
+    "content": "I was born in 1988.",
+    "after_tool_sequence": 1
+  },
+  {
+    "role": "agent",
+    "content": "Thank you. I am calling about overdue payments on your account. Your credit card has 900.00 past due and is 4 days late. Your personal loan has 600.00 past due and is 12 days late. Can you pay the full overdue amount for all of these today?",
+    "after_tool_sequence": 3
+  },
+  {
+    "role": "customer",
+    "content": "I can't pay today, but for both accounts I can pay the full amounts on Sunday the eighteenth.",
+    "after_tool_sequence": 3
+  },
+  {
+    "role": "agent",
+    "content": "Sunday 18 October 2026 is not a business day. Could you pay 900.00 for the credit card on the next business day, Monday 19 October 2026?",
+    "after_tool_sequence": 3
+  },
+  {
+    "role": "customer",
+    "content": "I'm not sure about Monday; what I can commit to is paying the full amounts for both accounts on Sunday the eighteenth.",
+    "after_tool_sequence": 3
+  },
+  {
+    "role": "agent",
+    "content": "Sorry, I did not catch the amount. Which amount do you mean?",
+    "after_tool_sequence": 3
+  },
+  {
+    "role": "customer",
+    "content": "I mean the full overdue amounts, 900.00 for the credit card and 600.00 for the personal loan. I can pay both on Sunday the eighteenth.",
+    "after_tool_sequence": 3
+  },
+  {
+    "role": "agent",
+    "content": "Sorry, I did not catch the amount. Which amount do you mean?",
+    "after_tool_sequence": 3
+  },
+  {
+    "role": "customer",
+    "content": "Sorry, I mean the full overdue amounts: 900.00 for the credit card and 600.00 for the personal loan, both paid on Sunday the eighteenth.",
+    "after_tool_sequence": 3
+  },
+  {
+    "role": "agent",
+    "content": "Could you pay 900.00 for the credit card on Thursday 15 October 2026?",
+    "after_tool_sequence": 3
+  },
+  {
+    "role": "customer",
+    "content": "No, I can't manage Thursday. For both accounts, I can pay the full amounts on Sunday the eighteenth.",
+    "after_tool_sequence": 3
+  },
+  {
+    "role": "agent",
+    "content": "Sunday 18 October 2026 is not a business day. Could you pay 600.00 for the personal loan on the next business day, Monday 19 October 2026?",
+    "after_tool_sequence": 3
+  },
+  {
+    "role": "customer",
+    "content": "I can't commit to Monday. What I can do is pay the full amounts for both accounts on Sunday the eighteenth.",
+    "after_tool_sequence": 3
+  },
+  {
+    "role": "agent",
+    "content": "Could you pay 600.00 for the personal loan on Thursday 15 October 2026?",
+    "after_tool_sequence": 3
+  },
+  {
+    "role": "customer",
+    "content": "No, Thursday doesn't work for me either. I can pay the full amounts for both accounts on Sunday the eighteenth.",
+    "after_tool_sequence": 3
+  },
+  {
+    "role": "agent",
+    "content": "Could you pay 200.00 for the personal loan on Tuesday 20 October 2026? The remaining balance stays overdue.",
+    "after_tool_sequence": 3
+  },
+  {
+    "role": "customer",
+    "content": "I'd rather not agree to a partial payment on Tuesday. What I can offer is the full amounts for both accounts on Sunday the eighteenth.",
+    "after_tool_sequence": 3
+  },
+  {
+    "role": "agent",
+    "content": "Thank you for your time. Goodbye.",
+    "after_tool_sequence": 5
+  }
+]

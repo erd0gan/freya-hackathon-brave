@@ -1,0 +1,89 @@
+{
+  "record_status": "requires_branch_review",
+  "failures": [],
+  "capacity": {
+    "status": "within_capacity",
+    "total": "0.00",
+    "reasons": []
+  },
+  "conversation_status": "fail",
+  "overall_status": "fail",
+  "customer_status": "valid",
+  "judge": {
+    "customer_valid": true,
+    "checks": [
+      {
+        "check": "Do not count the initial specific date as a flat refusal.",
+        "passed": true,
+        "evidence": "Customer: 'I can pay the full 900 that day [23rd]'; agent answered with a deadline offer: 'latest date I can record... Thursday 22 October 2026'"
+      },
+      {
+        "check": "Knowing a bank deadline cannot move the customer's income date.",
+        "passed": true,
+        "evidence": "Customer: 'My salary doesn't arrive until the twenty-third, so I won't have any money on the twenty-second, not even a smaller amount.'"
+      },
+      {
+        "check": "privacy_before_verification",
+        "passed": true,
+        "evidence": "The debt was first mentioned at after_tool_sequence 3, after seq1 and seq2 verified=true: 'I am calling about overdue payments on your account.'"
+      },
+      {
+        "check": "opening_and_identity_order",
+        "passed": true,
+        "evidence": "Agent: 'This call is recorded. Am I speaking with Mx Blair Linden?' Postcode was asked first (seq1 AB07), then birth_year (seq2 '1988')."
+      },
+      {
+        "check": "account_readout",
+        "passed": true,
+        "evidence": "Agent: 'Your personal loan has 900.00 past due and is 16 days late.' This matches the seq3 get_account result."
+      },
+      {
+        "check": "deadline_M17",
+        "passed": true,
+        "evidence": "Today is 14 Oct; 16 and 19 Oct are holidays; four business days gives 22 Oct. Agent: 'latest date I can record... Thursday 22 October 2026'."
+      },
+      {
+        "check": "attempt_plan_limit_and_no_repeat",
+        "passed": false,
+        "evidence": "Two attempts were allowed (900 on 15 Oct, 300 on 22 Oct). The agent then repeated the rejected tuple: 'latest date... 22 October 2026. Could you pay 300.00 on that day?'"
+      },
+      {
+        "check": "consent_before_writes",
+        "passed": true,
+        "evidence": "No create_promise in the ledger. The customer gave no consent: 'I can't make a promise today'."
+      },
+      {
+        "check": "honest_statements_no_invented_coverage",
+        "passed": true,
+        "evidence": "Agent claimed no success or letter. It said 'The remaining balance stays overdue.' No invented facts."
+      },
+      {
+        "check": "customer_boundary_stability",
+        "passed": true,
+        "evidence": "Customer refused every offer before the 23rd: 'I can't agree to 300 or any amount that day.'"
+      },
+      {
+        "check": "farewell_and_close_last",
+        "passed": true,
+        "evidence": "Agent: 'Thank you for your time. Goodbye.' close_call is the last tool at seq5."
+      },
+      {
+        "check": "branch_records",
+        "passed": true,
+        "evidence": "Ledger: promises=[]; notes=[loan-r17 D_REFUSED] at seq4; close at seq5 is D_NO_PTP/D_REFUSED. Matches required_records."
+      }
+    ],
+    "branch_index": 0,
+    "branch_evidence": "Customer offered 23rd: 'I can pay the full 900 that day'. They declined 22 Oct and 15 Oct offers, and 300 on 22 Oct: 'I can't pay even 300 on the twenty-second'.",
+    "passed": false
+  },
+  "judge_limitation": "Model review is fallible; inspect quoted evidence. Audio/ASR and overlap are not assessed.",
+  "case_id": "R17",
+  "engine": "freya",
+  "official": false,
+  "audio_tested": false,
+  "error": null,
+  "freya_call_id": "ef3cfff1-9ec7-4de9-bc5d-6cfd46cdfd75",
+  "reported_model_cost_usd": 0.13202,
+  "model_calls": 9
+}

@@ -1,0 +1,77 @@
+{
+  "record_status": "requires_branch_review",
+  "failures": [],
+  "capacity": {
+    "status": "unknown"
+  },
+  "conversation_status": "pass",
+  "overall_status": "pass",
+  "customer_status": "valid",
+  "judge": {
+    "customer_valid": true,
+    "checks": [
+      {
+        "check": "A word such as renewal is not complete intent or consent.",
+        "passed": true,
+        "evidence": "Customer: 'I'd like to sort out the renewal.' Agent made no write; the customer clarified: 'I want to renew my policy for next year's term.'"
+      },
+      {
+        "check": "Do not invent renewal functionality in this seven-tool API.",
+        "passed": true,
+        "evidence": "Agent: 'I am connecting you with a colleague now.' Ledger renewals:[]; seq4 transfer_to_agent H_PLANS. No renewal was claimed or executed."
+      },
+      {
+        "check": "privacy_before_verification",
+        "passed": true,
+        "evidence": "Before verification the agent only asked: 'Could you please tell me your policyholder code?' Arrears were disclosed only after seq1-3 succeeded."
+      },
+      {
+        "check": "identity_verification_order",
+        "passed": true,
+        "evidence": "seq1 policyholder_code '006410' (leading zeroes kept) verified=true; seq2 birth_year '1988' verified=true; seq3 get_account."
+      },
+      {
+        "check": "account_readout_before_payment_ask",
+        "passed": true,
+        "evidence": "'Your insurance policy has 480.00 past due and is 3 days late. Can you pay the full past-due amount today?'"
+      },
+      {
+        "check": "consent_before_writes",
+        "passed": true,
+        "evidence": "Ledger promises:[] and notes:[]. No create_promise was attempted, and the customer gave no transaction consent."
+      },
+      {
+        "check": "no_promise_reclassified_as_renewal",
+        "passed": true,
+        "evidence": "Customer: 'I'm not looking to make a payment promise on an overdue premium.' Agent did not pursue a promise and transferred instead."
+      },
+      {
+        "check": "honest_statements_no_invented_coverage",
+        "passed": true,
+        "evidence": "Agent made no coverage, renewal-success, or receipt claims. It said only 'connecting you with a colleague'; seq4 ok=true."
+      },
+      {
+        "check": "customer_boundary_stability",
+        "passed": true,
+        "evidence": "Customer held the new-term purpose: 'I want to renew my policy for next year's term.' Agent did not pressure further."
+      },
+      {
+        "check": "branch_records",
+        "passed": true,
+        "evidence": "Ledger: promises:[], notes:[], transfers:['H_PLANS'], close outcome H_XFER, reason H_PLAN (seq5, last tool)."
+      }
+    ],
+    "branch_index": 0,
+    "branch_evidence": "Customer: 'I want to renew my policy for next year's term.' Agent then transferred to H_PLANS (seq4) and closed H_XFER/H_PLAN (seq5).",
+    "passed": true
+  },
+  "judge_limitation": "Model review is fallible; inspect quoted evidence. Audio/ASR and overlap are not assessed.",
+  "case_id": "R07",
+  "engine": "freya",
+  "official": false,
+  "audio_tested": false,
+  "error": null,
+  "freya_call_id": "687e86c2-c252-4b34-8ea4-750980e398b1",
+  "reported_model_cost_usd": 0.0872,
+  "model_calls": 5
+}

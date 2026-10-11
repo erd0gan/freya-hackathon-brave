@@ -1,0 +1,20 @@
+{
+  "record_status": "requires_branch_review",
+  "failures": [],
+  "capacity": {
+    "status": "within_capacity",
+    "total": "200.00",
+    "reasons": []
+  },
+  "conversation_status": "not_reviewed",
+  "overall_status": "unassessed",
+  "review_error": "Unterminated string starting at: line 87 column 19 (char 5621)",
+  "case_id": "R04",
+  "engine": "baseline",
+  "official": false,
+  "audio_tested": false,
+  "error": null,
+  "freya_call_id": null,
+  "reported_model_cost_usd": 0.8472999999999999,
+  "model_calls": 28
+}

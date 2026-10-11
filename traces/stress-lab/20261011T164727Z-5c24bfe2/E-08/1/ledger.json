@@ -1,0 +1,36 @@
+{
+  "wrong": 0,
+  "closed": true,
+  "calls": [
+    {
+      "tool": "close_call",
+      "body": {
+        "detail": "E_DECLINED",
+        "disposition": "E_NO_ID",
+        "session_ref": "sl-4KQWmNzmUPb-vqsdke3n_TN2lBBZ1qnQ"
+      },
+      "sequence": 1,
+      "status": 200,
+      "result": {
+        "status": "APPLIED",
+        "payload": {
+          "accepted": true
+        }
+      }
+    }
+  ],
+  "promises": [],
+  "notes": [],
+  "callbacks": [],
+  "transfers": [],
+  "claims": [],
+  "inspections": [],
+  "rentals": [],
+  "endorsements": [],
+  "renewals": [],
+  "close": {
+    "detail": "E_DECLINED",
+    "disposition": "E_NO_ID"
+  },
+  "now": "2026-10-14T11:00:00"
+}

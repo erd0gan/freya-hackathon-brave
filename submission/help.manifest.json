@@ -1,0 +1,32 @@
+{
+ "slot": "help",
+ "status": "error: FileNotFoundError: [Errno 2] No such file or directory: '--help'",
+ "started_utc": "2026-10-11T16:13:18Z",
+ "duration_s": 0.0,
+ "commit": "5b75f86-dirty",
+ "inputs": {
+  "brief": "--help",
+  "brief_sha256": "unreadable(FileNotFoundError)",
+  "tool_api": "-",
+  "tool_api_sha256": "-"
+ },
+ "spec": {},
+ "observer": {},
+ "validator": {},
+ "proof_map": {},
+ "selftest": {},
+ "workflow_sha256": null,
+ "export": {
+  "mode": "none",
+  "file": null,
+  "sha256": null,
+  "check": null
+ },
+ "freya": {},
+ "smoke": "not run",
+ "model": {
+  "calls": 0,
+  "cost_usd": 0.0,
+  "failures": 0
+ }
+}

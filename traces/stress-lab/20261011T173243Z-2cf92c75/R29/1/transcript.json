@@ -1,0 +1,31 @@
+[
+  {
+    "role": "customer",
+    "content": "Hello?"
+  },
+  {
+    "role": "agent",
+    "content": "Hello, I am Meridian Bank's digital assistant. This call is recorded. Am I speaking with Mx Alexis Dale?",
+    "after_tool_sequence": 0
+  },
+  {
+    "role": "customer",
+    "content": "No, this isn't Alexis. I'm the office manager and usually handle their paperwork, so how can I help?",
+    "after_tool_sequence": 0
+  },
+  {
+    "role": "agent",
+    "content": "I can discuss this with Mx Dale alone. When can Mx Dale be reached?",
+    "after_tool_sequence": 0
+  },
+  {
+    "role": "customer",
+    "content": "That's fine, I understand. Alexis will be available tomorrow at 10:00 if you can call back then.",
+    "after_tool_sequence": 0
+  },
+  {
+    "role": "agent",
+    "content": "Your callback is booked. Thank you for your time. Goodbye.",
+    "after_tool_sequence": 1
+  }
+]

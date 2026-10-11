@@ -1,0 +1,32 @@
+{
+  "wrong": 0,
+  "closed": false,
+  "calls": [
+    {
+      "tool": "verify_identity",
+      "body": {
+        "field": "policyholder_code",
+        "answer": "000819",
+        "customer_id": "sl-a512JvNXyUZOhM9X3i9m_f3QKsvUdVvZ"
+      },
+      "sequence": 1,
+      "status": 200,
+      "result": {
+        "ok": true,
+        "verified": true,
+        "wrong_answers": 0
+      }
+    }
+  ],
+  "promises": [],
+  "notes": [],
+  "callbacks": [],
+  "transfers": [],
+  "claims": [],
+  "inspections": [],
+  "rentals": [],
+  "endorsements": [],
+  "renewals": [],
+  "close": null,
+  "now": "2026-10-14T11:00:00"
+}

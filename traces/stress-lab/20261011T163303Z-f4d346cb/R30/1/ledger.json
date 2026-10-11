@@ -1,0 +1,117 @@
+{
+  "wrong": 1,
+  "closed": true,
+  "calls": [
+    {
+      "tool": "verify_identity",
+      "body": {
+        "field": "postcode",
+        "answer": "ZX21",
+        "customer_id": "sl-kCL6AlpxDoDxczfWeYyfScQ4HuN0b1no"
+      },
+      "sequence": 1,
+      "status": 200,
+      "result": {
+        "ok": true,
+        "verified": false,
+        "wrong_answers": 1
+      }
+    },
+    {
+      "tool": "verify_identity",
+      "body": {
+        "field": "postcode",
+        "answer": "AB07",
+        "customer_id": "sl-kCL6AlpxDoDxczfWeYyfScQ4HuN0b1no"
+      },
+      "sequence": 2,
+      "status": 200,
+      "result": {
+        "ok": true,
+        "verified": true,
+        "wrong_answers": 1
+      }
+    },
+    {
+      "tool": "verify_identity",
+      "body": {
+        "field": "birth_year",
+        "answer": "1988",
+        "customer_id": "sl-kCL6AlpxDoDxczfWeYyfScQ4HuN0b1no"
+      },
+      "sequence": 3,
+      "status": 200,
+      "result": {
+        "ok": true,
+        "verified": true,
+        "wrong_answers": 1
+      }
+    },
+    {
+      "tool": "get_account",
+      "body": {
+        "customer_id": "sl-kCL6AlpxDoDxczfWeYyfScQ4HuN0b1no"
+      },
+      "sequence": 4,
+      "status": 200,
+      "result": {
+        "ok": true,
+        "products": [
+          {
+            "product_id": "card-r30",
+            "type": "credit_card",
+            "display_name": "credit card",
+            "past_due": 900.0,
+            "floor": 300.0,
+            "days_late": 4
+          }
+        ]
+      }
+    },
+    {
+      "tool": "create_promise",
+      "body": {
+        "date": "2026-10-15",
+        "amount": 900.0,
+        "product_id": "card-r30",
+        "customer_id": "sl-kCL6AlpxDoDxczfWeYyfScQ4HuN0b1no"
+      },
+      "sequence": 5,
+      "status": 200,
+      "result": {
+        "ok": true
+      }
+    },
+    {
+      "tool": "close_call",
+      "body": {
+        "outcome": "D_PTP",
+        "customer_id": "sl-kCL6AlpxDoDxczfWeYyfScQ4HuN0b1no"
+      },
+      "sequence": 6,
+      "status": 200,
+      "result": {
+        "ok": true
+      }
+    }
+  ],
+  "promises": [
+    {
+      "product_id": "card-r30",
+      "amount": "900.00",
+      "date": "2026-10-15"
+    }
+  ],
+  "notes": [],
+  "callbacks": [],
+  "transfers": [],
+  "claims": [],
+  "inspections": [],
+  "rentals": [],
+  "endorsements": [],
+  "renewals": [],
+  "close": {
+    "outcome": "D_PTP"
+  },
+  "now": "2026-10-14T11:00:00"
+}

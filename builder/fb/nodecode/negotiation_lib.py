@@ -654,6 +654,7 @@ def _agree(p, amount, date, own_deadline=False):
     p["offer"] = None
     p["pending_amount"] = None
     p["own_deadline"] = own_deadline
+    p["moved"] = False
     p["acked"] = False
 
 
@@ -773,9 +774,26 @@ def _apply_offer(st, k, amount, date_iso, date_kind, neg, cal, now, cfg, all_pro
                 amount=_m(amt),
             )
             q["offer"] = {"amount": amt, "date": q["deadline"], "kind": "deadline", "say": line}
+        elif res.startswith("not_business_day") and len(targets) > 1:
+            # one day for every product, not a business day: the next one for each, explained
+            # in the one read-back (stress C-01 on Freya, 11 Oct: "both on Sunday the 18th", a
+            # holiday, moved the card only, then asked again and again)
+            _agree(q, amt, res.split(":", 1)[1])
+            q["moved"] = True
         elif res.startswith("not_business_day"):
             nb = res.split(":", 1)[1]
-            if len(targets) > 1:
+            holiday = str(date_iso)[:10] in set(cfg.get("holidays") or [])
+            if holiday:
+                line = _line(
+                    neg,
+                    "next_business_day_holiday",
+                    "{date} is a holiday. Could you pay {amount} on the next business day, "
+                    "{next_date}?",
+                    date=_d(date_iso),
+                    amount=_m(amt),
+                    next_date=_d(nb),
+                )
+            elif len(targets) > 1:
                 line = _line(
                     neg,
                     "next_business_day_product",
@@ -813,6 +831,24 @@ def _apply_offer(st, k, amount, date_iso, date_kind, neg, cal, now, cfg, all_pro
     return None
 
 
+CONTRAST_WORDS = re.compile(
+    r"\b(but|however|instead|rather|though|although|except|only if|unless|works|fine|ok|okay)\b"
+    r"|\bi (?:can|could|will|'ll|would) (?:pay|do|manage|make|afford|go)\b|\bi'll (?:pay|do)\b",
+    re.I,
+)
+
+
+def _plain_no(r):
+    """The customer's words refuse (outside a no to today) and offer nothing in contrast:
+    no 'but ...', 'instead', 'Friday works'. English only (other languages: as labelled)."""
+    raw = str(r.get("raw") or "")
+    if not raw or _neg_lang() != "en":
+        return False
+    t = _txt(raw)
+    rest = _re("today_refusal").sub(" ", t)
+    return bool(_re("refusal").search(rest)) and not CONTRAST_WORDS.search(t)
+
+
 def _split_amounts(st, r):
     """{product index: amount} said for several products in one message: '300 to the card and
     200 to the loan' (each part names one product and one amount), or one amount 'for each' of
@@ -832,6 +868,10 @@ def _split_amounts(st, r):
         a = parse_amount(rest)
         if a is not None and a > 0:
             out[js[0]] = a
+        elif _neg_lang() == "en" and re.search(
+            r"\b(zero|nothing|none|take (?:that|it) off|remove)\b", rest, re.I
+        ):
+            out[js[0]] = 0.0  # "zero on the car loan": a no to that product (R04)
     live = [j for j, q in enumerate(st["p"]) if q["status"] in ("open", "agreed")]
     out = {j: a for j, a in out.items() if j in live}
     if len(out) >= 2:
@@ -879,6 +919,8 @@ def _item(neg, q, key="readback_item"):
     default = "{product}, {amount} on {date}"
     if key == "readback_item_deadline":
         default += ", which is the latest date I can record for it"
+    elif key == "readback_item_moved":
+        default += ", the next business day"
     elif key == "ack_item":
         default = "{product} for {amount} on {date}"
     return _line(
@@ -888,7 +930,15 @@ def _item(neg, q, key="readback_item"):
 
 def _readback(st, neg):
     parts = [
-        _item(neg, q, "readback_item_deadline" if q.get("own_deadline") else "readback_item")
+        _item(
+            neg,
+            q,
+            "readback_item_deadline"
+            if q.get("own_deadline")
+            else "readback_item_moved"
+            if q.get("moved")
+            else "readback_item",
+        )
         for q in st["p"]
         if q["status"] == "agreed"
     ]
@@ -1184,7 +1234,8 @@ def _restates_readback(st, r):
     five times). A no, a 'but' or a number nobody agreed is a change."""
     raw = _txt(r.get("raw"))
     ag = [q for q in st["p"] if q["status"] == "agreed"]
-    if len(ag) < 2 or _neg_lang() != "en" or not re.match(r"\W*(?:yes|yeah|yep|correct)\b", raw, re.I):
+    yes = re.match(r"\W*(?:yes|yeah|yep|correct)\b", raw, re.I)
+    if len(ag) < 2 or _neg_lang() != "en" or not yes:
         return False
     if _re("refusal").search(raw) or re.search(r"\b(?:but|instead|change|rather)\b", raw, re.I):
         return False
@@ -1353,6 +1404,22 @@ def step(st, r, neg, cal, now, cfg):
         # turn" (stress F-02 on Freya, 11 Oct: "I lost my job yesterday, but I could pay three
         # hundred on the card today" was taken as an offer; persuasion went on)
         kind = "hardship"
+    if (
+        r.get("human_words")
+        and kind not in ("human", "hardship")
+        and int(_pol(neg, "human_requests_to_transfer") or 1) <= 1
+    ):
+        # a brief that transfers a request for a person at once: the request wins over the
+        # rest of the message ("that card is not mine ... put me through to a person now", a
+        # confirmation with "could I speak to a person": stress F-03 / R28 / D-05 / R03)
+        kind = "human"
+    if kind == "offer" and r.get("said_no") and _plain_no(r):
+        # "No, I'm not going to be able to pay 300 on the 22nd either" / "No, I can't. The 500
+        # today is all I have": a no that repeats the offer's values (or what they have) is a
+        # no, not an agreement to them (stress D-03 / R04 on Freya, 11 Oct: read back and
+        # confirmed-asked after the refusal)
+        kind = "no"
+        r["amount"], r["date"] = None, None
     st["unclear_run"] = int(st.get("unclear_run") or 0) + 1 if kind == "unclear" else 0
     # whole replies that answer nothing ("Hmm."), not cut off and no question: after three in a
     # row the next one is a non-answer (A30: uses an attempt), so the call cannot go on forever
@@ -1853,10 +1920,20 @@ def step(st, r, neg, cal, now, cfg):
         if split:
             # each amount to its own product, each checked against its own floor
             say = None
-            for j in sorted(split):
-                s1 = _apply_offer(
-                    st, j, split[j], r.get("date"), r.get("date_kind"), neg, cal, now, cfg, False
-                )
+            for j in sorted(split, key=lambda x: (split[x] == 0, x)):
+                if split[j] == 0:
+                    # nothing for this product: a no to it (its next attempt, else refused)
+                    q = st["p"][j]
+                    _refuse_offer(q, q.get("amount"), q.get("date"))
+                    _refuse_offer(q)
+                    q["status"] = "open"
+                    q["offer"] = None
+                    s1 = None if say else _flat_refusal(st, j, neg, cal)
+                else:
+                    s1 = _apply_offer(
+                        st, j, split[j], r.get("date"), r.get("date_kind"), neg, cal, now, cfg,
+                        False,
+                    )
                 say = say or s1
         elif alloc:
             say = alloc
@@ -2134,6 +2211,7 @@ DISPUTE_CLAIM = re.compile(
     r"\bisn't mine\b|\bnot mine\b|\bnot my (?:\w+ )?(?:debt|account|card|loan|policy)\b|"
     r"\bnever (?:had|opened|took out|owned)\b|\bdo(?:n't| not) recogni[sz]e\b|"
     r"\bclosed (?:\w+ )?(?:years|long|ages|months) ago\b|\bwas closed\b|"
+    r"\bclosed (?:it |that |this )?last (?:year|month)\b|\bdisput\w*|"
     r"\bpaid off (?:\w+ )?(?:years|long|ages|months) ago\b",
     re.I,
 )
@@ -2155,6 +2233,15 @@ CONSENT_WORDS = re.compile(
 HEAR_ONLY = re.compile(
     r"\b(?:can|could) hear you\b|\bhear you (?:fine|ok|okay|well|clearly|now)\b|"
     r"\bi'?m (?:still )?(?:here|listening)\b|\bi (?:understand|see)\b",
+    re.I,
+)
+# An explicit request for a person now ("put me through", "transfer me", "is there someone
+# who can explain"), not a follow-up later ("have someone follow up with me").
+HUMAN_WORDS = re.compile(
+    r"\b(?:speak|talk) (?:to|with) (?:a |an |another |some |one of your )?(?:real |actual |"
+    r"live )?(?:person|human|someone|somebody|agent|adviser|advisor|representative|manager|"
+    r"colleague|operator)\b|\bput me through\b|\btransfer me\b|\bconnect me (?:to|with)\b|"
+    r"\bis there (?:someone|somebody|anyone|a person) (?:who|that|i can)\b",
     re.I,
 )
 # The customer's own hardship in so many words (illness, a death, losing the job).
@@ -2218,6 +2305,8 @@ LANG_WORDS = {
         "total": r"\b(?:toplam\w*|hepsi icin|birlikte|bolus\w*|paylastir\w*)\b",
         "hardship": r"\b(?:isimi kaybettim|issiz kaldim|isten cikarildim|hastaneye? \w*|"
         r"vefat \w*|hayatini kaybetti)\b",
+        "human": r"\b(?:insanla|temsilciyle|yetkiliyle|musteri temsilcisiyle|biriyle) "
+        r"(?:gorus|konus)\w*|\bbeni (?:\w+ )?(?:aktar|bagla)\w*",
         "day_number": r"\d|\b(?:bir|iki|uc|dort|bes|alti|yedi|sekiz|dokuz|on|yirmi|otuz)",
         "move": r"\b(?:haftaya|gelecek|onumuzdeki|sonraki|ertesi|obur|hafta)\w*",
         "joiners": "ve virgul nokta arti",
@@ -2240,6 +2329,7 @@ EN_WORDS = dict(
     each=EACH_WORDS,
     total=TOTAL_WORDS,
     hardship=HARDSHIP_WORDS,
+    human=HUMAN_WORDS,
     full_too_much=FULL_TOO_MUCH,
     paid_claim=PAID_CLAIM,
     not_paid=NOT_PAID,
@@ -2344,6 +2434,7 @@ def read_reply(v, today):
     # '200 or maybe 300', 'half of it', words nobody reads: asked again, never the full amount
     bad = amount is None and not amount_is and _amount_words(amount_text)
     said_yes = kind == "yes"
+    said_no = kind in ("no", "too_much", "evasive")
     if (kind in ("yes", "no", "too_much", "evasive") and (iso or amount is not None)) or (
         offer and (bad or amount_is)
     ):
@@ -2390,6 +2481,8 @@ def read_reply(v, today):
         "consent_words": bool(raw and _re("consent").search(t)),
         "hear_only": bool(raw and _re("hear_only").search(t)),
         "hardship_words": bool(raw and _re("hardship").search(t)),
+        "human_words": bool(raw and _re("human").search(t)),
+        "said_no": said_no,
         "also_hardship": str(v.get("also_hardship") or "").strip().lower() in ("yes", "true"),
         "said_yes": said_yes,
         "raw": raw,

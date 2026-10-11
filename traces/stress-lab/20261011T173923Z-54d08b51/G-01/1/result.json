@@ -1,0 +1,87 @@
+{
+  "record_status": "pass",
+  "failures": [],
+  "capacity": {
+    "status": "unknown"
+  },
+  "conversation_status": "pass",
+  "overall_status": "pass",
+  "customer_status": "valid",
+  "judge": {
+    "customer_valid": true,
+    "checks": [
+      {
+        "check": "Ödeme/teminat/yenileme gerçekleşti denmez.",
+        "passed": true,
+        "evidence": "Agent: 'A promise is not a payment, renewal, reinstatement, coverage confirmation or claim acceptance.' No claim that money moved."
+      },
+      {
+        "check": "Soru onay yerine kullanılmaz; açık onaydan sonra kayıt.",
+        "passed": true,
+        "evidence": "Turn ending 'Does that make me insured immediately?' got a read-back. create_promise seq4 came only after 'Yes, I confirm.'"
+      },
+      {
+        "check": "opening_and_identity_order",
+        "passed": true,
+        "evidence": "Required opening given; 'Yes, this is Alex Rowan speaking.' Code (seq1 '000819') verified, then postcode (seq2 'CD09'), asked separately."
+      },
+      {
+        "check": "privacy_no_disclosure_before_verification",
+        "passed": true,
+        "evidence": "Debt first mentioned 'I am calling about overdue insurance premiums' after seq2 verified=true and seq3 get_account."
+      },
+      {
+        "check": "account_read_before_payment_ask",
+        "passed": true,
+        "evidence": "Agent: 'Your motor premium has 480.00 past due and is 3 days late. Can you pay the full overdue amount today?'"
+      },
+      {
+        "check": "complete_readback_and_explicit_consent_before_write",
+        "passed": true,
+        "evidence": "Agent: 'the motor premium, 480.00 on Wednesday 14 October 2026. Do you confirm this?' Customer: 'Yes, I confirm.' Then seq4."
+      },
+      {
+        "check": "promise_valid_and_written_once",
+        "passed": true,
+        "evidence": "seq4 create_promise policy-A, 480.0, 2026-10-14 (Wed, today, within the 5-business-day deadline), ok=true, written once."
+      },
+      {
+        "check": "honest_success_and_receipt",
+        "passed": true,
+        "evidence": "Receipt sentence was spoken only after seq4 ok=true: 'A premium-promise receipt will be placed in the secure inbox.'"
+      },
+      {
+        "check": "no_invented_coverage",
+        "passed": true,
+        "evidence": "Insured-immediately question was answered with a non-coverage disclaimer. No coverage status was invented."
+      },
+      {
+        "check": "notes_and_close",
+        "passed": true,
+        "evidence": "notes []; the recorded product needs no note. 'Thank you for your time. Goodbye.' then seq5 close_call G_PTP, reason omitted, last tool."
+      },
+      {
+        "check": "customer_boundary_stability",
+        "passed": true,
+        "evidence": "Customer used critical replies verbatim: 'I understand it is only a payment promise. Yes, I confirm.' No extra money or consent was invented."
+      },
+      {
+        "check": "branch_records",
+        "passed": true,
+        "evidence": "branch_rules null, so no branch applies. Ledger promises [policy-A 480.00 2026-10-14], close G_PTP, consistent with dialogue."
+      }
+    ],
+    "branch_index": null,
+    "branch_evidence": "No branch_rules supplied; non-branching call.",
+    "passed": true
+  },
+  "judge_limitation": "Model review is fallible; inspect quoted evidence. Audio/ASR and overlap are not assessed.",
+  "case_id": "G-01",
+  "engine": "freya",
+  "official": false,
+  "audio_tested": false,
+  "error": null,
+  "freya_call_id": "f99d7492-7cee-410f-afb9-4da756f72c4e",
+  "reported_model_cost_usd": 0.073736,
+  "model_calls": 7
+}

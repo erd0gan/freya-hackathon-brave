@@ -1,0 +1,91 @@
+[
+  {
+    "role": "customer",
+    "content": "Hello?"
+  },
+  {
+    "role": "agent",
+    "content": "Hello, I am Vector Bank's digital assistant. This call is recorded. Am I speaking with Mx Jamie Cole?",
+    "after_tool_sequence": 0
+  },
+  {
+    "role": "customer",
+    "content": "Yes, this is Jamie Cole speaking.",
+    "after_tool_sequence": 0
+  },
+  {
+    "role": "agent",
+    "content": "First, I need to ask you two security questions. Please tell me your member code.",
+    "after_tool_sequence": 0
+  },
+  {
+    "role": "customer",
+    "content": "Sure, my member code is 004271.",
+    "after_tool_sequence": 0
+  },
+  {
+    "role": "agent",
+    "content": "What is your year of birth?",
+    "after_tool_sequence": 1
+  },
+  {
+    "role": "customer",
+    "content": "It's 1988.",
+    "after_tool_sequence": 1
+  },
+  {
+    "role": "agent",
+    "content": "Thank you. I'm calling about overdue payments on your account. Your credit card has 900.00 past due and is 4 days late. Can you pay the full overdue amount today?",
+    "after_tool_sequence": 3
+  },
+  {
+    "role": "customer",
+    "content": "Right, okay. I can't do it today, but I can pay the full 900 pounds tomorrow, on October 15th.",
+    "after_tool_sequence": 3
+  },
+  {
+    "role": "agent",
+    "content": "To confirm: the credit card, 900.00 on Thursday 15 October 2026. Do you confirm this? Please say yes to confirm.",
+    "after_tool_sequence": 3
+  },
+  {
+    "role": "customer",
+    "content": "Yes, I can hear you. Does that take money now?",
+    "after_tool_sequence": 3
+  },
+  {
+    "role": "agent",
+    "content": "I'm sorry, I don't have that information. Sorry, I did not catch that. Do you confirm this? Please say yes to confirm.",
+    "after_tool_sequence": 3
+  },
+  {
+    "role": "customer",
+    "content": "Hang on, I said I can hear you, but I'm not confirming yet. I need to know first: is this taking 900 pounds from me right now, or just recording that I'll pay it on the 15th?",
+    "after_tool_sequence": 3
+  },
+  {
+    "role": "agent",
+    "content": "I'm sorry, I don't have that information. To confirm: the credit card, 900.00 on Thursday 15 October 2026. Do you confirm this? Please say yes to confirm.",
+    "after_tool_sequence": 3
+  },
+  {
+    "role": "customer",
+    "content": "I'm sorry, but I can't say yes until I know whether this takes money from me today or just records a promise to pay on the 15th. Is there someone who can explain that to me?",
+    "after_tool_sequence": 3
+  },
+  {
+    "role": "agent",
+    "content": "I'm sorry, I don't have that information. To confirm: the credit card, 900.00 on Thursday 15 October 2026. Do you confirm this? Please say yes to confirm.",
+    "after_tool_sequence": 3
+  },
+  {
+    "role": "customer",
+    "content": "No, I'm not confirming anything until someone can tell me whether this takes the money now or just records that I'll pay on the 15th. Can you put me through to a person, or should I call the bank back myself?",
+    "after_tool_sequence": 3
+  },
+  {
+    "role": "agent",
+    "content": "I'll connect you with a colleague now. Thank you for your time. Goodbye.",
+    "after_tool_sequence": 4
+  }
+]

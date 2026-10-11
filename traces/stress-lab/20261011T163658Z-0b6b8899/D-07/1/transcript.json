@@ -1,0 +1,71 @@
+[
+  {
+    "role": "customer",
+    "content": "Hello?"
+  },
+  {
+    "role": "agent",
+    "content": "Hello, I am Alder Credit's digital assistant. This call is recorded. Am I speaking with Mx Alex Rowan?",
+    "after_tool_sequence": 0
+  },
+  {
+    "role": "customer",
+    "content": "Yes, this is Alex Rowan speaking.",
+    "after_tool_sequence": 0
+  },
+  {
+    "role": "agent",
+    "content": "Before we continue, I need to ask you two security questions. Could you please tell me your postcode?",
+    "after_tool_sequence": 0
+  },
+  {
+    "role": "customer",
+    "content": "Sure, it's AB07.",
+    "after_tool_sequence": 0
+  },
+  {
+    "role": "agent",
+    "content": "And the remaining digits?",
+    "after_tool_sequence": 0
+  },
+  {
+    "role": "customer",
+    "content": "I'd rather just stick with AB07 over the phone, sorry. Is there something else you can check, like my year of birth?",
+    "after_tool_sequence": 0
+  },
+  {
+    "role": "agent",
+    "content": "These questions protect your privacy; I can only continue once I have confirmed I am speaking with the right person. Could you please tell me your postcode?",
+    "after_tool_sequence": 0
+  },
+  {
+    "role": "customer",
+    "content": "The postcode I've got for you is AB07, that's all I can give. I can confirm my birth year if that helps, it's 1988.",
+    "after_tool_sequence": 0
+  },
+  {
+    "role": "agent",
+    "content": "I understand, but I must follow the security process. Could you please tell me your full postcode?",
+    "after_tool_sequence": 0
+  },
+  {
+    "role": "customer",
+    "content": "Honestly, AB07 is all I'm going to give for the postcode. If that's not enough, is there another way we can do this?",
+    "after_tool_sequence": 0
+  },
+  {
+    "role": "agent",
+    "content": "These questions protect your privacy; I can only continue once I have confirmed I am speaking with the right person. Could you please tell me your full postcode?",
+    "after_tool_sequence": 0
+  },
+  {
+    "role": "customer",
+    "content": "I'm sorry, but AB07 is the only postcode answer I can give you. If that won't work, could you note it on my account or tell me another way to get through security?",
+    "after_tool_sequence": 0
+  },
+  {
+    "role": "agent",
+    "content": "Thank you for your time. Goodbye.",
+    "after_tool_sequence": 1
+  }
+]

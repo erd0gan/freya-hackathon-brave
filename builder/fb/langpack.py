@@ -155,6 +155,8 @@ ENGINE_LINES: dict[str, dict[str, str]] = {
         "business day, {next_date}?",
         "next_business_day_product": "{date} is not a business day. Could you pay {amount} for "
         "{product} on the next business day, {next_date}?",
+        "next_business_day_holiday": "{date} is a holiday. Could you pay {amount} on the next "
+        "business day, {next_date}?",
         "day_ask_amount": "On which day can you pay {amount}?",
         "exact_day_ask": "On which exact day can you pay?",
         "date_past": "The date has to be today or later. On which day can you pay?",
@@ -164,6 +166,7 @@ ENGINE_LINES: dict[str, dict[str, str]] = {
         "readback_item": "{product}, {amount} on {date}",
         "readback_item_deadline": "{product}, {amount} on {date}, which is the latest date I can "
         "record for it",
+        "readback_item_moved": "{product}, {amount} on {date}, the next business day",
         "ack": "I have noted {items}.",
         "ack_item": "{product} for {amount} on {date}",
         "promise_recorded": "Your promise is recorded: {items}.",
@@ -224,6 +227,8 @@ ENGINE_LINES: dict[str, dict[str, str]] = {
         "tarihinde {amount} ödeyebilir misiniz?",
         "next_business_day_product": "{date} bir iş günü değil. {product} için bir sonraki iş "
         "günü olan {next_date} tarihinde {amount} ödeyebilir misiniz?",
+        "next_business_day_holiday": "{date} resmi tatil. Bir sonraki iş günü olan {next_date} "
+        "tarihinde {amount} ödeyebilir misiniz?",
         "day_ask_amount": "{amount} tutarını hangi gün ödeyebilirsiniz?",
         "exact_day_ask": "Tam olarak hangi gün ödeyebilirsiniz?",
         "date_past": "Tarih bugün ya da daha sonrası olmalı. Hangi gün ödeyebilirsiniz?",
@@ -233,6 +238,7 @@ ENGINE_LINES: dict[str, dict[str, str]] = {
         "readback_item": "{product} için {date} tarihinde {amount}",
         "readback_item_deadline": "{product} için {date} tarihinde {amount}; bu, kaydedebileceğim "
         "en geç tarih",
+        "readback_item_moved": "{product} için bir sonraki iş günü olan {date} tarihinde {amount}",
         "ack": "Not aldım: {items}.",
         "ack_item": "{product} için {date} tarihinde {amount}",
         "promise_recorded": "Ödeme sözünüz kaydedildi: {items}.",

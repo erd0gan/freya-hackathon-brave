@@ -1,0 +1,20 @@
+{
+  "record_status": "fail",
+  "failures": [
+    "Closing reason: expected D_DISPUTE, got D_REFUSED",
+    "notes: expected [{'product_id': 'asset-A', 'reason': 'D_PAID'}, {'product_id': 'asset-B', 'reason': 'D_DISPUTE'}, {'product_id': 'asset-C', 'reason': 'D_REFUSED'}], got []"
+  ],
+  "capacity": {
+    "status": "unknown"
+  },
+  "conversation_status": "not_reviewed",
+  "overall_status": "error",
+  "case_id": "D-06",
+  "engine": "freya",
+  "official": false,
+  "audio_tested": false,
+  "error": "RuntimeError: POST /api/v2/chat/message -> 404: {\"success\":false,\"data\":{\"message\":\"Agent service error\",\"result\":{\"error\":\"Agent service error\"}}}",
+  "freya_call_id": "32eff042-0587-4515-b4b9-888f9fa97629",
+  "reported_model_cost_usd": 0.439432,
+  "model_calls": 35
+}

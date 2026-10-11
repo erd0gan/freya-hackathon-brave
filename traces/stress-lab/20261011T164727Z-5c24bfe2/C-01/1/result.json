@@ -1,0 +1,96 @@
+{
+  "record_status": "fail",
+  "failures": [
+    "Closing outcome: expected C_PTP, got C_NO_ID",
+    "Closing reason: expected None, got C_FAILED",
+    "promises: expected [{'product_id': 'asset-A', 'amount': '900.00', 'date': '2026-10-19'}, {'product_id': 'asset-B', 'amount': '600.00', 'date': '2026-10-19'}], got []"
+  ],
+  "capacity": {
+    "status": "unknown"
+  },
+  "conversation_status": "fail",
+  "overall_status": "fail",
+  "customer_status": "valid",
+  "judge": {
+    "customer_valid": true,
+    "checks": [
+      {
+        "check": "Cuma/Cumartesi iş günü sayılmaz; 18 Ekim tatildir.",
+        "passed": false,
+        "evidence": "Call ended at identity (seq 3 close_call C_NO_ID); no date discussion occurred, so there is no evidence on business days or the 18 Oct holiday."
+      },
+      {
+        "check": "Her iki ürün için ilk uygun gün 19 Ekim; sırf deadline diye 20 Ekim'e atlanmaz.",
+        "passed": false,
+        "evidence": "No get_account or promise date in ledger; the agent never reached the date proposal."
+      },
+      {
+        "check": "Onaydan önce iki ürün ve iki tutar okunur.",
+        "passed": false,
+        "evidence": "No read-back occurred; promises:[] and the transcript ends with 'I could not verify your identity'."
+      },
+      {
+        "check": "opening_disclosure_and_identity_question",
+        "passed": true,
+        "evidence": "Agent: 'Hello, I am Meridian Bank's digital assistant. This call is recorded. Am I speaking with Mx Alex Rowan?'"
+      },
+      {
+        "check": "privacy_no_disclosure_before_verification",
+        "passed": true,
+        "evidence": "No arrears, product or amount was mentioned; the agent only asked 'What is your postcode?'"
+      },
+      {
+        "check": "identity_code_normalization",
+        "passed": false,
+        "evidence": "Customer said 'zero zero seven three' (0073), but seq 1 sent answer 'zero zero seven three' instead of '0073'; the code was not normalized."
+      },
+      {
+        "check": "no_fragment_or_extra_text_sent",
+        "passed": false,
+        "evidence": "Seq 2 sent answer \"zero zero seven three, that's 0-0-7-3\" with extra text instead of the clean code '0073'."
+      },
+      {
+        "check": "correct_disposition",
+        "passed": false,
+        "evidence": "close_call C_NO_ID/C_FAILED came from the agent's two malformed submissions; the customer gave the correct postcode both times."
+      },
+      {
+        "check": "honest_statements",
+        "passed": false,
+        "evidence": "Agent said 'that answer is not correct', but the customer's answer was correct; the failure came from the agent's formatting."
+      },
+      {
+        "check": "consent_before_writes",
+        "passed": true,
+        "evidence": "No promise writes occurred; the ledger shows promises:[] and notes:[]."
+      },
+      {
+        "check": "no_invented_contact_info",
+        "passed": true,
+        "evidence": "Agent: 'Please use the official contact channel shown on your statement.' No number or URL was invented."
+      },
+      {
+        "check": "customer_capacity_boundary_stability",
+        "passed": true,
+        "evidence": "Customer: 'Yes, I am Alex Rowan.' and gave a consistent postcode; no boundary or capacity issues arose."
+      },
+      {
+        "check": "branch_records",
+        "passed": true,
+        "evidence": "branch_rules is null, so no branch required_records apply. Ledger: verify x2, close_call seq 3."
+      }
+    ],
+    "branch_index": null,
+    "branch_evidence": "No branch_rules supplied; this is a non-branching scenario.",
+    "passed": false
+  },
+  "judge_limitation": "Model review is fallible; inspect quoted evidence. Audio/ASR and overlap are not assessed.",
+  "case_id": "C-01",
+  "engine": "freya",
+  "official": false,
+  "audio_tested": false,
+  "error": null,
+  "freya_call_id": "5485f3ef-3802-4595-ba51-41139e3387f9",
+  "reported_model_cost_usd": 0.057468,
+  "model_calls": 4
+}

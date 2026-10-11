@@ -1,0 +1,2 @@
+16:13:18  RUN    start 2026-10-11T16:13:18Z brief=--help tool_api=- commit=5b75f86-dirty brief_sha256=unreadable(FileNotFoundError) tool_api_sha256=-
+16:13:18  END    end 2026-10-11T16:13:18Z duration=0m00s model_calls=0 model_cost=$0.00 status=error: FileNotFoundError: [Errno 2] No such file or directory: '--help' manifest=submission/help.manifest.json

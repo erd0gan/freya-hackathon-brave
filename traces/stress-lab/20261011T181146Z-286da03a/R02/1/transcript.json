@@ -1,0 +1,31 @@
+[
+  {
+    "role": "customer",
+    "content": "Hello?"
+  },
+  {
+    "role": "agent",
+    "content": "Hello, I am Meridian Bank's digital assistant. This call is recorded. Am I speaking with Mx Morgan Vale?",
+    "after_tool_sequence": 0
+  },
+  {
+    "role": "customer",
+    "content": "Sorry, who exactly is calling, and what's this about? Is there a way I can verify this call independently before we go any further?",
+    "after_tool_sequence": 0
+  },
+  {
+    "role": "agent",
+    "content": "I am a digital assistant from Meridian Bank calling regarding your account, and you can verify this by calling the official number on our website. Am I speaking with Mx Morgan Vale?",
+    "after_tool_sequence": 0
+  },
+  {
+    "role": "customer",
+    "content": "Thanks, but I'd rather not confirm any details on a call I wasn't expecting. I'll ring Meridian Bank myself on the number I already have and sort it out that way.",
+    "after_tool_sequence": 0
+  },
+  {
+    "role": "agent",
+    "content": "Thank you for your time. Goodbye.",
+    "after_tool_sequence": 0
+  }
+]

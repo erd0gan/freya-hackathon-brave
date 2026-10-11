@@ -1,0 +1,76 @@
+[
+  {
+    "role": "customer",
+    "content": "Hello?"
+  },
+  {
+    "role": "agent",
+    "content": "Hello, I am Cedar Insurance's digital assistant. This call is recorded. Am I speaking with Mx Robin Hale?",
+    "after_tool_sequence": 0
+  },
+  {
+    "role": "customer",
+    "content": "Yes, this is Robin Hale speaking.",
+    "after_tool_sequence": 0
+  },
+  {
+    "role": "agent",
+    "content": "Thank you. Before we continue, I need to verify your identity. Could you please tell me your policyholder code?",
+    "after_tool_sequence": 0
+  },
+  {
+    "role": "customer",
+    "content": "Sure, it's 000819.",
+    "after_tool_sequence": 0
+  },
+  {
+    "role": "agent",
+    "content": "Thank you, that's confirmed. Could you please tell me your postcode?",
+    "after_tool_sequence": 1
+  },
+  {
+    "role": "customer",
+    "content": "It's CD09.",
+    "after_tool_sequence": 1
+  },
+  {
+    "role": "agent",
+    "content": "Thank you, you're verified. I'm calling about your insurance policy, which has a past due amount of 480.0 and is 8 days late. Are you able to pay the full 480.0 today?",
+    "after_tool_sequence": 3
+  },
+  {
+    "role": "customer",
+    "content": "No, I can't pay the full 480 today. I've got 120 pounds I can put toward it now, and a client might pay me around the twentieth, but I can't guarantee that.",
+    "after_tool_sequence": 3
+  },
+  {
+    "role": "agent",
+    "content": "I understand. The lowest amount I can arrange is 160.0, so 120 would be below that. Could you pay 160.0 today? Please note the rest of the balance would remain overdue. I also can't arrange a date as late as the twentieth; the latest date available is Friday, 16 October 2026.",
+    "after_tool_sequence": 3
+  },
+  {
+    "role": "customer",
+    "content": "I'm sorry, I only have 120 pounds until the twentieth, so I can't commit to 160 today or by the sixteenth. I don't want to promise money I haven't got, so if 120 isn't possible, I'll have to leave it there for now.",
+    "after_tool_sequence": 3
+  },
+  {
+    "role": "agent",
+    "content": "I understand, and thank you for being honest. One last option: could you pay 160.0 by tomorrow, Thursday, 15 October 2026? The remaining balance would still be overdue. If that isn't possible, that's fine, just let me know.",
+    "after_tool_sequence": 3
+  },
+  {
+    "role": "customer",
+    "content": "No, sorry, I won't have 160 by tomorrow either. I've only got 120 until the twentieth, so I'll have to decline for now rather than promise something I can't pay.",
+    "after_tool_sequence": 3
+  },
+  {
+    "role": "agent",
+    "content": "Thank you for your time, Robin. I've noted that we couldn't arrange a promise today, and the balance remains overdue. If anything changes, please use the official contact channel on your statement. Goodbye.",
+    "after_tool_sequence": 4
+  },
+  {
+    "role": "customer",
+    "content": "Okay, thanks for understanding. I'll get in touch through the official channel if things change. Goodbye.",
+    "after_tool_sequence": 4
+  }
+]

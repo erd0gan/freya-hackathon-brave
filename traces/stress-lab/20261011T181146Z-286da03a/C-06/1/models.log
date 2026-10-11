@@ -1,0 +1,15 @@
+18:11:47  RUN    start 2026-10-11T18:11:47Z case=C-06 engine=freya agent_model=Freya configured workflow customer_model=anthropic/claude-opus-5.5
+18:11:57  MODEL  anthropic:claude-opus-5-5  purpose: stress-customer (3s)  tokens=321 cost=$0.0021
+18:12:03  MODEL  anthropic:claude-opus-5-5  purpose: stress-customer (attempt 1)  FAILED after 2.1s: error body: empty reply: {"model": "claude-opus-5-5", "id": "msg_011CfvuFBDSBeQnhrAtD4XJw", "type": "message", "role": "assistant", "content": [], "container": null, "stop_reason": "refusal", "stop_sequence": null, "stop_deta
+18:12:05  MODEL  anthropic/claude-opus-5.5  purpose: stress-customer (attempt 2)  FAILED after 2.1s: error body: empty reply: {"id": "gen-1791742323-vRhogh6YuFhiQ8xXRrBd", "object": "chat.completion", "created": 1791742323, "model": "anthropic/claude-opus-5.5", "provider": "Claude Platform on AWS", "system_fingerprint": null
+18:12:10  MODEL  anthropic:claude-opus-5-5  purpose: stress-customer (attempt 3)  FAILED after 1.4s: error body: empty reply: {"model": "claude-opus-5-5", "id": "msg_011CfvuFhowZdGSwwiJCUU8k", "type": "message", "role": "assistant", "content": [], "container": null, "stop_reason": "refusal", "stop_sequence": null, "stop_deta
+18:12:11  MODEL  anthropic/claude-opus-5.5  purpose: stress-customer (attempt 4)  FAILED after 1.9s: error body: empty reply: {"id": "gen-1791742330-0mCzT1gHDMi6TPpDxsz5", "object": "chat.completion", "created": 1791742330, "model": "anthropic/claude-opus-5.5", "provider": "Claude Platform on AWS", "system_fingerprint": null
+18:12:13  MODEL  anthropic:claude-opus-5-5  purpose: stress-customer (attempt 1)  FAILED after 1.5s: error body: empty reply: {"model": "claude-opus-5-5", "id": "msg_011CfvuFwvGD9CBsoeKZE2RK", "type": "message", "role": "assistant", "content": [{"type": "thinking", "thinking": "", "signature": "CAQS9AQKEAgSGAI4AUIIdGhpbmtpbm
+18:12:17  MODEL  anthropic/claude-opus-5.5  purpose: stress-customer (4s)  tokens=388 cost=$0.0023
+18:12:25  MODEL  anthropic:claude-opus-5-5  purpose: stress-customer (2s)  tokens=383 cost=$0.0021
+18:12:32  MODEL  anthropic:claude-opus-5-5  purpose: stress-customer (2s)  tokens=533 cost=$0.0039
+18:12:40  MODEL  anthropic:claude-opus-5-5  purpose: stress-customer (4s)  tokens=668 cost=$0.0051
+18:12:47  MODEL  anthropic:claude-opus-5-5  purpose: stress-customer (3s)  tokens=620 cost=$0.0033
+18:12:54  MODEL  anthropic:claude-opus-5-5  purpose: stress-customer (2s)  tokens=689 cost=$0.0035
+18:13:31  MODEL  anthropic:claude-opus-5-5  purpose: stress-judge (16s)  tokens=7842 cost=$0.0588
+18:13:31  END    end 2026-10-11T18:13:31Z duration=1m43s model_calls=8 model_cost=$0.08 model_failures=5 status=pass

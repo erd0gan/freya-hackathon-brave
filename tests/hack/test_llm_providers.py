@@ -264,3 +264,31 @@ def test_parse_json_reads_imperfect_replies(reply, want):
 def test_parse_json_without_json_raises_value_error():
     with pytest.raises(ValueError):
         llm.parse_json("no json here")
+
+
+def test_an_outage_of_a_minute_is_waited_out_and_a_refused_key_is_not(monkeypatch, tmp_path):
+    # SX-5: both providers down for a while; each round waits longer, and the last failure
+    # does not wait for nothing
+    keys(monkeypatch)
+    waits = []
+    monkeypatch.setattr(llm.time, "sleep", waits.append)
+    seen = []
+    monkeypatch.setattr(llm.urllib.request, "urlopen", fake([503] * 11 + [OR_OK], seen))
+    assert llm.chat(Trace(tmp_path / "t.log", echo=False), "p", MSGS) == "from openrouter"
+    assert len(seen) == 12 and sum(waits) >= 60
+    seen, waits[:] = [], []
+    monkeypatch.setattr(llm.urllib.request, "urlopen", fake([503] * 12, seen))
+    with pytest.raises(llm.LLMError, match="after 12 attempts"):
+        llm.chat(Trace(tmp_path / "t.log", echo=False), "p", MSGS)
+    assert waits == [3.0, 6.0, 12.0, 24.0, 30.0]
+    # a refused key is not asked again; the other provider still is
+    seen = []
+    monkeypatch.setattr(llm.urllib.request, "urlopen", fake([401, 503, 503, OR_OK], seen))
+    assert llm.chat(Trace(tmp_path / "t.log", echo=False), "p", MSGS) == "from openrouter"
+    assert "anthropic.com" in seen[0].full_url
+    assert all("openrouter" in r.full_url for r in seen[1:])
+    seen = []
+    monkeypatch.setattr(llm.urllib.request, "urlopen", fake([401, 403], seen))
+    with pytest.raises(llm.LLMError):
+        llm.chat(Trace(tmp_path / "t.log", echo=False), "p", MSGS)
+    assert len(seen) == 2

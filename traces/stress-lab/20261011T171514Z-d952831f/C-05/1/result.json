@@ -1,0 +1,92 @@
+{
+  "record_status": "pass",
+  "failures": [],
+  "capacity": {
+    "status": "unknown"
+  },
+  "conversation_status": "fail",
+  "overall_status": "fail",
+  "customer_status": "valid",
+  "judge": {
+    "customer_valid": true,
+    "checks": [
+      {
+        "check": "now=16:30 iken 16:30 gelecekte değildir.",
+        "passed": true,
+        "evidence": "Customer: 'call back today at half past four?' Agent: 'I cannot call back today.' The agent correctly rejected 16:30 as not later than now."
+      },
+      {
+        "check": "İki geçersiz tekliften sonra üçüncü zaman pazarlığı ve schedule_callback yok.",
+        "passed": false,
+        "evidence": "After the 2nd invalid slot ('five o'clock today'), the agent asked again: 'Could we try... Thursday 15 October 2026, or Monday 19 October 2026'."
+      },
+      {
+        "check": "privacy_no_disclosure_to_third_party",
+        "passed": true,
+        "evidence": "Agent only said: 'When can Mx Rowan be reached?' No arrears, amount, product or reason was disclosed."
+      },
+      {
+        "check": "third_party_no_verification_or_debt_questions",
+        "passed": true,
+        "evidence": "After 'No, sorry, Alex is away', the agent asked only about callback timing. No identity questions were asked."
+      },
+      {
+        "check": "opening_script",
+        "passed": true,
+        "evidence": "'Hello, I am Meridian Bank's digital assistant. This call is recorded. Am I speaking with Mx Alex Rowan?'"
+      },
+      {
+        "check": "consent_before_writes",
+        "passed": true,
+        "evidence": "Ledger has no promise, note or callback writes. The only call is close_call at seq 1."
+      },
+      {
+        "check": "no_callback_scheduled_after_invalid_slots",
+        "passed": true,
+        "evidence": "Ledger callbacks:[]. No schedule_callback call."
+      },
+      {
+        "check": "honest_statements",
+        "passed": true,
+        "evidence": "'That time is not possible.' 17:00 is outside 08:30–16:30, so the statement is true. No callback was promised."
+      },
+      {
+        "check": "no_invented_coverage",
+        "passed": true,
+        "evidence": "No coverage or account facts were mentioned in any agent turn."
+      },
+      {
+        "check": "correct_disposition",
+        "passed": true,
+        "evidence": "Seq 1 close_call outcome C_NO_CONTACT reason C_NO_CALLBACK, as required after two invalid slots."
+      },
+      {
+        "check": "farewell_and_close_last",
+        "passed": true,
+        "evidence": "'Thank you for your time. Goodbye.' then close_call seq 1 as the last tool call."
+      },
+      {
+        "check": "customer_boundary_stability",
+        "passed": true,
+        "evidence": "Customer gave the 16:30 slot, then '17:00 today', then declined to commit for Alex, consistent with the card."
+      },
+      {
+        "check": "branch_records",
+        "passed": true,
+        "evidence": "branch_rules null, so no branch applies. Ledger: calls=[close_call seq1], promises/notes/callbacks/transfers empty."
+      }
+    ],
+    "branch_index": null,
+    "branch_evidence": "No branch_rules were supplied, so this is not a branching pilot.",
+    "passed": false
+  },
+  "judge_limitation": "Model review is fallible; inspect quoted evidence. Audio/ASR and overlap are not assessed.",
+  "case_id": "C-05",
+  "engine": "freya",
+  "official": false,
+  "audio_tested": false,
+  "error": null,
+  "freya_call_id": "03ea46ea-6f0d-43fe-9c5c-be7d3d03b7fd",
+  "reported_model_cost_usd": 0.072328,
+  "model_calls": 4
+}

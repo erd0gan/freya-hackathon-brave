@@ -1,0 +1,99 @@
+{
+  "record_status": "requires_branch_review",
+  "failures": [],
+  "capacity": {
+    "status": "within_capacity",
+    "total": "900.00",
+    "reasons": []
+  },
+  "conversation_status": "pass",
+  "overall_status": "pass",
+  "customer_status": "valid",
+  "judge": {
+    "customer_valid": true,
+    "checks": [
+      {
+        "check": "Clarifying a security question is not refusing to answer.",
+        "passed": true,
+        "evidence": "Customer: 'My current postcode is ZX21, but... do you need my current address...?' Agent sent ZX21 (seq1), not a refusal; no refusal explanation given."
+      },
+      {
+        "check": "Do not reveal the stored postcode; actor follows response sequence, not an automatic identity-answer template.",
+        "passed": true,
+        "evidence": "Agent: 'that's not the postcode we have. Could you please tell me your postcode again?' Stored value not disclosed; customer gave ZX21 then AB07."
+      },
+      {
+        "check": "opening_and_identity_confirmation",
+        "passed": true,
+        "evidence": "Agent gave the scripted opening and asked 'Am I speaking with Mx Kendall Grove?'; customer: 'Yes, this is Kendall Grove speaking.'"
+      },
+      {
+        "check": "privacy_no_disclosure_before_verification",
+        "passed": true,
+        "evidence": "Debt first mentioned after seq3 verified birth_year and seq4 get_account: 'I am calling about overdue payments.'"
+      },
+      {
+        "check": "identity_order_and_wrong_count",
+        "passed": true,
+        "evidence": "seq1 postcode ZX21 verified:false wrong 1; seq2 AB07 verified:true; seq3 birth_year '1988' verified:true. Strings were preserved. Total wrong 1."
+      },
+      {
+        "check": "account_readout_and_today_ask",
+        "passed": true,
+        "evidence": "'Your credit card has 900.00 past due and is 4 days late. Can you pay the full past-due amount today?' This matches seq4."
+      },
+      {
+        "check": "date_amount_validity",
+        "passed": true,
+        "evidence": "days_late 4 gives an 8-business-day deadline. 2026-10-15 (Thu) is within it. Amount 900.00 equals past_due and is at or above floor 300."
+      },
+      {
+        "check": "complete_readback_and_explicit_consent_before_write",
+        "passed": true,
+        "evidence": "'the credit card, 900.00 on Thursday 15 October 2026. Do you confirm this?' Customer: 'Yes... I confirm'. Then seq5 create_promise."
+      },
+      {
+        "check": "conditional_question_not_treated_as_consent",
+        "passed": true,
+        "evidence": "Customer asked 'Would that work?' The agent did not write and asked for explicit confirmation. Its reply 'I do not have that information' was unhelpful."
+      },
+      {
+        "check": "single_write_and_honest_success_statement",
+        "passed": true,
+        "evidence": "seq5 create_promise ok:true called once. Agent: 'Your promise is recorded... A letter confirming the promise will be sent.' No claim that money moved."
+      },
+      {
+        "check": "no_invented_facts_or_coverage",
+        "passed": true,
+        "evidence": "On the address update request, the agent said 'I do not have that information' and invented no URL or phone number."
+      },
+      {
+        "check": "notes_and_close",
+        "passed": true,
+        "evidence": "No notes for the recorded product. Agent said 'Thank you for your time. Goodbye.' Then seq6 close_call D_PTP with reason omitted, as the last tool."
+      },
+      {
+        "check": "customer_boundary_stability",
+        "passed": true,
+        "evidence": "Customer used only ZX21 then AB07 and offered 900 for Oct 15, within capacity of 900. No invented guesses."
+      },
+      {
+        "check": "branch_records",
+        "passed": true,
+        "evidence": "Ledger wrong:1; promises [card-r30 900.00 2026-10-15]; close D_PTP. Matches required_records."
+      }
+    ],
+    "branch_index": 0,
+    "branch_evidence": "ZX21 failed (seq1), AB07 passed (seq2), 1988 passed (seq3). Customer: 'I confirm 900 pounds on Thursday the 15th'. seq5 promise ok.",
+    "passed": true
+  },
+  "judge_limitation": "Model review is fallible; inspect quoted evidence. Audio/ASR and overlap are not assessed.",
+  "case_id": "R30",
+  "engine": "freya",
+  "official": false,
+  "audio_tested": false,
+  "error": null,
+  "freya_call_id": "f4c027f0-ad0d-441d-8fe4-78b8e8e876f9",
+  "reported_model_cost_usd": 0.144012,
+  "model_calls": 9
+}

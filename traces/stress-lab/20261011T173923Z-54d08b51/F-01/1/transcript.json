@@ -1,0 +1,61 @@
+[
+  {
+    "role": "customer",
+    "content": "Hello?"
+  },
+  {
+    "role": "agent",
+    "content": "Hello, I am Lattice Bank's digital assistant. This call is recorded. Am I speaking with Mx Alex Rowan?",
+    "after_tool_sequence": 0
+  },
+  {
+    "role": "customer",
+    "content": "Yes, this is Alex Rowan speaking.",
+    "after_tool_sequence": 0
+  },
+  {
+    "role": "agent",
+    "content": "First, I need to confirm your identity. What is your postcode?",
+    "after_tool_sequence": 0
+  },
+  {
+    "role": "customer",
+    "content": "It's LT06.",
+    "after_tool_sequence": 0
+  },
+  {
+    "role": "agent",
+    "content": "What is your year of birth?",
+    "after_tool_sequence": 1
+  },
+  {
+    "role": "customer",
+    "content": "It's 1988.",
+    "after_tool_sequence": 1
+  },
+  {
+    "role": "agent",
+    "content": "Thank you. I am calling about overdue payments on your account. Your credit card has 900.00 past due and is 4 days late. Your personal loan has 600.00 past due and is 4 days late. Your car loan has 450.00 past due and is 4 days late. Can you pay the full overdue amount for all of these today?",
+    "after_tool_sequence": 3
+  },
+  {
+    "role": "customer",
+    "content": "No, I won't be paying the card, not today and not on whatever date you offer next. The personal loan arrears were actually paid yesterday, and that car loan isn't mine.",
+    "after_tool_sequence": 3
+  },
+  {
+    "role": "agent",
+    "content": "Thank you. Please note that a payment can take up to two business days to post. I have noted that. Let us go through them one at a time. Could you pay 900.00 for the credit card on Thursday 15 October 2026?",
+    "after_tool_sequence": 3
+  },
+  {
+    "role": "customer",
+    "content": "No, I'm not paying the card on Thursday either. Like I said, I won't be paying it on any date you offer.",
+    "after_tool_sequence": 3
+  },
+  {
+    "role": "agent",
+    "content": "Thank you for your time. Goodbye.",
+    "after_tool_sequence": 6
+  }
+]

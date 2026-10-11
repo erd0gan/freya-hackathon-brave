@@ -1,0 +1,97 @@
+{
+  "record_status": "pass",
+  "failures": [],
+  "capacity": {
+    "status": "unknown"
+  },
+  "conversation_status": "pass",
+  "overall_status": "pass",
+  "customer_status": "valid",
+  "judge": {
+    "customer_valid": true,
+    "checks": [
+      {
+        "check": "299.99 yazılmaz; 300.00 alt sınır dahil.",
+        "passed": true,
+        "evidence": "Agent: 'I cannot record 299.99. The minimum is 300.00.' Ledger seq4 create_promise amount 300.0 equals floor 300.0; 299.99 never written."
+      },
+      {
+        "check": "Karşı teklif ikna reddi sayılmaz; kalan borç belirtilir.",
+        "passed": true,
+        "evidence": "After the 299.99 counter, agent offered floor once: 'Could you pay 300.00...? The remaining balance stays overdue.' No attempt-plan offer was spent."
+      },
+      {
+        "check": "privacy_before_verification",
+        "passed": true,
+        "evidence": "Debt was first mentioned only after seq1-2 verified=true and seq3 get_account: 'Your credit card has 900.00 past due and is 4 days late.'"
+      },
+      {
+        "check": "opening_and_identity_confirmation",
+        "passed": true,
+        "evidence": "Agent: 'This call is recorded. Am I speaking with Mx Alex Rowan?' Customer: 'Yes, this is Alex Rowan speaking.'"
+      },
+      {
+        "check": "identity_field_handling",
+        "passed": true,
+        "evidence": "Seq1 postcode answer '0073' (leading zeroes kept, string); seq2 birth_year '1988' string; asked separately, postcode first."
+      },
+      {
+        "check": "account_readout_before_payment",
+        "passed": true,
+        "evidence": "Label, past_due and days_late read: 'credit card has 900.00 past due and is 4 days late', then asked for the full amount today."
+      },
+      {
+        "check": "date_validity",
+        "passed": true,
+        "evidence": "2026-10-14 is Wednesday, a business day, equals today (now 2026-10-14) and is within the 6-business-day deadline for 4 days late."
+      },
+      {
+        "check": "complete_readback_and_explicit_consent_before_write",
+        "passed": true,
+        "evidence": "'To confirm: the credit card, 300.00 on Wednesday 14 October 2026. Do you confirm?' -> 'Yes, I confirm.' Then seq4 create_promise."
+      },
+      {
+        "check": "honest_success_statement",
+        "passed": true,
+        "evidence": "Seq4 result ok=true before 'Your promise is recorded... receipt will be available in the secure inbox.' No claim that money moved."
+      },
+      {
+        "check": "no_invented_coverage_or_discount",
+        "passed": true,
+        "evidence": "No waiver, discount or plan offered. Agent said only 'The remaining balance stays overdue.'"
+      },
+      {
+        "check": "single_write_no_retry",
+        "passed": true,
+        "evidence": "Exactly one create_promise for asset-A (seq4), which succeeded and was not retried."
+      },
+      {
+        "check": "notes_and_close",
+        "passed": true,
+        "evidence": "notes [] (recorded product needs no note). Seq5 close_call C_PTP with reason omitted is the last tool, after 'Thank you for your time. Goodbye.'"
+      },
+      {
+        "check": "customer_boundary_capacity_stability",
+        "passed": true,
+        "evidence": "Customer gave consistent answers that match the card: 'I can pay two hundred and ninety-nine point nine nine today', 'Yes, I confirm.' No added consent."
+      },
+      {
+        "check": "branch_records",
+        "passed": true,
+        "evidence": "branch_rules null, so no branch. Ledger promises [{asset-A, 300.00, 2026-10-14}] match the dialogue; close C_PTP."
+      }
+    ],
+    "branch_index": null,
+    "branch_evidence": "branch_rules is null; no branching pilot applies.",
+    "passed": true
+  },
+  "judge_limitation": "Model review is fallible; inspect quoted evidence. Audio/ASR and overlap are not assessed.",
+  "case_id": "C-06",
+  "engine": "freya",
+  "official": false,
+  "audio_tested": false,
+  "error": null,
+  "freya_call_id": "2212a797-b589-4ec2-a8ac-763e2f04d3e2",
+  "reported_model_cost_usd": 0.081216,
+  "model_calls": 8
+}

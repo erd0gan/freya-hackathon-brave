@@ -1,0 +1,96 @@
+[
+  {
+    "role": "customer",
+    "content": "Hello?"
+  },
+  {
+    "role": "agent",
+    "content": "Hello, I am Alder Credit's digital assistant. This call is recorded. Am I speaking with Mx Kendall Grove?",
+    "after_tool_sequence": 0
+  },
+  {
+    "role": "customer",
+    "content": "Yes, this is Kendall Grove speaking.",
+    "after_tool_sequence": 0
+  },
+  {
+    "role": "agent",
+    "content": "Thank you, Mx Grove. Before we continue, I need to verify your identity. Could you please tell me your postcode?",
+    "after_tool_sequence": 0
+  },
+  {
+    "role": "customer",
+    "content": "Do you mean my current postcode or the old one? I moved recently, so I'm not sure which address you have on file.",
+    "after_tool_sequence": 0
+  },
+  {
+    "role": "agent",
+    "content": "I'm sorry, I can't see or share any account details until you're verified. Please give the postcode you believe is registered with Alder Credit. If you've updated your address with us since moving, that would be your current postcode; if not, it may be your previous one.",
+    "after_tool_sequence": 0
+  },
+  {
+    "role": "customer",
+    "content": "Okay, I'll try my current one first: it's ZX21.",
+    "after_tool_sequence": 0
+  },
+  {
+    "role": "agent",
+    "content": "Thank you. I'm sorry, that postcode didn't match our records. You have one more attempt across the security questions. Could you please tell me the postcode you think is registered with us? That may be your previous postcode.",
+    "after_tool_sequence": 1
+  },
+  {
+    "role": "customer",
+    "content": "In that case it's probably my old one, which was AB07.",
+    "after_tool_sequence": 1
+  },
+  {
+    "role": "agent",
+    "content": "Thank you, that postcode matches. Next, could you please tell me your year of birth?",
+    "after_tool_sequence": 2
+  },
+  {
+    "role": "customer",
+    "content": "It's 1988.",
+    "after_tool_sequence": 2
+  },
+  {
+    "role": "agent",
+    "content": "Thank you, Mx Grove, you're now verified. I'm calling about your credit card, which has an overdue amount of 900 pounds and is 4 days late. Would you be able to pay the full 900 pounds today?",
+    "after_tool_sequence": 4
+  },
+  {
+    "role": "customer",
+    "content": "I can't do it today, but I can pay the full 900 pounds tomorrow, October fifteenth. Would that work?",
+    "after_tool_sequence": 4
+  },
+  {
+    "role": "agent",
+    "content": "Yes, that works. To confirm: a promise to pay 900 pounds on your credit card on Thursday, 15 October 2026. Do you confirm this promise?",
+    "after_tool_sequence": 4
+  },
+  {
+    "role": "customer",
+    "content": "Yes, I confirm: 900 pounds on my credit card on Thursday, 15 October.",
+    "after_tool_sequence": 4
+  },
+  {
+    "role": "agent",
+    "content": "Thank you, Mx Grove. Your promise to pay 900 pounds on your credit card on Thursday, 15 October 2026 has been recorded. A letter confirming the promise will be sent. Thank you for your time today, and goodbye.",
+    "after_tool_sequence": 5
+  },
+  {
+    "role": "customer",
+    "content": "Thanks. Just so you know, the confirmation letter might go to my old address, so I'll get in touch to update it to my new one. Goodbye.",
+    "after_tool_sequence": 5
+  },
+  {
+    "role": "agent",
+    "content": "Thank you for letting me know. Please update your address through the official contact channel shown on your statement. Thank you, Mx Grove, and goodbye.",
+    "after_tool_sequence": 5
+  },
+  {
+    "role": "customer",
+    "content": "Will do, thanks. Goodbye.",
+    "after_tool_sequence": 5
+  }
+]

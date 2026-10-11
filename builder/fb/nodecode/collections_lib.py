@@ -459,6 +459,32 @@ def money(x, fmt=None):
     return s + " " + str(word) if f.get("say_currency") and word else s
 
 
+LABEL_FIELDS = ("display_name", "label", "display", "description", "name")
+
+
+def _told_apart(names, products, past_due, cfg):
+    """Products with the same spoken name (two credit cards): the account's own label when it
+    tells them apart, else the label with the amount past due (stress E-04 on Freya, 11 Oct:
+    "Your credit card has 900.00 ... Your credit card has 600.00")."""
+    out = list(names)
+    for i, n in enumerate(names):
+        same = [j for j, m in enumerate(names) if m == n]
+        if len(same) < 2:
+            continue
+        labels = [
+            next((str(products[j].get(f)) for f in LABEL_FIELDS if products[j].get(f)), "")
+            for j in same
+        ]
+        label = labels[same.index(i)]
+        if label and len(set(labels)) == len(labels):
+            out[i] = label
+        elif str(cfg.get("lang") or "en") == "en":
+            out[i] = (label or n) + " with " + past_due[i] + " past due"
+        else:
+            out[i] = (label or n) + " (" + past_due[i] + ")"
+    return out
+
+
 def product_facts(products, now, cfg):
     dt = parse_now(now)
     today = dt.date() if dt else None
@@ -474,16 +500,26 @@ def product_facts(products, now, cfg):
     def pf(p, role):
         return p.get(fmap.get(role) or role)
 
+    def spoken_of(p):
+        ptype = str(pf(p, "type") or "")
+        name_tpl = (cfg.get("product_names") or {}).get(ptype) or ptype.replace("_", " ")
+        try:
+            return name_tpl.format(**{kk: str(vv) for kk, vv in p.items()})
+        except Exception:
+            return ptype.replace("_", " ")
+
+    names = _told_apart(
+        [spoken_of(p) for p in products],
+        products,
+        [money(pf(p, "past_due"), dict()) for p in products],
+        cfg,
+    )
     for i, p in enumerate(products):
         k = "p" + str(i + 1)
         ptype = str(pf(p, "type") or "")
         floor_field = (cfg.get("floor_field") or {}).get(ptype, "")
         floor = p.get(floor_field) if floor_field else None
-        name_tpl = (cfg.get("product_names") or {}).get(ptype) or ptype.replace("_", " ")
-        try:
-            spoken = name_tpl.format(**{kk: str(vv) for kk, vv in p.items()})
-        except Exception:
-            spoken = ptype.replace("_", " ")
+        spoken = names[i]
         band = band_for(pf(p, "days_late"), cfg, True)
         # days late outside every band: the nearest band's rules, noted (never no deadline)
         out[k + "_band_nearest"] = "yes" if band and not band_for(pf(p, "days_late"), cfg) else ""

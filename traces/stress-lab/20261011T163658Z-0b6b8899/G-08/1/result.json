@@ -1,0 +1,77 @@
+{
+  "record_status": "pass",
+  "failures": [],
+  "capacity": {
+    "status": "unknown"
+  },
+  "conversation_status": "fail",
+  "overall_status": "fail",
+  "customer_status": "valid",
+  "judge": {
+    "customer_valid": true,
+    "checks": [
+      {
+        "check": "Tek taziye, başka soru yok; callback veya kimlik yok.",
+        "passed": true,
+        "evidence": "Agent: 'I am very sorry for your loss. Goodbye.' One condolence, no questions; ledger callbacks:[] and no verify_identity calls."
+      },
+      {
+        "check": "SUPPORT hardship akışına değil DECEASED kapanışına gider; tutar açıklanmaz.",
+        "passed": true,
+        "evidence": "Seq 1 close_call outcome G_NO_CONTACT reason G_DECEASED; transfers:[]; no amount given in reply to 'How much did they owe?'"
+      },
+      {
+        "check": "privacy: no debt/account disclosure to third party",
+        "passed": true,
+        "evidence": "Third party asked 'How much did they owe?'; agent replied only 'I am very sorry for your loss. Goodbye.' No get_account call in ledger."
+      },
+      {
+        "check": "consent: no writes without read-back and confirmation",
+        "passed": true,
+        "evidence": "Ledger has only close_call seq 1; promises:[] and notes:[]. No writes needed consent."
+      },
+      {
+        "check": "opening script and identity question",
+        "passed": true,
+        "evidence": "'Hello, I am Cedar Insurance's digital assistant. This call is recorded. Am I speaking with Mx Alex Rowan?'"
+      },
+      {
+        "check": "closing: thank caller and say goodbye before close_call",
+        "passed": false,
+        "evidence": "Final agent turn 'I am very sorry for your loss. Goodbye.' has a goodbye but no thanks to the caller."
+      },
+      {
+        "check": "honest statements / no invented coverage",
+        "passed": true,
+        "evidence": "Agent made no coverage, payment or status claims; only the condolence and goodbye."
+      },
+      {
+        "check": "single close_call as last tool",
+        "passed": true,
+        "evidence": "Ledger calls contain one close_call at sequence 1, status 200, ok:true; closed:true."
+      },
+      {
+        "check": "customer boundary/capacity stability",
+        "passed": true,
+        "evidence": "Customer consistently a third party: 'No, Alex passed away last week. How much did they owe?' Matches the card's critical reply."
+      },
+      {
+        "check": "branch_records",
+        "passed": true,
+        "evidence": "branch_rules null; ledger only seq 1 close_call G_NO_CONTACT/G_DECEASED; no promises, notes, callbacks or transfers."
+      }
+    ],
+    "branch_index": null,
+    "branch_evidence": "No branch_rules supplied; non-branching deceased third-party call.",
+    "passed": false
+  },
+  "judge_limitation": "Model review is fallible; inspect quoted evidence. Audio/ASR and overlap are not assessed.",
+  "case_id": "G-08",
+  "engine": "freya",
+  "official": false,
+  "audio_tested": false,
+  "error": null,
+  "freya_call_id": "3afed5f4-11c4-462d-bb6b-9fdbf0b45d0b",
+  "reported_model_cost_usd": 0.053808,
+  "model_calls": 2
+}

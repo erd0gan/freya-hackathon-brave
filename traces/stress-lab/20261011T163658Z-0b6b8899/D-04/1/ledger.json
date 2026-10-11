@@ -1,0 +1,132 @@
+{
+  "wrong": 0,
+  "closed": true,
+  "calls": [
+    {
+      "tool": "verify_identity",
+      "body": {
+        "field": "postcode",
+        "answer": "AB07",
+        "customer_id": "sl-XD-Ker_ehHH3ZeXcWR_j8d6TdVHLn5Y8"
+      },
+      "sequence": 1,
+      "status": 200,
+      "result": {
+        "ok": true,
+        "verified": true,
+        "wrong_answers": 0
+      }
+    },
+    {
+      "tool": "verify_identity",
+      "body": {
+        "field": "birth_year",
+        "answer": "1988",
+        "customer_id": "sl-XD-Ker_ehHH3ZeXcWR_j8d6TdVHLn5Y8"
+      },
+      "sequence": 2,
+      "status": 200,
+      "result": {
+        "ok": true,
+        "verified": true,
+        "wrong_answers": 0
+      }
+    },
+    {
+      "tool": "get_account",
+      "body": {
+        "customer_id": "sl-XD-Ker_ehHH3ZeXcWR_j8d6TdVHLn5Y8"
+      },
+      "sequence": 3,
+      "status": 200,
+      "result": {
+        "ok": true,
+        "products": [
+          {
+            "product_id": "asset-A",
+            "type": "credit_card",
+            "display_name": "credit card",
+            "past_due": 900.0,
+            "floor": 300.0,
+            "days_late": 4
+          }
+        ]
+      }
+    },
+    {
+      "tool": "create_promise",
+      "body": {
+        "date": "2026-10-14",
+        "amount": 900.0,
+        "product_id": "asset-A",
+        "customer_id": "sl-XD-Ker_ehHH3ZeXcWR_j8d6TdVHLn5Y8"
+      },
+      "sequence": 4,
+      "status": 200,
+      "result": {
+        "ok": false,
+        "error": "DEFINITIVE_NO_COMMIT"
+      }
+    },
+    {
+      "tool": "create_promise",
+      "body": {
+        "date": "2026-10-14",
+        "amount": 900.0,
+        "product_id": "asset-A",
+        "customer_id": "sl-XD-Ker_ehHH3ZeXcWR_j8d6TdVHLn5Y8"
+      },
+      "sequence": 5,
+      "status": 200,
+      "result": {
+        "ok": false,
+        "error": "DEFINITIVE_NO_COMMIT"
+      }
+    },
+    {
+      "tool": "create_promise",
+      "body": {
+        "date": "2026-10-14",
+        "amount": 900.0,
+        "product_id": "asset-A",
+        "customer_id": "sl-XD-Ker_ehHH3ZeXcWR_j8d6TdVHLn5Y8"
+      },
+      "sequence": 6,
+      "status": 200,
+      "result": {
+        "ok": true
+      }
+    },
+    {
+      "tool": "close_call",
+      "body": {
+        "outcome": "D_PTP",
+        "customer_id": "sl-XD-Ker_ehHH3ZeXcWR_j8d6TdVHLn5Y8"
+      },
+      "sequence": 7,
+      "status": 200,
+      "result": {
+        "ok": true
+      }
+    }
+  ],
+  "promises": [
+    {
+      "product_id": "asset-A",
+      "amount": "900.00",
+      "date": "2026-10-14"
+    }
+  ],
+  "notes": [],
+  "callbacks": [],
+  "transfers": [],
+  "claims": [],
+  "inspections": [],
+  "rentals": [],
+  "endorsements": [],
+  "renewals": [],
+  "close": {
+    "outcome": "D_PTP"
+  },
+  "now": "2026-10-14T11:00:00"
+}

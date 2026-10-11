@@ -1,0 +1,63 @@
+{
+  "wrong": 2,
+  "closed": true,
+  "calls": [
+    {
+      "tool": "verify_identity",
+      "body": {
+        "field": "postcode",
+        "answer": "zero zero seven three",
+        "customer_id": "sl-ChI470p_qhTq477NakuIiiFgeuUb2jU6"
+      },
+      "sequence": 1,
+      "status": 200,
+      "result": {
+        "ok": true,
+        "verified": false,
+        "wrong_answers": 1
+      }
+    },
+    {
+      "tool": "verify_identity",
+      "body": {
+        "field": "postcode",
+        "answer": "zero zero seven three, that's 0-0-7-3",
+        "customer_id": "sl-ChI470p_qhTq477NakuIiiFgeuUb2jU6"
+      },
+      "sequence": 2,
+      "status": 200,
+      "result": {
+        "ok": true,
+        "verified": false,
+        "wrong_answers": 2
+      }
+    },
+    {
+      "tool": "close_call",
+      "body": {
+        "reason": "C_FAILED",
+        "outcome": "C_NO_ID",
+        "customer_id": "sl-ChI470p_qhTq477NakuIiiFgeuUb2jU6"
+      },
+      "sequence": 3,
+      "status": 200,
+      "result": {
+        "ok": true
+      }
+    }
+  ],
+  "promises": [],
+  "notes": [],
+  "callbacks": [],
+  "transfers": [],
+  "claims": [],
+  "inspections": [],
+  "rentals": [],
+  "endorsements": [],
+  "renewals": [],
+  "close": {
+    "reason": "C_FAILED",
+    "outcome": "C_NO_ID"
+  },
+  "now": "2026-10-14T11:00:00"
+}

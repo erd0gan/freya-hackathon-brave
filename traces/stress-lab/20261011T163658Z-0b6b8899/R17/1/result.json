@@ -1,0 +1,19 @@
+{
+  "record_status": "requires_branch_review",
+  "failures": [],
+  "capacity": {
+    "status": "within_capacity",
+    "total": "0.00",
+    "reasons": []
+  },
+  "conversation_status": "not_reviewed",
+  "overall_status": "error",
+  "case_id": "R17",
+  "engine": "freya",
+  "official": false,
+  "audio_tested": false,
+  "error": "RuntimeError: POST /api/v2/chat/message -> 502: error code: 502\n",
+  "freya_call_id": "9740d87b-b7df-48ae-811d-ddd386c80222",
+  "reported_model_cost_usd": 0.01894,
+  "model_calls": 3
+}

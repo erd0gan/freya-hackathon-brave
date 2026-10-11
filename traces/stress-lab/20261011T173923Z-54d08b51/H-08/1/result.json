@@ -1,0 +1,97 @@
+{
+  "record_status": "pass",
+  "failures": [],
+  "capacity": {
+    "status": "unknown"
+  },
+  "conversation_status": "fail",
+  "overall_status": "fail",
+  "customer_status": "valid",
+  "judge": {
+    "customer_valid": true,
+    "checks": [
+      {
+        "check": "700 borç veya gelecek prim gibi yazılmaz.",
+        "passed": true,
+        "evidence": "Ledger seq4 create_promise amount 480.0 policy-A; no 700 anywhere in promises/renewals; agent never called 700 debt or future premium"
+      },
+      {
+        "check": "Fazla tutar sessiz kırpılmaz; müşteri 480'i açıkça onaylar.",
+        "passed": false,
+        "evidence": "Reply to 'Put me down for seven hundred today.' was 'To confirm: the motor premium, 480.00...' with no full-amount offer/explanation; silent clip"
+      },
+      {
+        "check": "above_full_offer_full",
+        "passed": false,
+        "evidence": "Brief: 'Above full: offer full'. Agent skipped the offer and went straight to read-back 480.00, never explaining 700 exceeds past_due"
+      },
+      {
+        "check": "opening_and_identity_confirmation",
+        "passed": true,
+        "evidence": "'Hello, I am Beacon Assurance's digital assistant. This call is recorded. Am I speaking with Mx Alex Rowan?' / 'Yes, this is Alex Rowan speaking.'"
+      },
+      {
+        "check": "privacy_no_disclosure_before_verification",
+        "passed": true,
+        "evidence": "Overdue premiums first mentioned after seq1-2 verified=true and seq3 get_account"
+      },
+      {
+        "check": "identity_order_and_format",
+        "passed": true,
+        "evidence": "Code asked first, then birth year, separately; seq1 answer '006410' keeps leading zeroes; seq2 '1988' string"
+      },
+      {
+        "check": "account_readout",
+        "passed": true,
+        "evidence": "'Your motor premium has 480.00 past due and is 3 days late.' matches seq3 label, past_due and days_late"
+      },
+      {
+        "check": "complete_readback_and_consent_before_write",
+        "passed": true,
+        "evidence": "Read-back gave product, 480.00 and Wed 14 Oct 2026; 'Yes, I confirm.' came before seq4 create_promise"
+      },
+      {
+        "check": "date_validity",
+        "passed": true,
+        "evidence": "2026-10-14 is today, a Wednesday and a business day, within the 6-business-day deadline for 3 days late"
+      },
+      {
+        "check": "honest_success_statement_and_receipt",
+        "passed": true,
+        "evidence": "seq4 ok=true, then 'Your receipt will be sent by post.'; postal wording is correct before 2026-11-01; no claim that money moved"
+      },
+      {
+        "check": "no_invented_coverage",
+        "passed": true,
+        "evidence": "No coverage, renewal or reinstatement statements appear in any agent turn"
+      },
+      {
+        "check": "notes_and_close",
+        "passed": true,
+        "evidence": "No notes needed for the recorded product; seq5 close_call H_PTP, reason omitted, is the last tool, after 'Thank you for your time. Goodbye.'"
+      },
+      {
+        "check": "customer_boundary_capacity_stability",
+        "passed": true,
+        "evidence": "Customer used the card's critical replies in order, invented no money and showed no capacity issue"
+      },
+      {
+        "check": "branch_records",
+        "passed": true,
+        "evidence": "branch_rules null; ledger promises [{policy-A, 480.00, 2026-10-14}] matches seq4"
+      }
+    ],
+    "branch_index": null,
+    "branch_evidence": "No branch_rules supplied; not a branching pilot.",
+    "passed": false
+  },
+  "judge_limitation": "Model review is fallible; inspect quoted evidence. Audio/ASR and overlap are not assessed.",
+  "case_id": "H-08",
+  "engine": "freya",
+  "official": false,
+  "audio_tested": false,
+  "error": null,
+  "freya_call_id": "3624fdeb-b362-4410-b262-ca56a85e9958",
+  "reported_model_cost_usd": 0.08246400000000001,
+  "model_calls": 7
+}

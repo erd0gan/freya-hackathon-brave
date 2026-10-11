@@ -1,0 +1,27 @@
+17:04:57  RUN    start 2026-10-10T17:04:57Z brief=.builder\brief-ab-run.md tool_api=kit\tools\openapi.json commit=e1b01f3
+17:04:57  NOTE   brief: 12567 chars; tools: add_note, close_call, create_promise, get_account, schedule_callback, transfer_to_agent, verify_identity
+17:05:37  MODEL  anthropic/claude-opus-5.5  purpose: extract the spec from the brief (40s)  tokens=13855 cost=$0.1319
+17:05:37  NOTE   spec decision: Brief B applies on top of Brief A and replaces it where they differ. Customers can have one to three products. Every late product is stated before any question. Bands, deadlines and persuasion attempts are per product. Products are handled in get_account order.
+17:05:37  NOTE   spec decision: Brief A says it never uses add_note. Brief B (later, explicitly overriding) wins: every product without a promise gets add_note with its product_id and a reason. This also applies when no product gets a promise. The exception is any transfer (restructuring, support, human): then no notes at all, bef
+17:05:37  NOTE   spec decision: Closing follows Brief B. Outcome is 'promise' if at least one promise was recorded, except on a transfer. With no promise, if every product is noted 'paid', the outcome is 'paid'. Otherwise the outcome is 'no_promise' with the reason of the first product, in get_account order, whose note is not 'pai
+17:05:37  NOTE   spec decision: Brief A rule 37 closes as no_promise/service_error after two failed create_promise calls. Brief B rule 11 replaces this: keep the recorded promises, note the failed product as service_error and continue. The close reason then follows the closing rules.
+17:05:37  NOTE   spec decision: If a transfer follows a recorded promise, the call closes as transferred with that transfer's reason. On a restructuring request, promises that are agreed but not yet recorded are not recorded.
+17:05:37  NOTE   spec decision: If the customer names one date for everything and it is after one product's deadline, that product is recorded on its own deadline and the read-back says so. All promises are read back together with one confirmation.
+17:05:37  NOTE   spec decision: Opening: the brief requires saying the call is recorded. The word 'recorded' is reserved, so the line says 'we are recording this call'.
+17:05:37  NOTE   spec decision: The brief writes the question as {title} {last_name}. It is written as {{title}} {{last_name}} to match the call-variable format.
+17:05:37  NOTE   spec decision: Brief B gives no exact words for the multi-product today question. Literal reading of rule 4: ask whether the customer can pay all of them today.
+17:05:37  NOTE   spec decision: Callback window: 'today or the next business day', 10:00 to 19:00 both included, later than now. business_days_only=true is the literal reading: the next day must be a business day.
+17:05:37  NOTE   spec decision: record_failure_queue: the brief never transfers on a record failure (record_failure=continue). The queue is set to 'support' only as an unused placeholder.
+17:05:37  NOTE   spec decision: reason_priority: the brief uses the first-product rule, so no priority order is defined. The list is left empty rather than invented.
+17:05:37  NOTE   spec decision: The human queue is the tool enum 'general' (Brief A rule 42); its transfer reason is 'human'.
+17:05:37  NOTE   spec decision: Lines with no exact wording in the brief (identity_intro, sympathy, support_offer, help_first, callback_booked, goodbye) were written as short plain sentences that follow the brief's instructions.
+17:05:37  NOTE   spec decision: Dates given only as numbers are read day, month, year (DMY), per Brief A rule 11.
+17:05:37  NOTE   spec decision: Attempt 1 amount is 'current': the full past-due amount, or the floor if the customer already said the full amount is too much. Attempt 2 (late band only) is the floor on the deadline. If today is the last business day of the week, attempt 1 proposes the last business day of next week.
+17:05:37  NOTE   spec decision: The 'recorded' line is the brief's exact required sentence (Brief A rule 38). The promise is only described as recorded after create_promise returns ok:true.
+17:05:37  NOTE   spec checks: 0 open problems
+17:05:37  NOTE   workflow: 28 steps, 7 tools, 459511 bytes; validator 0 errors, 8 warnings
+17:05:38  FREYA  dry run: ok
+17:05:39  FREYA  save_workflow slot=brief-ab-run -> workflow_id=1457f7f8-667f-41c4-bb03-ed07a71152f0 agent_id=4ba64d3f-80b4-45cd-854c-8b2365cbc609 version=1 (published)
+17:05:43  TEST   chat smoke: call started, agent said: 'Hello. Am I speaking with Ms Morgan?'
+17:05:44  FREYA  export_workflow -> submission\brief-ab-run.workflow.json
+17:05:44  END    end 2026-10-10T17:05:44Z duration=0m46s model_calls=1 model_cost=$0.13 status=ok workflow_id=1457f7f8-667f-41c4-bb03-ed07a71152f0 agent_id=4ba64d3f-80b4-45cd-854c-8b2365cbc609

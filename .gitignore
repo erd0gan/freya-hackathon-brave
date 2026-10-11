@@ -18,8 +18,9 @@ docs/research-talkative/raw/
 docs/research-talkative/compare/raw/
 .claude/
 
-# final case pack and the per-run copies of it (inputs, not part of the builder)
+# The final case pack: never committed (nothing from the final case may be in the builder)
 FINAL_BRIEF/
+# per-run copies of the final case pack (inputs, not part of the builder)
 final/
 final[0-9]/
 mock/.wrangler/

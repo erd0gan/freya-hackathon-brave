@@ -1,0 +1,51 @@
+[
+  {
+    "role": "customer",
+    "content": "Hello?"
+  },
+  {
+    "role": "agent",
+    "content": "Hello, I am Vector Bank's digital assistant. This call is recorded. Am I speaking with Mx Alex Rowan?",
+    "after_tool_sequence": 0
+  },
+  {
+    "role": "customer",
+    "content": "Yes, this is Alex Rowan speaking.",
+    "after_tool_sequence": 0
+  },
+  {
+    "role": "agent",
+    "content": "Before we continue, I need to ask you two security questions. Could you please tell me your member code?",
+    "after_tool_sequence": 0
+  },
+  {
+    "role": "customer",
+    "content": "Sure, it's zero zero four two seven one.",
+    "after_tool_sequence": 0
+  },
+  {
+    "role": "agent",
+    "content": "That answer is not correct. Could you please tell me your member code again?",
+    "after_tool_sequence": 1
+  },
+  {
+    "role": "customer",
+    "content": "Oh, that's odd, I'm fairly sure it's zero, zero, four, two, seven, one.",
+    "after_tool_sequence": 1
+  },
+  {
+    "role": "agent",
+    "content": "That answer is not correct. Could you please tell me your member code again?",
+    "after_tool_sequence": 2
+  },
+  {
+    "role": "customer",
+    "content": "I'm reading it straight off my card, and it's zero, zero, four, two, seven, one. Could there be a problem on your end?",
+    "after_tool_sequence": 2
+  },
+  {
+    "role": "agent",
+    "content": "I could not verify your identity. Please contact us through the official contact channel shown on your statement. Thank you for your time. Goodbye.",
+    "after_tool_sequence": 3
+  }
+]

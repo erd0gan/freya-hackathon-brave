@@ -1,0 +1,82 @@
+{
+  "record_status": "pass",
+  "failures": [],
+  "capacity": {
+    "status": "unknown"
+  },
+  "conversation_status": "pass",
+  "overall_status": "pass",
+  "customer_status": "valid",
+  "judge": {
+    "customer_valid": true,
+    "checks": [
+      {
+        "check": "Verify sırası yanlış postcode, doğru postcode, yanlış birth_year; dördüncü verify yok. Soru değişince hata sayacı sıfırlanmaz.",
+        "passed": true,
+        "evidence": "seq1 postcode XX99 verified:false wrong 1; seq2 0073 verified:true wrong 1; seq3 birth_year 1987 wrong 2; seq4 close_call, no 4th verify"
+      },
+      {
+        "check": "Borç/tutar/ürün açıklanmaz; get_account/create_promise/add_note yok.",
+        "passed": true,
+        "evidence": "Ledger has only verify_identity x3 and close_call; promises/notes empty; agent turns mention no debt, amount or product"
+      },
+      {
+        "check": "privacy_no_predisclosure",
+        "passed": true,
+        "evidence": "Agent: \"First, I need to confirm your identity. What is your postcode?\" No reason for the call or account facts given before or after failure"
+      },
+      {
+        "check": "opening_and_identity_confirmation",
+        "passed": true,
+        "evidence": "Agent: \"Hello, I am Meridian Bank's digital assistant. This call is recorded. Am I speaking with Mx Alex Rowan?\" Customer: \"Yes, this is Alex Rowan speaking.\""
+      },
+      {
+        "check": "identity_format_string_preserved",
+        "passed": true,
+        "evidence": "seq2 answer \"0073\" keeps leading zeroes; seq3 birth_year sent as string \"1987\""
+      },
+      {
+        "check": "consent_before_writes",
+        "passed": true,
+        "evidence": "No write tools were called. Ledger promises [] and notes []. Consent was not applicable"
+      },
+      {
+        "check": "honest_failure_statement_official_channel",
+        "passed": true,
+        "evidence": "Agent: \"I could not confirm your identity. Please contact us through the official contact channel on your statement.\" No number was invented"
+      },
+      {
+        "check": "no_invented_coverage",
+        "passed": true,
+        "evidence": "Agent turns contain no coverage or product claims"
+      },
+      {
+        "check": "farewell_and_close_disposition",
+        "passed": true,
+        "evidence": "Agent said \"Thank you for your time. Goodbye.\" before seq4 close_call outcome C_NO_ID reason C_FAILED, which is the last tool"
+      },
+      {
+        "check": "customer_boundary_capacity_stability",
+        "passed": true,
+        "evidence": "Customer gave critical replies in order: \"XX99.\", \"Zero zero seven three.\", \"Nineteen eighty-seven.\" No consent or money was invented"
+      },
+      {
+        "check": "branch_records",
+        "passed": true,
+        "evidence": "branch_rules is null and no branch applies. Ledger shows promises/notes/callbacks/transfers all [], consistent with NO_ID/FAILED"
+      }
+    ],
+    "branch_index": null,
+    "branch_evidence": "branch_rules null; no branching pilot",
+    "passed": true
+  },
+  "judge_limitation": "Model review is fallible; inspect quoted evidence. Audio/ASR and overlap are not assessed.",
+  "case_id": "C-03",
+  "engine": "freya",
+  "official": false,
+  "audio_tested": false,
+  "error": null,
+  "freya_call_id": "dd118bcc-eee5-4217-bb20-b4c6cca5b081",
+  "reported_model_cost_usd": 0.06468399999999999,
+  "model_calls": 5
+}

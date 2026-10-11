@@ -1,0 +1,51 @@
+[
+  {
+    "role": "customer",
+    "content": "Hello?"
+  },
+  {
+    "role": "agent",
+    "content": "Hello, I am Beacon Assurance's digital assistant. This call is recorded. Am I speaking with Mx Drew Ellis?",
+    "after_tool_sequence": 0
+  },
+  {
+    "role": "customer",
+    "content": "Yes, this is Drew Ellis. I'd like to sort out the renewal.",
+    "after_tool_sequence": 0
+  },
+  {
+    "role": "agent",
+    "content": "First, I need to ask you two security questions. Could you please tell me your policyholder code?",
+    "after_tool_sequence": 0
+  },
+  {
+    "role": "customer",
+    "content": "Sure, it's 006410.",
+    "after_tool_sequence": 0
+  },
+  {
+    "role": "agent",
+    "content": "What is your year of birth?",
+    "after_tool_sequence": 1
+  },
+  {
+    "role": "customer",
+    "content": "1988.",
+    "after_tool_sequence": 1
+  },
+  {
+    "role": "agent",
+    "content": "Thank you. I am calling about overdue insurance premiums. Your insurance policy has 480.00 past due and is 3 days late. Can you pay the full overdue amount today?",
+    "after_tool_sequence": 3
+  },
+  {
+    "role": "customer",
+    "content": "That's not what I'm calling about. I want to renew for next year's term, not make a payment promise on an overdue premium. Can you help with the renewal, or put me through to someone who can?",
+    "after_tool_sequence": 3
+  },
+  {
+    "role": "agent",
+    "content": "I am connecting you with a colleague now. Thank you for your time. Goodbye.",
+    "after_tool_sequence": 5
+  }
+]

@@ -1,0 +1,107 @@
+{
+  "record_status": "pass",
+  "failures": [],
+  "capacity": {
+    "status": "unknown"
+  },
+  "conversation_status": "fail",
+  "overall_status": "fail",
+  "customer_status": "valid",
+  "judge": {
+    "customer_valid": true,
+    "checks": [
+      {
+        "check": "Tek ürün paid/dispute tüm çağrıyı bitirmez.",
+        "passed": true,
+        "evidence": "After paid motor/disputed home, call continued: 'I'll pay the health premium today' -> create_promise policy-C seq4"
+      },
+      {
+        "check": "Poliçe bazlı not ve promise; nihai promise.",
+        "passed": true,
+        "evidence": "seq4 promise policy-C 720.0; seq5 note policy-A G_PAID; seq6 note policy-B G_DISPUTE; seq7 close G_PTP, no reason field"
+      },
+      {
+        "check": "opening_and_identity_confirmation",
+        "passed": true,
+        "evidence": "'This call is recorded. Am I speaking with Mx Alex Rowan?' -> 'Yes, this is Alex Rowan speaking.'"
+      },
+      {
+        "check": "privacy_no_disclosure_before_verification",
+        "passed": true,
+        "evidence": "Arrears first stated after seq1/seq2 verified=true and seq3 get_account succeeded"
+      },
+      {
+        "check": "identity_order_and_raw_values",
+        "passed": true,
+        "evidence": "seq1 policyholder_code '000819' (leading zeroes kept), then seq2 postcode 'CD09', asked separately"
+      },
+      {
+        "check": "account_readout_before_payment_ask",
+        "passed": true,
+        "evidence": "'motor premium has 480.00 past due and is 3 days late... home 360.00, 4 days... health 720.00, 8 days' before today ask"
+      },
+      {
+        "check": "paid_and_dispute_handling",
+        "passed": true,
+        "evidence": "'Posting may take two business days'; no promise for policy-A/B; seq5 G_PAID, seq6 G_DISPUTE"
+      },
+      {
+        "check": "promise_validity_amount_date",
+        "passed": true,
+        "evidence": "720.00 = full past_due, floor 240; 2026-10-14 is today, a Wednesday, within the 2-business-day deadline for 8 days late"
+      },
+      {
+        "check": "complete_readback_and_explicit_consent_before_write",
+        "passed": true,
+        "evidence": "'the health premium, 720.00 on Wednesday 14 October 2026. Do you confirm this?' -> 'Yes, I confirm the health premium only.' then seq4"
+      },
+      {
+        "check": "honest_success_statements",
+        "passed": false,
+        "evidence": "'I have noted that.' was said at after_tool_sequence 3, before any add_note; the notes were only written at seq5/seq6"
+      },
+      {
+        "check": "receipt_line_only_after_success",
+        "passed": true,
+        "evidence": "Receipt sentence said at after_tool_sequence 4, after seq4 create_promise ok=true"
+      },
+      {
+        "check": "no_invented_coverage_or_money_moved",
+        "passed": true,
+        "evidence": "Agent made no coverage, reinstatement or payment claims; said 'Your promise is recorded'"
+      },
+      {
+        "check": "single_promise_write_no_retry",
+        "passed": true,
+        "evidence": "Exactly one create_promise (seq4, ok=true) and no retry"
+      },
+      {
+        "check": "farewell_then_close_last",
+        "passed": true,
+        "evidence": "'Thank you for your time. Goodbye.' then seq7 close_call G_PTP, which is the last tool"
+      },
+      {
+        "check": "customer_boundary_stability",
+        "passed": true,
+        "evidence": "Customer's statements match the card's critical replies; no added consent or extra money"
+      },
+      {
+        "check": "branch_records",
+        "passed": true,
+        "evidence": "branch_rules null; ledger matches dialogue: promises [policy-C], notes [A G_PAID, B G_DISPUTE], close G_PTP"
+      }
+    ],
+    "branch_index": null,
+    "branch_evidence": "No branch_rules supplied; this is not a branching pilot.",
+    "passed": false
+  },
+  "judge_limitation": "Model review is fallible; inspect quoted evidence. Audio/ASR and overlap are not assessed.",
+  "case_id": "G-02",
+  "engine": "freya",
+  "official": false,
+  "audio_tested": false,
+  "error": null,
+  "freya_call_id": "c19c467b-efa5-4ad9-ae11-7822a37e3898",
+  "reported_model_cost_usd": 0.08654,
+  "model_calls": 7
+}

@@ -1,0 +1,51 @@
+{
+  "wrong": 0,
+  "closed": true,
+  "calls": [
+    {
+      "tool": "schedule_callback",
+      "body": {
+        "date": "2026-11-02",
+        "time": "19:00",
+        "customer_id": "sl-31ft84mV3gJ6-VPRXvumG6I-gORxSNeK"
+      },
+      "sequence": 1,
+      "status": 200,
+      "result": {
+        "ok": true
+      }
+    },
+    {
+      "tool": "close_call",
+      "body": {
+        "reason": "H_CALLBACK",
+        "outcome": "H_NO_CONTACT",
+        "customer_id": "sl-31ft84mV3gJ6-VPRXvumG6I-gORxSNeK"
+      },
+      "sequence": 2,
+      "status": 200,
+      "result": {
+        "ok": true
+      }
+    }
+  ],
+  "promises": [],
+  "notes": [],
+  "callbacks": [
+    {
+      "date": "2026-11-02",
+      "time": "19:00"
+    }
+  ],
+  "transfers": [],
+  "claims": [],
+  "inspections": [],
+  "rentals": [],
+  "endorsements": [],
+  "renewals": [],
+  "close": {
+    "reason": "H_CALLBACK",
+    "outcome": "H_NO_CONTACT"
+  },
+  "now": "2026-11-02T18:59:00"
+}

@@ -1,0 +1,92 @@
+{
+  "record_status": "fail",
+  "failures": [
+    "Closing outcome: expected E_PTP, got E_XFER",
+    "Closing reason: expected None, got E_HUMAN",
+    "notes: expected [{'product_id': 'asset-B', 'reason': 'E_SERVICE_ERROR'}], got []",
+    "transfers: expected [], got ['E_GENERAL']"
+  ],
+  "capacity": {
+    "status": "unknown"
+  },
+  "conversation_status": "fail",
+  "overall_status": "fail",
+  "customer_status": "valid",
+  "judge": {
+    "customer_valid": true,
+    "checks": [
+      {
+        "check": "İlk ürün tekrar yazılmaz veya iptal edilmez.",
+        "passed": true,
+        "evidence": "Ledger seq4 create_promise asset-A APPLIED/accepted; no later asset-A write or cancel; seq5-6 target asset-B only"
+      },
+      {
+        "check": "Yalnız ilk ürünün başarısı söylenir; nihai E_PTP reason alanı olmadan.",
+        "passed": false,
+        "evidence": "Agent said only 'Your promise is recorded: the credit card...' but seq8 close_call is disposition E_XFER, detail E_HUMAN, not E_PTP"
+      },
+      {
+        "check": "privacy_no_disclosure_before_verification",
+        "passed": true,
+        "evidence": "Arrears first mentioned after seq2 verified=true and seq3 get_account: 'Your credit card has 900.00 past due'"
+      },
+      {
+        "check": "identity_order_and_format",
+        "passed": true,
+        "evidence": "seq1 member_code '004271' as a string with leading zeroes, then seq2 birth_year '1988'; both verified=true"
+      },
+      {
+        "check": "complete_readback_and_explicit_consent_before_writes",
+        "passed": true,
+        "evidence": "Read-back gave both products, 900.00/600.00, Wed 14 Oct 2026; customer: 'Yes, I confirm both.' before seq4"
+      },
+      {
+        "check": "retry_policy_create_promise",
+        "passed": true,
+        "evidence": "asset-B seq5 DEFINITIVE_NO_COMMIT, retried once at seq6 (2 total max); success at seq4 not retried"
+      },
+      {
+        "check": "honest_success_failure_statements",
+        "passed": true,
+        "evidence": "'The record is available in the secure portal.' after seq4 success; 'I could not record the promise for the personal loan.'"
+      },
+      {
+        "check": "unwarranted_transfer_vs_service_error_closure",
+        "passed": false,
+        "evidence": "'could you have someone follow up...Otherwise, that's all' is not an explicit human request; seq7 E_GENERAL replaced service_error note + E_PTP"
+      },
+      {
+        "check": "official_channel_guidance_no_invention",
+        "passed": false,
+        "evidence": "Asked who to contact; agent: 'I'm sorry, I don't have that information.' No direction to the statement's official channel"
+      },
+      {
+        "check": "no_invented_coverage_or_money_moved",
+        "passed": true,
+        "evidence": "No coverage claims; agent never says money moved, only 'Your promise is recorded'"
+      },
+      {
+        "check": "customer_boundary_capacity_stability",
+        "passed": true,
+        "evidence": "Customer consistently able to pay: 'Yes, I can pay both full amounts today.' No hardship or refusal raised"
+      },
+      {
+        "check": "single_close_last_tool",
+        "passed": true,
+        "evidence": "seq8 close_call is the only close and the last tool, after 'Thank you for your time. Goodbye.'"
+      }
+    ],
+    "branch_index": null,
+    "branch_evidence": "branch_rules null; non-branching scenario",
+    "passed": false
+  },
+  "judge_limitation": "Model review is fallible; inspect quoted evidence. Audio/ASR and overlap are not assessed.",
+  "case_id": "E-07",
+  "engine": "freya",
+  "official": false,
+  "audio_tested": false,
+  "error": null,
+  "freya_call_id": "84e33a89-fa55-4142-85e4-3223c16534b2",
+  "reported_model_cost_usd": 0.08699600000000002,
+  "model_calls": 8
+}

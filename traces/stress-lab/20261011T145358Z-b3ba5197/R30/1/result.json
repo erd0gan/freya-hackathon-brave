@@ -1,0 +1,94 @@
+{
+  "record_status": "requires_branch_review",
+  "failures": [],
+  "capacity": {
+    "status": "within_capacity",
+    "total": "900.00",
+    "reasons": []
+  },
+  "conversation_status": "pass",
+  "overall_status": "pass",
+  "customer_status": "valid",
+  "judge": {
+    "customer_valid": true,
+    "checks": [
+      {
+        "check": "Clarifying a security question is not refusing to answer.",
+        "passed": true,
+        "evidence": "Customer: 'Do you mean my current postcode or the old one?' Agent did not count it as refusal; re-asked postcode, no refusal explanation, no wrong count"
+      },
+      {
+        "check": "Do not reveal the stored postcode; actor follows response sequence, not an automatic identity-answer template.",
+        "passed": true,
+        "evidence": "Agent: 'I can't see or share any account details until you're verified.' Customer gave ZX21 (seq1 mismatch), then AB07 (seq2 verified), then 1988"
+      },
+      {
+        "check": "opening_and_identity_confirmation",
+        "passed": true,
+        "evidence": "Agent: 'Hello, I am Alder Credit's digital assistant. This call is recorded. Am I speaking with Mx Kendall Grove?' Customer: 'Yes, this is Kendall Grove speaking.'"
+      },
+      {
+        "check": "privacy_no_disclosure_before_verification",
+        "passed": true,
+        "evidence": "Credit card and 900 first mentioned after seq3 birth_year verified=true and seq4 get_account; earlier turns disclosed no product or arrears"
+      },
+      {
+        "check": "identity_sequence_and_wrong_count",
+        "passed": true,
+        "evidence": "seq1 postcode ZX21 verified=false wrong=1; seq2 AB07 verified=true; seq3 birth_year '1988' string verified=true; 'one more attempt' accurate"
+      },
+      {
+        "check": "account_read_before_payment",
+        "passed": true,
+        "evidence": "Agent: 'credit card, which has an overdue amount of 900 pounds and is 4 days late. Would you be able to pay the full 900 pounds today?'"
+      },
+      {
+        "check": "date_and_amount_validity",
+        "passed": true,
+        "evidence": "days_late 4: 1-14 band, deadline 8 bus. days (M-17 hols 16/19 Oct) = 2026-10-28; 2026-10-15 is a Thursday; 900 is within floor 300 to past_due 900"
+      },
+      {
+        "check": "complete_readback_and_explicit_consent_before_write",
+        "passed": true,
+        "evidence": "Agent: 'promise to pay 900 pounds on your credit card on Thursday, 15 October 2026. Do you confirm' Customer: 'Yes, I confirm' then seq5 create_promise"
+      },
+      {
+        "check": "single_write_honest_success",
+        "passed": true,
+        "evidence": "seq5 create_promise card-r30 900.0 2026-10-15 ok=true, called once; agent said letter will be sent only after that success"
+      },
+      {
+        "check": "no_invented_coverage_or_contacts",
+        "passed": true,
+        "evidence": "Agent: 'Please update your address through the official contact channel shown on your statement.' No number, URL or coverage was invented"
+      },
+      {
+        "check": "notes_and_close",
+        "passed": true,
+        "evidence": "notes [] (product recorded); seq6 close_call D_PTP with reason omitted, last tool; agent said 'Thank you... goodbye' before it"
+      },
+      {
+        "check": "customer_boundary_capacity_stability",
+        "passed": true,
+        "evidence": "Customer used only ZX21 then AB07, offered '900 pounds tomorrow, October fifteenth', within maximum_total 900.00; no invented guesses"
+      },
+      {
+        "check": "branch_records",
+        "passed": true,
+        "evidence": "ledger wrong=1; promises [{card-r30, 900.00, 2026-10-15}]; close D_PTP; matches required_records"
+      }
+    ],
+    "branch_index": 0,
+    "branch_evidence": "ZX21 seq1 verified=false; AB07 seq2 verified=true; 1988 seq3 verified=true; customer: 'Yes, I confirm: 900 pounds...15 October'",
+    "passed": true
+  },
+  "judge_limitation": "Model review is fallible; inspect quoted evidence. Audio/ASR and overlap are not assessed.",
+  "case_id": "R30",
+  "engine": "baseline",
+  "official": false,
+  "audio_tested": false,
+  "error": null,
+  "freya_call_id": null,
+  "reported_model_cost_usd": 0.6893119999999999,
+  "model_calls": 25
+}

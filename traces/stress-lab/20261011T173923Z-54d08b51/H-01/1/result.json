@@ -1,0 +1,102 @@
+{
+  "record_status": "fail",
+  "failures": [
+    "Closing outcome: expected H_NO_CONTACT, got H_PTP",
+    "Closing reason: expected H_CALLBACK, got None",
+    "promises: expected [], got [{'product_id': 'policy-A', 'amount': '480.00', 'date': '2026-10-15'}]",
+    "callbacks: expected [{'date': '2026-10-14', 'time': '15:30'}], got []"
+  ],
+  "capacity": {
+    "status": "unknown"
+  },
+  "conversation_status": "fail",
+  "overall_status": "fail",
+  "customer_status": "valid",
+  "judge": {
+    "customer_valid": true,
+    "checks": [
+      {
+        "check": "19:00 gelecek kuralı kullanılmaz; etkin sınır 16:00.",
+        "passed": true,
+        "evidence": "No 18:00 callback was recorded (callbacks:[]). The agent did not apply the 19:00 rule, but it never stated the 16:00 limit either."
+      },
+      {
+        "check": "Yayımlanma tarihi yürürlük tarihi yerine geçmez.",
+        "passed": true,
+        "evidence": "now=2026-10-14T11:00 is before R-2 takes effect on 2026-11-01. No callback was written under the 19:00 rule; callbacks:[]."
+      },
+      {
+        "check": "callback_request_handled",
+        "passed": false,
+        "evidence": "Customer: 'call me back at six this evening?' Agent: 'I'm sorry, I don't have that information.' The agent did not explain the 16:00 limit or ask for another slot."
+      },
+      {
+        "check": "valid_second_callback_recorded",
+        "passed": false,
+        "evidence": "Customer: 'Then make it half past three.' 15:30 today is valid, but no callback was recorded (callbacks:[]) and the call closed H_PTP."
+      },
+      {
+        "check": "explicit_consent_before_write",
+        "passed": false,
+        "evidence": "Customer: 'Thursday the fifteenth is fine, but please note it down for half past three like I said.' This was conditional, yet create_promise was still called (seq 4)."
+      },
+      {
+        "check": "complete_read_back",
+        "passed": true,
+        "evidence": "'To confirm: the motor premium, 480.00 on Thursday 15 October 2026. Do you confirm this?'"
+      },
+      {
+        "check": "honest_statements",
+        "passed": false,
+        "evidence": "'Your promise is recorded' ignores the customer's half-past-three request. The customer replied: 'make sure the half past three time is on the record.'"
+      },
+      {
+        "check": "privacy_before_verification",
+        "passed": true,
+        "evidence": "No account details were disclosed until seq 1 and seq 2 returned verified=true and get_account ran at seq 3."
+      },
+      {
+        "check": "identity_handling",
+        "passed": true,
+        "evidence": "seq1 answer '006410' kept its leading zeroes; seq2 answer '1988' was sent as a string; both returned verified=true."
+      },
+      {
+        "check": "account_read_before_payment",
+        "passed": true,
+        "evidence": "'Your motor premium has 480.00 past due and is 3 days late.'"
+      },
+      {
+        "check": "no_invented_coverage",
+        "passed": true,
+        "evidence": "The agent made no coverage or renewal claims in any turn."
+      },
+      {
+        "check": "customer_boundary_stability",
+        "passed": false,
+        "evidence": "Customer: 'I can't sort that out right now.' The agent pushed the payment offer instead of honouring the callback request."
+      },
+      {
+        "check": "close_call_last",
+        "passed": true,
+        "evidence": "seq 5 close_call H_PTP is the last tool, after 'Thank you for your time. Goodbye.' However, the outcome should reflect the callback request."
+      },
+      {
+        "check": "branch_records",
+        "passed": true,
+        "evidence": "branch_rules is null, so no branch records are required."
+      }
+    ],
+    "branch_index": null,
+    "branch_evidence": "branch_rules is null",
+    "passed": false
+  },
+  "judge_limitation": "Model review is fallible; inspect quoted evidence. Audio/ASR and overlap are not assessed.",
+  "case_id": "H-01",
+  "engine": "freya",
+  "official": false,
+  "audio_tested": false,
+  "error": null,
+  "freya_call_id": "9bbb0c6a-43e6-444e-b4e7-48f993237785",
+  "reported_model_cost_usd": 0.09471600000000001,
+  "model_calls": 8
+}

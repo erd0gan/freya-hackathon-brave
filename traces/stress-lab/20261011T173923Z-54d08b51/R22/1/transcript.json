@@ -1,0 +1,61 @@
+[
+  {
+    "role": "customer",
+    "content": "Hello?"
+  },
+  {
+    "role": "agent",
+    "content": "Hello, I am Cedar Insurance's digital assistant. This call is recorded. Am I speaking with Mx Dakota Pine?",
+    "after_tool_sequence": 0
+  },
+  {
+    "role": "customer",
+    "content": "Yes, this is Dakota Pine speaking.",
+    "after_tool_sequence": 0
+  },
+  {
+    "role": "agent",
+    "content": "Before we continue, I need to confirm your identity. Could you please tell me your policyholder code?",
+    "after_tool_sequence": 0
+  },
+  {
+    "role": "customer",
+    "content": "Yes, it's 000819.",
+    "after_tool_sequence": 0
+  },
+  {
+    "role": "agent",
+    "content": "Could you please tell me your postcode?",
+    "after_tool_sequence": 1
+  },
+  {
+    "role": "customer",
+    "content": "It's CD09.",
+    "after_tool_sequence": 1
+  },
+  {
+    "role": "agent",
+    "content": "Thank you. I am calling about overdue insurance premiums. Your insurance policy has 480.00 past due and is 8 days late. Can you pay the full overdue amount today?",
+    "after_tool_sequence": 3
+  },
+  {
+    "role": "customer",
+    "content": "I'm sorry, I can't deal with it today. My partner died recently, and I'm just not able to handle paying this right now.",
+    "after_tool_sequence": 3
+  },
+  {
+    "role": "agent",
+    "content": "I am very sorry to hear that. Would you like me to connect you with our support team?",
+    "after_tool_sequence": 3
+  },
+  {
+    "role": "customer",
+    "content": "Not today, thank you. I need to leave it there.",
+    "after_tool_sequence": 3
+  },
+  {
+    "role": "agent",
+    "content": "Thank you for your time. Goodbye.",
+    "after_tool_sequence": 4
+  }
+]

@@ -1,0 +1,31 @@
+[
+  {
+    "role": "customer",
+    "content": "Hello?"
+  },
+  {
+    "role": "agent",
+    "content": "Hello, I am Cedar Insurance's digital assistant. This call is recorded. Am I speaking with Mx Casey Moss?",
+    "after_tool_sequence": 0
+  },
+  {
+    "role": "customer",
+    "content": "No, this is Casey's spouse; Casey can't come to the phone right now. Is there something I can help with?",
+    "after_tool_sequence": 0
+  },
+  {
+    "role": "agent",
+    "content": "I can only discuss this with Mx Moss alone. When would be a good time to reach them?",
+    "after_tool_sequence": 0
+  },
+  {
+    "role": "customer",
+    "content": "That's fine, I understand. Casey will be available tomorrow at ten in the morning, so that would be a good time to call back.",
+    "after_tool_sequence": 0
+  },
+  {
+    "role": "agent",
+    "content": "Thank you, your callback is booked. Thank you for your time. Goodbye.",
+    "after_tool_sequence": 2
+  }
+]

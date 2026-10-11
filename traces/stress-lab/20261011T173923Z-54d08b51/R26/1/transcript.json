@@ -1,0 +1,71 @@
+[
+  {
+    "role": "customer",
+    "content": "Hello?"
+  },
+  {
+    "role": "agent",
+    "content": "Hello, I am Alder Credit's digital assistant. This call is recorded. Am I speaking with Mx Ellis Green?",
+    "after_tool_sequence": 0
+  },
+  {
+    "role": "customer",
+    "content": "Yes, this is Ellis Green speaking.",
+    "after_tool_sequence": 0
+  },
+  {
+    "role": "agent",
+    "content": "Before we continue, I need to ask two short security questions. What is your postcode?",
+    "after_tool_sequence": 0
+  },
+  {
+    "role": "customer",
+    "content": "It's AB07.",
+    "after_tool_sequence": 0
+  },
+  {
+    "role": "agent",
+    "content": "What is your year of birth?",
+    "after_tool_sequence": 1
+  },
+  {
+    "role": "customer",
+    "content": "1988.",
+    "after_tool_sequence": 1
+  },
+  {
+    "role": "agent",
+    "content": "Thank you. I am calling about overdue payments on your account. Your credit card has 900.00 past due and is 4 days late. Can you pay the full past-due amount today?",
+    "after_tool_sequence": 3
+  },
+  {
+    "role": "customer",
+    "content": "I can't pay it today, but I can pay the full 900 on October fifteenth, which is tomorrow. Would that be a promise to pay tomorrow, or would you take the money from my account now?",
+    "after_tool_sequence": 3
+  },
+  {
+    "role": "agent",
+    "content": "This would be a promise to pay on that date. To confirm: the credit card, 900.00 on Thursday 15 October 2026. Do you confirm this?",
+    "after_tool_sequence": 3
+  },
+  {
+    "role": "customer",
+    "content": "Yes, I confirm: a promise to pay 900.00 on my credit card on Thursday 15 October 2026.",
+    "after_tool_sequence": 3
+  },
+  {
+    "role": "agent",
+    "content": "Your promise is recorded: the credit card, 900.00 on Thursday 15 October 2026. A letter confirming the promise will be sent. Is there anything else I can help you with?",
+    "after_tool_sequence": 4
+  },
+  {
+    "role": "customer",
+    "content": "No, that's everything. Thank you for the clear explanation, goodbye.",
+    "after_tool_sequence": 4
+  },
+  {
+    "role": "agent",
+    "content": "Thank you for your time. Goodbye.",
+    "after_tool_sequence": 4
+  }
+]

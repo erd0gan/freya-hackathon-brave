@@ -1,0 +1,19 @@
+{
+  "record_status": "fail",
+  "failures": [
+    "notes: expected [{'product_id': 'asset-A', 'reason': 'D_REFUSED'}], got []"
+  ],
+  "capacity": {
+    "status": "unknown"
+  },
+  "conversation_status": "not_reviewed",
+  "overall_status": "error",
+  "case_id": "D-03",
+  "engine": "freya",
+  "official": false,
+  "audio_tested": false,
+  "error": "Step budget exhausted; unfinished call retained",
+  "freya_call_id": "e0fd8f17-d92a-45c2-b87c-3ebffe00ca83",
+  "reported_model_cost_usd": 0.372532,
+  "model_calls": 40
+}

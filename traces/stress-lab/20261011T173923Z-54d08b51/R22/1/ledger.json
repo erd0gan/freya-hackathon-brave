@@ -1,0 +1,102 @@
+{
+  "wrong": 0,
+  "closed": true,
+  "calls": [
+    {
+      "tool": "verify_identity",
+      "body": {
+        "field": "policyholder_code",
+        "answer": "000819",
+        "customer_id": "sl-iqf5QcMWRVZquFKldsAKmXkIHRtx-xQq"
+      },
+      "sequence": 1,
+      "status": 200,
+      "result": {
+        "ok": true,
+        "verified": true,
+        "wrong_answers": 0
+      }
+    },
+    {
+      "tool": "verify_identity",
+      "body": {
+        "field": "postcode",
+        "answer": "CD09",
+        "customer_id": "sl-iqf5QcMWRVZquFKldsAKmXkIHRtx-xQq"
+      },
+      "sequence": 2,
+      "status": 200,
+      "result": {
+        "ok": true,
+        "verified": true,
+        "wrong_answers": 0
+      }
+    },
+    {
+      "tool": "get_account",
+      "body": {
+        "customer_id": "sl-iqf5QcMWRVZquFKldsAKmXkIHRtx-xQq"
+      },
+      "sequence": 3,
+      "status": 200,
+      "result": {
+        "ok": true,
+        "products": [
+          {
+            "product_id": "policy-r22",
+            "type": "insurance_policy",
+            "display_name": "insurance policy",
+            "past_due": 480.0,
+            "floor": 160.0,
+            "days_late": 8
+          }
+        ]
+      }
+    },
+    {
+      "tool": "add_note",
+      "body": {
+        "reason": "G_HARDSHIP",
+        "product_id": "policy-r22",
+        "customer_id": "sl-iqf5QcMWRVZquFKldsAKmXkIHRtx-xQq"
+      },
+      "sequence": 4,
+      "status": 200,
+      "result": {
+        "ok": true
+      }
+    },
+    {
+      "tool": "close_call",
+      "body": {
+        "reason": "G_HARDSHIP",
+        "outcome": "G_NO_PTP",
+        "customer_id": "sl-iqf5QcMWRVZquFKldsAKmXkIHRtx-xQq"
+      },
+      "sequence": 5,
+      "status": 200,
+      "result": {
+        "ok": true
+      }
+    }
+  ],
+  "promises": [],
+  "notes": [
+    {
+      "product_id": "policy-r22",
+      "reason": "G_HARDSHIP"
+    }
+  ],
+  "callbacks": [],
+  "transfers": [],
+  "claims": [],
+  "inspections": [],
+  "rentals": [],
+  "endorsements": [],
+  "renewals": [],
+  "close": {
+    "reason": "G_HARDSHIP",
+    "outcome": "G_NO_PTP"
+  },
+  "now": "2026-10-14T11:00:00"
+}

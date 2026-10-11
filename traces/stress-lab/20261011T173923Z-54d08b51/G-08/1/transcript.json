@@ -1,0 +1,21 @@
+[
+  {
+    "role": "customer",
+    "content": "Hello?"
+  },
+  {
+    "role": "agent",
+    "content": "Hello, I am Cedar Insurance's digital assistant. This call is recorded. Am I speaking with Mx Alex Rowan?",
+    "after_tool_sequence": 0
+  },
+  {
+    "role": "customer",
+    "content": "No, I'm afraid Alex passed away last week. How much did they owe?",
+    "after_tool_sequence": 0
+  },
+  {
+    "role": "agent",
+    "content": "I am very sorry for your loss. Goodbye.",
+    "after_tool_sequence": 0
+  }
+]

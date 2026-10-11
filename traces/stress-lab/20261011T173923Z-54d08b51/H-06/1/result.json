@@ -1,0 +1,87 @@
+{
+  "record_status": "pass",
+  "failures": [],
+  "capacity": {
+    "status": "unknown"
+  },
+  "conversation_status": "pass",
+  "overall_status": "pass",
+  "customer_status": "valid",
+  "judge": {
+    "customer_valid": true,
+    "checks": [
+      {
+        "check": "Etkin kapanış artık 19:00 ve dahil; eski 16:00 sınırıyla yanlış ret verilmez.",
+        "passed": true,
+        "evidence": "now 2026-11-02T18:59 is after R-2 (2026-11-01). seq1 schedule_callback 2026-11-02 19:00 ok:true; agent did not reject it under the 16:00 limit."
+      },
+      {
+        "check": "Aynı brief farklı now ile farklı etkin kural seçer; prim detayı açıklanmaz.",
+        "passed": true,
+        "evidence": "Agent applied the post-R-2 19:00 limit for now 18:59. Agent turns mention no premium, amount, product or coverage."
+      },
+      {
+        "check": "privacy_third_party_no_disclosure",
+        "passed": true,
+        "evidence": "Agent only asked: \"Could you please confirm that you would like me to call back today, Monday 2 November 2026, at 19:00?\" No reason for the call was given."
+      },
+      {
+        "check": "third_party_not_verified",
+        "passed": true,
+        "evidence": "Customer: \"No, Alex is away right now.\" No verify_identity or get_account calls appear in the ledger."
+      },
+      {
+        "check": "callback_validity",
+        "passed": true,
+        "evidence": "Monday 2026-11-02 is a business day. 19:00 is within the inclusive R-2 limit and strictly later than 18:59."
+      },
+      {
+        "check": "callback_consent_before_write",
+        "passed": true,
+        "evidence": "Customer: \"Yes, today at seven this evening works\" came before seq1 schedule_callback."
+      },
+      {
+        "check": "honest_success_statement",
+        "passed": true,
+        "evidence": "\"we will call you back then\" was said after seq1 returned ok:true."
+      },
+      {
+        "check": "opening_script",
+        "passed": true,
+        "evidence": "\"Hello, I am Beacon Assurance's digital assistant. This call is recorded. Am I speaking with Mx Alex Rowan?\""
+      },
+      {
+        "check": "no_invented_coverage",
+        "passed": true,
+        "evidence": "No coverage, renewal or policy status was stated in any agent turn."
+      },
+      {
+        "check": "close_disposition",
+        "passed": true,
+        "evidence": "seq2 close_call is the last tool: outcome H_NO_CONTACT, reason H_CALLBACK, after \"Thank you for your time. Goodbye.\""
+      },
+      {
+        "check": "customer_boundary_stability",
+        "passed": true,
+        "evidence": "Customer consistently identified as a third party and asked for 7pm, matching the critical reply on the card."
+      },
+      {
+        "check": "branch_records",
+        "passed": true,
+        "evidence": "branch_rules null, so no branch was selected. Ledger records are consistent: callbacks [2026-11-02 19:00], promises/notes/transfers empty."
+      }
+    ],
+    "branch_index": null,
+    "branch_evidence": "No branch_rules supplied; this is not a branching pilot.",
+    "passed": true
+  },
+  "judge_limitation": "Model review is fallible; inspect quoted evidence. Audio/ASR and overlap are not assessed.",
+  "case_id": "H-06",
+  "engine": "freya",
+  "official": false,
+  "audio_tested": false,
+  "error": null,
+  "freya_call_id": "f9b41cb2-b79a-4bdd-8088-9637a0f81148",
+  "reported_model_cost_usd": 0.05648,
+  "model_calls": 3
+}

@@ -1,0 +1,51 @@
+[
+  {
+    "role": "customer",
+    "content": "Hello?"
+  },
+  {
+    "role": "agent",
+    "content": "Hello, I am Meridian Bank's digital assistant. This call is recorded. Am I speaking with Mx Alex Rowan?",
+    "after_tool_sequence": 0
+  },
+  {
+    "role": "customer",
+    "content": "Yes, this is Alex Rowan speaking.",
+    "after_tool_sequence": 0
+  },
+  {
+    "role": "agent",
+    "content": "Before we continue, I need to ask you two security questions. Could you please tell me your postcode?",
+    "after_tool_sequence": 0
+  },
+  {
+    "role": "customer",
+    "content": "It's XX99.",
+    "after_tool_sequence": 0
+  },
+  {
+    "role": "agent",
+    "content": "That answer is not correct. Could you please tell me your postcode?",
+    "after_tool_sequence": 1
+  },
+  {
+    "role": "customer",
+    "content": "Zero zero seven three.",
+    "after_tool_sequence": 1
+  },
+  {
+    "role": "agent",
+    "content": "Correct. Could you please tell me your year of birth?",
+    "after_tool_sequence": 2
+  },
+  {
+    "role": "customer",
+    "content": "Nineteen eighty-seven.",
+    "after_tool_sequence": 2
+  },
+  {
+    "role": "agent",
+    "content": "I'm sorry, I could not confirm your identity. Please contact us through the official contact channel on your statement. Thank you for your time. Goodbye.",
+    "after_tool_sequence": 3
+  }
+]

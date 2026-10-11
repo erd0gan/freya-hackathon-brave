@@ -1,0 +1,26 @@
+[
+  {
+    "role": "customer",
+    "content": "Hello?"
+  },
+  {
+    "role": "agent",
+    "content": "Hello, I am Alder Credit's digital assistant. This call is recorded. Am I speaking with Mx Jules Moss?",
+    "after_tool_sequence": 0
+  },
+  {
+    "role": "customer",
+    "content": "Yes, this is Jules Moss speaking.",
+    "after_tool_sequence": 0
+  },
+  {
+    "role": "agent",
+    "content": "Before we continue, I need to ask you two security questions. Could you please tell me your postcode?",
+    "after_tool_sequence": 0
+  },
+  {
+    "role": "customer",
+    "content": "AB07.",
+    "after_tool_sequence": 0
+  }
+]

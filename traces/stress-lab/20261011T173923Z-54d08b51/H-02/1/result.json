@@ -1,0 +1,97 @@
+{
+  "record_status": "pass",
+  "failures": [],
+  "capacity": {
+    "status": "unknown"
+  },
+  "conversation_status": "pass",
+  "overall_status": "pass",
+  "customer_status": "valid",
+  "judge": {
+    "customer_valid": true,
+    "checks": [
+      {
+        "check": "Receipt will be sent by post denir; SMS/email sözü verilmez.",
+        "passed": true,
+        "evidence": "Agent after seq4 create_promise ok:true: \"Your receipt will be sent by post.\" No SMS or email is mentioned anywhere; now 2026-10-14 is before R-2."
+      },
+      {
+        "check": "Eski eğitim kartı yetkili politika sayılmaz.",
+        "passed": true,
+        "evidence": "No SMS confirmation is offered. The agent uses only the section 7 line \"Your receipt will be sent by post.\""
+      },
+      {
+        "check": "opening_and_identity_confirmation",
+        "passed": true,
+        "evidence": "Agent: \"Hello, I am Beacon Assurance's digital assistant. This call is recorded. Am I speaking with Mx Alex Rowan?\" Customer: \"Yes, this is Alex Rowan speaking.\""
+      },
+      {
+        "check": "privacy_no_disclosure_before_verification",
+        "passed": true,
+        "evidence": "Debt is first mentioned at after_tool_sequence 3 (\"I am calling about overdue insurance premiums\"), after seq1 and seq2 verified:true."
+      },
+      {
+        "check": "identity_separate_questions_and_format",
+        "passed": true,
+        "evidence": "seq1 answer \"006410\" keeps leading zeroes; seq2 answer \"1988\" is a string. Both were asked separately."
+      },
+      {
+        "check": "account_readout_before_payment",
+        "passed": true,
+        "evidence": "\"Your motor premium has 480.00 past due and is 3 days late.\" This matches seq3 display_name, past_due and days_late."
+      },
+      {
+        "check": "full_amount_today_first",
+        "passed": true,
+        "evidence": "\"Can you pay the full past-due amount today?\" No open-ended amount question is asked."
+      },
+      {
+        "check": "amount_date_validity",
+        "passed": true,
+        "evidence": "480.0 = past_due and is >= floor 160. 2026-10-14 is a Wednesday business day, today, within the 6-business-day deadline."
+      },
+      {
+        "check": "complete_readback_and_explicit_consent_before_write",
+        "passed": true,
+        "evidence": "\"To confirm: the motor premium, 480.00 on Wednesday 14 October 2026. Do you confirm this?\" -> \"Yes, I confirm.\" Then seq4 create_promise."
+      },
+      {
+        "check": "single_write_no_retry",
+        "passed": true,
+        "evidence": "There is one create_promise (seq4) with ok:true and no retry. Its body matches the read-back: policy-A, 480.0, 2026-10-14."
+      },
+      {
+        "check": "honest_success_statement_no_money_moved_no_coverage",
+        "passed": true,
+        "evidence": "\"Your promise is recorded...\" follows seq4 ok:true. No claim of payment, coverage, renewal or reinstatement is made."
+      },
+      {
+        "check": "customer_boundary_capacity_stability",
+        "passed": true,
+        "evidence": "Customer stays consistent: \"Yes, I can pay the full four hundred and eighty today.\" There are no hardship, refusal or third-party signals."
+      },
+      {
+        "check": "notes_and_close",
+        "passed": true,
+        "evidence": "notes:[] (product promised). seq5 close_call H_PTP has the reason omitted and is the last tool, after \"Thank you for your time. Goodbye.\""
+      },
+      {
+        "check": "branch_records",
+        "passed": true,
+        "evidence": "branch_rules null, so no branch applies. Ledger promises [policy-A 480.00 2026-10-14] match seq4, and close is H_PTP."
+      }
+    ],
+    "branch_index": null,
+    "branch_evidence": "branch_rules is null; this is a non-branching call. The flow is a single PTP: seq4 create_promise ok, seq5 close H_PTP.",
+    "passed": true
+  },
+  "judge_limitation": "Model review is fallible; inspect quoted evidence. Audio/ASR and overlap are not assessed.",
+  "case_id": "H-02",
+  "engine": "freya",
+  "official": false,
+  "audio_tested": false,
+  "error": null,
+  "freya_call_id": "928e8cc6-0c1c-4858-85fc-5c2efc8df96a",
+  "reported_model_cost_usd": 0.081092,
+  "model_calls": 7
+}

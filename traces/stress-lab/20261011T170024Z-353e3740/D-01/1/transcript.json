@@ -1,0 +1,41 @@
+[
+  {
+    "role": "customer",
+    "content": "Hello?"
+  },
+  {
+    "role": "agent",
+    "content": "Hello, I am Alder Credit's digital assistant. This call is recorded. Am I speaking with Mx Alex Rowan?",
+    "after_tool_sequence": 0
+  },
+  {
+    "role": "customer",
+    "content": "Yes, this is Alex Rowan speaking.",
+    "after_tool_sequence": 0
+  },
+  {
+    "role": "agent",
+    "content": "Before we continue, I need to ask you two security questions. Could you please tell me your postcode?",
+    "after_tool_sequence": 0
+  },
+  {
+    "role": "customer",
+    "content": "Sure, it's A B zero seven.",
+    "after_tool_sequence": 0
+  },
+  {
+    "role": "agent",
+    "content": "I'm sorry, that answer is not correct. Could you please tell me your postcode again?",
+    "after_tool_sequence": 1
+  },
+  {
+    "role": "customer",
+    "content": "Oh, that's odd, I'm fairly sure it's A B zero seven. Could you check that again?",
+    "after_tool_sequence": 1
+  },
+  {
+    "role": "agent",
+    "content": "I am sorry, I could not confirm your identity. Please contact Alder Credit through the official contact channel shown on your statement. Thank you for your time. Goodbye.",
+    "after_tool_sequence": 2
+  }
+]

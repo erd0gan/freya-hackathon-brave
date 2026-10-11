@@ -1,0 +1,91 @@
+[
+  {
+    "role": "customer",
+    "content": "Hello?"
+  },
+  {
+    "role": "agent",
+    "content": "Hello, I am Alder Credit's digital assistant. This call is recorded. Am I speaking with Mx Kendall Grove?",
+    "after_tool_sequence": 0
+  },
+  {
+    "role": "customer",
+    "content": "Yes, this is Kendall Grove speaking.",
+    "after_tool_sequence": 0
+  },
+  {
+    "role": "agent",
+    "content": "Before we continue, I need to ask you two security questions. Could you please tell me your postcode?",
+    "after_tool_sequence": 0
+  },
+  {
+    "role": "customer",
+    "content": "My current postcode is ZX21, but I moved recently, so do you need my current address or the one you might still have on file?",
+    "after_tool_sequence": 0
+  },
+  {
+    "role": "agent",
+    "content": "I'm sorry, that's not the postcode we have. Could you please tell me your postcode again?",
+    "after_tool_sequence": 1
+  },
+  {
+    "role": "customer",
+    "content": "Ah, then you probably still have my old address. The postcode there was AB07.",
+    "after_tool_sequence": 1
+  },
+  {
+    "role": "agent",
+    "content": "And what is your year of birth?",
+    "after_tool_sequence": 2
+  },
+  {
+    "role": "customer",
+    "content": "It's 1988.",
+    "after_tool_sequence": 2
+  },
+  {
+    "role": "agent",
+    "content": "Thank you. I am calling about overdue payments. Your credit card has 900.00 past due and is 4 days late. Can you pay the full past-due amount today?",
+    "after_tool_sequence": 4
+  },
+  {
+    "role": "customer",
+    "content": "I can't do it today, I'm afraid, but I can pay the full 900 pounds tomorrow, on October fifteenth. Would that work?",
+    "after_tool_sequence": 4
+  },
+  {
+    "role": "agent",
+    "content": "I am sorry, I do not have that information. To confirm: the credit card, 900.00 on Thursday 15 October 2026. Do you confirm this?",
+    "after_tool_sequence": 4
+  },
+  {
+    "role": "customer",
+    "content": "Yes, that's right, I confirm 900 pounds on Thursday the 15th of October for the credit card.",
+    "after_tool_sequence": 4
+  },
+  {
+    "role": "agent",
+    "content": "Your promise is recorded: the credit card, 900.00 on Thursday 15 October 2026. A letter confirming the promise will be sent. Is there anything else I can help you with?",
+    "after_tool_sequence": 5
+  },
+  {
+    "role": "customer",
+    "content": "Yes, actually. Since the letter will probably go to my old address, could you update my postcode to ZX21, or tell me how I can do that?",
+    "after_tool_sequence": 5
+  },
+  {
+    "role": "agent",
+    "content": "I am sorry, I do not have that information. Is there anything else I can help you with?",
+    "after_tool_sequence": 5
+  },
+  {
+    "role": "customer",
+    "content": "Okay, I'll contact Alder Credit separately about updating my address. No, that's everything, thank you, goodbye.",
+    "after_tool_sequence": 5
+  },
+  {
+    "role": "agent",
+    "content": "Thank you for your time. Goodbye.",
+    "after_tool_sequence": 6
+  }
+]

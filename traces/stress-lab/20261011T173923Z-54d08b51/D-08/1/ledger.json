@@ -1,0 +1,62 @@
+{
+  "wrong": 0,
+  "closed": true,
+  "calls": [
+    {
+      "tool": "verify_identity",
+      "body": {
+        "field": "postcode",
+        "answer": "AB07",
+        "customer_id": "sl-MT66owVDyWQLdv4cDEjLWKKMrgvrQCKE"
+      },
+      "sequence": 1,
+      "status": 200,
+      "result": {
+        "ok": true,
+        "verified": true,
+        "wrong_answers": 0
+      }
+    },
+    {
+      "tool": "transfer_to_agent",
+      "body": {
+        "queue": "D_GENERAL",
+        "customer_id": "sl-MT66owVDyWQLdv4cDEjLWKKMrgvrQCKE"
+      },
+      "sequence": 2,
+      "status": 200,
+      "result": {
+        "ok": true
+      }
+    },
+    {
+      "tool": "close_call",
+      "body": {
+        "reason": "D_HUMAN",
+        "outcome": "D_XFER",
+        "customer_id": "sl-MT66owVDyWQLdv4cDEjLWKKMrgvrQCKE"
+      },
+      "sequence": 3,
+      "status": 200,
+      "result": {
+        "ok": true
+      }
+    }
+  ],
+  "promises": [],
+  "notes": [],
+  "callbacks": [],
+  "transfers": [
+    "D_GENERAL"
+  ],
+  "claims": [],
+  "inspections": [],
+  "rentals": [],
+  "endorsements": [],
+  "renewals": [],
+  "close": {
+    "reason": "D_HUMAN",
+    "outcome": "D_XFER"
+  },
+  "now": "2026-10-14T11:00:00"
+}

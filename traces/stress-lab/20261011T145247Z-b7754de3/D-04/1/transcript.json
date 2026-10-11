@@ -1,0 +1,76 @@
+[
+  {
+    "role": "customer",
+    "content": "Hello?"
+  },
+  {
+    "role": "agent",
+    "content": "Hello, I am Alder Credit's digital assistant. This call is recorded. Am I speaking with Mx Alex Rowan?",
+    "after_tool_sequence": 0
+  },
+  {
+    "role": "customer",
+    "content": "Yes, this is Alex Rowan speaking.",
+    "after_tool_sequence": 0
+  },
+  {
+    "role": "agent",
+    "content": "Thank you. Before we continue, I need to verify your identity. Could you please tell me your postcode?",
+    "after_tool_sequence": 0
+  },
+  {
+    "role": "customer",
+    "content": "Sure, it's AB07.",
+    "after_tool_sequence": 0
+  },
+  {
+    "role": "agent",
+    "content": "Thank you, that's correct. Next, could you please tell me your year of birth?",
+    "after_tool_sequence": 1
+  },
+  {
+    "role": "customer",
+    "content": "It's 1988.",
+    "after_tool_sequence": 1
+  },
+  {
+    "role": "agent",
+    "content": "Thank you, you're verified. I'm calling about your credit card, which has an overdue amount of 900 pounds and is 4 days late. Would you be able to pay the full 900 pounds today?",
+    "after_tool_sequence": 3
+  },
+  {
+    "role": "customer",
+    "content": "Yes, I can pay the full amount today.",
+    "after_tool_sequence": 3
+  },
+  {
+    "role": "agent",
+    "content": "Thank you. To confirm: you promise to pay 900.00 on your credit card today, Wednesday 14 October 2026. Do you confirm this promise?",
+    "after_tool_sequence": 3
+  },
+  {
+    "role": "customer",
+    "content": "Yes, I confirm.",
+    "after_tool_sequence": 3
+  },
+  {
+    "role": "agent",
+    "content": "Thank you. Your promise to pay 900.00 on your credit card today, 14 October 2026, has been recorded. A letter confirming the promise will be sent. If you need to make any changes, please use the official contact channel shown on your statement. Is there anything else I can help you with?",
+    "after_tool_sequence": 6
+  },
+  {
+    "role": "customer",
+    "content": "No, that's everything, thank you for your help.",
+    "after_tool_sequence": 6
+  },
+  {
+    "role": "agent",
+    "content": "You're welcome, Mx Rowan. Thank you for your time today. Goodbye.",
+    "after_tool_sequence": 6
+  },
+  {
+    "role": "customer",
+    "content": "Goodbye, thanks again.",
+    "after_tool_sequence": 6
+  }
+]

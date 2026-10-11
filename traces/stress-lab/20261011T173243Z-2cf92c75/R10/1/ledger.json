@@ -1,0 +1,102 @@
+{
+  "wrong": 0,
+  "closed": true,
+  "calls": [
+    {
+      "tool": "verify_identity",
+      "body": {
+        "field": "postcode",
+        "answer": "0073",
+        "customer_id": "sl-sox9Lh_h6hl40aNBYpZooHYqvpiU9Er5"
+      },
+      "sequence": 1,
+      "status": 200,
+      "result": {
+        "ok": true,
+        "verified": true,
+        "wrong_answers": 0
+      }
+    },
+    {
+      "tool": "verify_identity",
+      "body": {
+        "field": "birth_year",
+        "answer": "1988",
+        "customer_id": "sl-sox9Lh_h6hl40aNBYpZooHYqvpiU9Er5"
+      },
+      "sequence": 2,
+      "status": 200,
+      "result": {
+        "ok": true,
+        "verified": true,
+        "wrong_answers": 0
+      }
+    },
+    {
+      "tool": "get_account",
+      "body": {
+        "customer_id": "sl-sox9Lh_h6hl40aNBYpZooHYqvpiU9Er5"
+      },
+      "sequence": 3,
+      "status": 200,
+      "result": {
+        "ok": true,
+        "products": [
+          {
+            "product_id": "card-r10",
+            "type": "credit_card",
+            "display_name": "credit card",
+            "past_due": 900.0,
+            "floor": 300.0,
+            "days_late": 4
+          }
+        ]
+      }
+    },
+    {
+      "tool": "create_promise",
+      "body": {
+        "date": "2026-10-15",
+        "amount": 300.0,
+        "product_id": "card-r10",
+        "customer_id": "sl-sox9Lh_h6hl40aNBYpZooHYqvpiU9Er5"
+      },
+      "sequence": 4,
+      "status": 200,
+      "result": {
+        "ok": true
+      }
+    },
+    {
+      "tool": "close_call",
+      "body": {
+        "outcome": "C_PTP",
+        "customer_id": "sl-sox9Lh_h6hl40aNBYpZooHYqvpiU9Er5"
+      },
+      "sequence": 5,
+      "status": 200,
+      "result": {
+        "ok": true
+      }
+    }
+  ],
+  "promises": [
+    {
+      "product_id": "card-r10",
+      "amount": "300.00",
+      "date": "2026-10-15"
+    }
+  ],
+  "notes": [],
+  "callbacks": [],
+  "transfers": [],
+  "claims": [],
+  "inspections": [],
+  "rentals": [],
+  "endorsements": [],
+  "renewals": [],
+  "close": {
+    "outcome": "C_PTP"
+  },
+  "now": "2026-10-14T11:00:00"
+}

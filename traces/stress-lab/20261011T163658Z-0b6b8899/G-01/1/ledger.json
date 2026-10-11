@@ -1,0 +1,63 @@
+{
+  "wrong": 2,
+  "closed": true,
+  "calls": [
+    {
+      "tool": "verify_identity",
+      "body": {
+        "field": "policyholder_code",
+        "answer": "zero zero zero eight one nine",
+        "customer_id": "sl-yP_dv3-_Q95nLV6EY3aewHN3S7UcQLFp"
+      },
+      "sequence": 1,
+      "status": 200,
+      "result": {
+        "ok": true,
+        "verified": false,
+        "wrong_answers": 1
+      }
+    },
+    {
+      "tool": "verify_identity",
+      "body": {
+        "field": "policyholder_code",
+        "answer": "zero, zero, zero, eight, one, nine",
+        "customer_id": "sl-yP_dv3-_Q95nLV6EY3aewHN3S7UcQLFp"
+      },
+      "sequence": 2,
+      "status": 200,
+      "result": {
+        "ok": true,
+        "verified": false,
+        "wrong_answers": 2
+      }
+    },
+    {
+      "tool": "close_call",
+      "body": {
+        "reason": "G_FAILED",
+        "outcome": "G_NO_ID",
+        "customer_id": "sl-yP_dv3-_Q95nLV6EY3aewHN3S7UcQLFp"
+      },
+      "sequence": 3,
+      "status": 200,
+      "result": {
+        "ok": true
+      }
+    }
+  ],
+  "promises": [],
+  "notes": [],
+  "callbacks": [],
+  "transfers": [],
+  "claims": [],
+  "inspections": [],
+  "rentals": [],
+  "endorsements": [],
+  "renewals": [],
+  "close": {
+    "reason": "G_FAILED",
+    "outcome": "G_NO_ID"
+  },
+  "now": "2026-10-14T11:00:00"
+}

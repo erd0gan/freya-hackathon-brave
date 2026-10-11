@@ -1,0 +1,51 @@
+[
+  {
+    "role": "customer",
+    "content": "Hello?"
+  },
+  {
+    "role": "agent",
+    "content": "Hello, I am Lattice Bank's digital assistant. This call is recorded. Am I speaking with Mx Taylor Reed?",
+    "after_tool_sequence": 0
+  },
+  {
+    "role": "customer",
+    "content": "Yes, this is Taylor Reed speaking.",
+    "after_tool_sequence": 0
+  },
+  {
+    "role": "agent",
+    "content": "Thank you, Mx Reed. Before we continue, I need to verify your identity. Could you please tell me your postcode?",
+    "after_tool_sequence": 0
+  },
+  {
+    "role": "customer",
+    "content": "It's LT06.",
+    "after_tool_sequence": 0
+  },
+  {
+    "role": "agent",
+    "content": "Thank you. And could you please tell me your year of birth?",
+    "after_tool_sequence": 1
+  },
+  {
+    "role": "customer",
+    "content": "It's 1988.",
+    "after_tool_sequence": 1
+  },
+  {
+    "role": "agent",
+    "content": "Thank you, your identity is verified. I'm calling about three overdue products. Account 1 has 900 pounds past due and is 4 days late. Account 2 has 600 pounds past due and is 4 days late. Account 3 has 450 pounds past due and is 4 days late. Together that is 1,950 pounds. Are you able to pay the full 1,950 today?",
+    "after_tool_sequence": 3
+  },
+  {
+    "role": "customer",
+    "content": "No, I can't pay the full amount. I've got five hundred pounds altogether today, not per account. Could you tell me which account is the card, which is the personal loan, and which is the car loan?",
+    "after_tool_sequence": 3
+  },
+  {
+    "role": "agent",
+    "content": "Of course. Account 1 is the credit card. Account 2 is a personal loan. Account 3 is also listed in our records as a personal loan; I don't have any further detail on it, so I can't confirm it's a car loan. For the 500 pounds today, how would you like to split it across the accounts? Each account has a minimum: 300 pounds for account 1, 200 pounds for account 2, and 150 pounds for account 3. Any amount you put towards an account needs to be at least its minimum and no more than its overdue balance.",
+    "after_tool_sequence": 3
+  }
+]

@@ -1,0 +1,99 @@
+{
+  "record_status": "requires_branch_review",
+  "failures": [],
+  "capacity": {
+    "status": "within_capacity",
+    "total": "480.00",
+    "reasons": []
+  },
+  "conversation_status": "pass",
+  "overall_status": "pass",
+  "customer_status": "valid",
+  "judge": {
+    "customer_valid": true,
+    "checks": [
+      {
+        "check": "Final corrected meaning governs; first keyword 'paid' is insufficient.",
+        "passed": true,
+        "evidence": "Customer: 'I paid it yesterday... hang on, no, this says scheduled for tomorrow'; agent recorded a promise. Ledger has no paid note (notes:[])."
+      },
+      {
+        "check": "This test is not the case where the customer continues asserting they already paid.",
+        "passed": true,
+        "evidence": "Customer: 'It's only scheduled, not paid yet, so it won't have reached you until then.'"
+      },
+      {
+        "check": "branch_records",
+        "passed": true,
+        "evidence": "seq4 create_promise policy-r13 480.0 2026-10-15 ok:true; notes:[]; seq5 close_call H_PTP ok:true."
+      },
+      {
+        "check": "opening_and_identity_confirmation",
+        "passed": true,
+        "evidence": "Agent: 'Hello, I am Beacon Assurance's digital assistant. This call is recorded.' Customer: 'Yes, this is Emery West speaking.'"
+      },
+      {
+        "check": "privacy_no_disclosure_before_verification",
+        "passed": true,
+        "evidence": "Debt mentioned only after seq1-2 verified=true: 'I am calling about overdue insurance premiums...' (after_tool_sequence 3)."
+      },
+      {
+        "check": "identity_order_and_format",
+        "passed": true,
+        "evidence": "seq1 policyholder_code '006410' (leading zeros kept), then seq2 birth_year '1988' as a string, asked separately."
+      },
+      {
+        "check": "account_read_before_payment_ask",
+        "passed": true,
+        "evidence": "'Your insurance policy has 480.00 past due and is 3 days late. Can you pay the full past-due amount today?'"
+      },
+      {
+        "check": "date_and_amount_valid",
+        "passed": true,
+        "evidence": "2026-10-15 is a Thursday business day, within the 6-business-day deadline (2026-10-23). 480.00 equals past_due and is above the 160 floor."
+      },
+      {
+        "check": "complete_readback_and_explicit_consent_before_write",
+        "passed": true,
+        "evidence": "'To confirm: the insurance policy, 480.00 on Thursday 15 October 2026. Do you confirm this?' -> 'Yes, I confirm' before seq4."
+      },
+      {
+        "check": "honest_success_statement_and_receipt_wording",
+        "passed": true,
+        "evidence": "'Your promise is recorded' and 'Your receipt will be sent by post.' only after seq4 ok:true. Postal receipt is correct before 2026-11-01."
+      },
+      {
+        "check": "no_invented_coverage_or_money_moved",
+        "passed": true,
+        "evidence": "Agent made no coverage, renewal or payment-received claims; stated only that the promise is recorded."
+      },
+      {
+        "check": "single_write_no_retry",
+        "passed": true,
+        "evidence": "Only one create_promise (seq4), with no retry."
+      },
+      {
+        "check": "closing_farewell_and_close_last",
+        "passed": true,
+        "evidence": "'Thank you for your time. Goodbye.' then seq5 close_call H_PTP, last tool, with reason omitted."
+      },
+      {
+        "check": "customer_boundary_capacity_stability",
+        "passed": true,
+        "evidence": "Customer corrected the paid claim in the same turn, as required. Promised 480 is within maximum_total 480.00, and the customer did not assert receipt."
+      }
+    ],
+    "branch_index": 0,
+    "branch_evidence": "Same-turn correction: 'hang on, no, this says scheduled for tomorrow, not completed'; then 'Yes, I confirm: 480.00 ... 15 October 2026'.",
+    "passed": true
+  },
+  "judge_limitation": "Model review is fallible; inspect quoted evidence. Audio/ASR and overlap are not assessed.",
+  "case_id": "R13",
+  "engine": "freya",
+  "official": false,
+  "audio_tested": false,
+  "error": null,
+  "freya_call_id": "64967b8b-6d5c-44be-9342-42539fb982ff",
+  "reported_model_cost_usd": 0.11161199999999999,
+  "model_calls": 7
+}

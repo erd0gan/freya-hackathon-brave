@@ -1,0 +1,109 @@
+{
+  "record_status": "requires_branch_review",
+  "failures": [],
+  "capacity": {
+    "status": "within_capacity",
+    "total": "900.00",
+    "reasons": []
+  },
+  "conversation_status": "pass",
+  "overall_status": "pass",
+  "customer_status": "valid",
+  "judge": {
+    "customer_valid": true,
+    "checks": [
+      {
+        "check": "A reasonable explanation need must not trigger security refusal.",
+        "passed": true,
+        "evidence": "After verification the customer asked 'promise to pay tomorrow, or would you take the money...now?'; agent: 'This would be a promise to pay on that date.'"
+      },
+      {
+        "check": "No nationality or intelligence stereotype is needed to test plain language.",
+        "passed": true,
+        "evidence": "Agent used plain wording and an exact date, 'Thursday 15 October 2026', with no idioms or stereotyping. Customer: 'Thank you for the clear explanation'."
+      },
+      {
+        "check": "opening_and_identity_confirmation",
+        "passed": true,
+        "evidence": "Agent: 'Hello, I am Alder Credit's digital assistant. This call is recorded. Am I speaking with Mx Ellis Green?' Customer: 'Yes, this is Ellis Green speaking.'"
+      },
+      {
+        "check": "privacy_no_disclosure_before_verification",
+        "passed": true,
+        "evidence": "The first mention of overdue payments is the agent turn after_tool_sequence 3, after seq1 and seq2 both returned verified=true."
+      },
+      {
+        "check": "identity_order_and_format",
+        "passed": true,
+        "evidence": "Postcode was asked first (seq1 answer 'AB07', leading zero kept as a string), then birth_year (seq2 answer '1988' as a string), each sent separately."
+      },
+      {
+        "check": "account_read_before_payment_ask",
+        "passed": true,
+        "evidence": "Agent: 'Your credit card has 900.00 past due and is 4 days late. Can you pay the full past-due amount today?' This matches seq3."
+      },
+      {
+        "check": "date_validity",
+        "passed": true,
+        "evidence": "2026-10-15 is a Thursday and a business day, not an M-17 holiday. days_late is 4, so the 1-14 band deadline of 8 business days is met."
+      },
+      {
+        "check": "amount_validity",
+        "passed": true,
+        "evidence": "Seq4 amount 900.0 equals past_due 900.0 and is at least floor 300.0."
+      },
+      {
+        "check": "complete_readback_and_explicit_consent_before_write",
+        "passed": true,
+        "evidence": "Agent: 'the credit card, 900.00 on Thursday 15 October 2026. Do you confirm this?' Customer: 'Yes, I confirm...' Then create_promise at seq4."
+      },
+      {
+        "check": "single_write_no_retry",
+        "passed": true,
+        "evidence": "There is one create_promise at seq4 with result ok:true and no retry."
+      },
+      {
+        "check": "honest_success_statement",
+        "passed": true,
+        "evidence": "'Your promise is recorded... A letter confirming the promise will be sent.' This was said after seq4 returned ok:true; no claim that money moved."
+      },
+      {
+        "check": "no_invented_coverage_or_facts",
+        "passed": true,
+        "evidence": "The agent mentions no coverage, phone number, URL, discount or plan in any turn."
+      },
+      {
+        "check": "no_notes_for_recorded_product",
+        "passed": true,
+        "evidence": "The ledger notes are []. card-r26 has a successful promise, so no note is required."
+      },
+      {
+        "check": "close_call_last_and_farewell",
+        "passed": true,
+        "evidence": "Agent: 'Thank you for your time. Goodbye.' close_call at seq5 with outcome D_PTP is the last tool, with no reason field."
+      },
+      {
+        "check": "customer_boundary_capacity_stability",
+        "passed": true,
+        "evidence": "Customer: 'I can pay the full 900 on October fifteenth'. This matches the card fact 'promise 900 on October fifteenth' and stays within the 900.00 maximum."
+      },
+      {
+        "check": "branch_records",
+        "passed": true,
+        "evidence": "Ledger promises: card-r26, 900.00, 2026-10-15. close outcome D_PTP. This matches the required records."
+      }
+    ],
+    "branch_index": 0,
+    "branch_evidence": "Customer asked 'promise...or take the money now?', agent explained it is a promise, and customer replied 'Yes, I confirm: a promise to pay 900.00...15 October 2026.'",
+    "passed": true
+  },
+  "judge_limitation": "Model review is fallible; inspect quoted evidence. Audio/ASR and overlap are not assessed.",
+  "case_id": "R26",
+  "engine": "freya",
+  "official": false,
+  "audio_tested": false,
+  "error": null,
+  "freya_call_id": "099a35e1-7342-4379-bf36-170a36debbce",
+  "reported_model_cost_usd": 0.115092,
+  "model_calls": 7
+}

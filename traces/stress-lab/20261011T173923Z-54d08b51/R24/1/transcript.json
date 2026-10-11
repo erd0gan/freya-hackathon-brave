@@ -1,0 +1,21 @@
+[
+  {
+    "role": "customer",
+    "content": "Hello?"
+  },
+  {
+    "role": "agent",
+    "content": "Hello, I am Beacon Assurance's digital assistant. This call is recorded. Am I speaking with Mx Marlowe Hill?",
+    "after_tool_sequence": 0
+  },
+  {
+    "role": "customer",
+    "content": "No, there's no one by that name on this number. I think you've got the wrong number.",
+    "after_tool_sequence": 0
+  },
+  {
+    "role": "agent",
+    "content": "Sorry to have bothered you. Goodbye.",
+    "after_tool_sequence": 0
+  }
+]

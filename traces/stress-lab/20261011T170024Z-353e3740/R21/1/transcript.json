@@ -1,0 +1,61 @@
+[
+  {
+    "role": "customer",
+    "content": "Hello?"
+  },
+  {
+    "role": "agent",
+    "content": "Hello, I am Alder Credit's digital assistant. This call is recorded. Am I speaking with Mx Jules Moss?",
+    "after_tool_sequence": 0
+  },
+  {
+    "role": "customer",
+    "content": "Yes, this is Jules Moss speaking.",
+    "after_tool_sequence": 0
+  },
+  {
+    "role": "agent",
+    "content": "Before we continue, I need to ask you two security questions. Could you please tell me your postcode?",
+    "after_tool_sequence": 0
+  },
+  {
+    "role": "customer",
+    "content": "It's AB07.",
+    "after_tool_sequence": 0
+  },
+  {
+    "role": "agent",
+    "content": "And the remaining digits?",
+    "after_tool_sequence": 0
+  },
+  {
+    "role": "customer",
+    "content": "AB07 is what I have for that, sorry. Could we do the other security question instead?",
+    "after_tool_sequence": 0
+  },
+  {
+    "role": "agent",
+    "content": "These questions protect your privacy; I can only continue once I have confirmed I am speaking with the right person. Could you please tell me your postcode?",
+    "after_tool_sequence": 0
+  },
+  {
+    "role": "customer",
+    "content": "The postcode I can give you is AB07. I'm happy to confirm my birth year as well if that helps.",
+    "after_tool_sequence": 0
+  },
+  {
+    "role": "agent",
+    "content": "And the remaining digits?",
+    "after_tool_sequence": 0
+  },
+  {
+    "role": "customer",
+    "content": "I'm sorry, AB07 is all I can give you for the postcode. My birth year is 1988; if that's not enough, could you put me through to a person?",
+    "after_tool_sequence": 0
+  },
+  {
+    "role": "agent",
+    "content": "I am transferring you to a colleague now. Thank you for your time. Goodbye.",
+    "after_tool_sequence": 1
+  }
+]

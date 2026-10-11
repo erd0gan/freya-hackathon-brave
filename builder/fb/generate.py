@@ -647,6 +647,13 @@ TEXT_ANSWER_HOOK = r"""            _t = str(_a or '').strip()
                         and re.search(r"that's|that is|as in|i mean", _t.lower())):
                     _c = _c[:_hl]
                 _t = _c
+            elif len(_p) >= 3:
+                # a sentence with one code in it: the code ('My current postcode is ZX21,
+                # though I moved recently' sent whole, stress R30; 'AB07 is all I can give')
+                _k2 = {re.sub(r'[^A-Za-z0-9]', '', x).upper() for x in re.split(r'\s+', _t)}
+                _k2 = [x for x in _k2 if len(x) >= 3 and re.search(r'\d', x)]
+                if len(_k2) == 1:
+                    _t = _k2[0]
             _b[ANSWER_KEY] = _t
 """
 

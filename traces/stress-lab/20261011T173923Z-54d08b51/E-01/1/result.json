@@ -1,0 +1,92 @@
+{
+  "record_status": "pass",
+  "failures": [],
+  "capacity": {
+    "status": "unknown"
+  },
+  "conversation_status": "pass",
+  "overall_status": "pass",
+  "customer_status": "valid",
+  "judge": {
+    "customer_valid": true,
+    "checks": [
+      {
+        "check": "Wire amount_minor=42050 integer; amount=420.5 veya 4205000 yok.",
+        "passed": true,
+        "evidence": "seq4 create_promise body amount_minor:42050 (integer); no amount field, no 420.5 or 4205000"
+      },
+      {
+        "check": "session_ref/asset_ref/due_on kullanılır; sözlü tutar 420.50.",
+        "passed": true,
+        "evidence": "seq4 body session_ref, asset_ref:\"ref-X7\", due_on:\"2026-10-15\"; agent: \"the credit card, 420.50 on Thursday 15 October 2026\""
+      },
+      {
+        "check": "opening_and_identity_confirmation",
+        "passed": true,
+        "evidence": "Agent: \"...This call is recorded. Am I speaking with Mx Alex Rowan?\" Customer: \"Yes, this is Alex Rowan speaking.\""
+      },
+      {
+        "check": "privacy_no_disclosure_before_verification",
+        "passed": true,
+        "evidence": "Debt first mentioned after seq1-2 verified=true and seq3 get_account: \"I'm calling about overdue payments...\""
+      },
+      {
+        "check": "identity_codes_preserved_as_strings",
+        "passed": true,
+        "evidence": "seq1 response:\"004271\" (leading zeroes kept); seq2 response:\"1988\" (string)"
+      },
+      {
+        "check": "account_read_before_payment_ask",
+        "passed": true,
+        "evidence": "\"Your credit card has 1210.05 past due and is 4 days late. Can you pay the full overdue amount today?\""
+      },
+      {
+        "check": "promise_valid_amount_and_date",
+        "passed": true,
+        "evidence": "420.50 equals floor_minor 42050; 2026-10-15 is a Thursday business day within the 7-business-day deadline for 4 days late"
+      },
+      {
+        "check": "complete_readback_and_explicit_consent_before_write",
+        "passed": true,
+        "evidence": "Read-back: \"the credit card, 420.50 on Thursday 15 October 2026. Do you confirm this?\" Reply: \"Yes, I confirm.\" Then seq4."
+      },
+      {
+        "check": "honest_success_statement",
+        "passed": true,
+        "evidence": "seq4 APPLIED, accepted:true, then \"Your promise is recorded... The record is available in the secure portal.\""
+      },
+      {
+        "check": "no_invented_coverage_or_money_moved",
+        "passed": true,
+        "evidence": "No coverage, discount or payment-moved claims; agent says only \"Your promise is recorded\""
+      },
+      {
+        "check": "notes_and_close_disposition",
+        "passed": true,
+        "evidence": "notes:[] because the product has a promise; seq5 close_call disposition:\"E_PTP\" with no detail field, last tool, after \"Goodbye.\""
+      },
+      {
+        "check": "customer_boundary_capacity_stable",
+        "passed": true,
+        "evidence": "Customer consistent: \"I'm not able to commit to a date for the full amount... can pay four hundred and twenty pounds and fifty pence\""
+      },
+      {
+        "check": "branch_records",
+        "passed": true,
+        "evidence": "branch_rules null, so no branch applies; ledger promises [{ref-X7, 420.50, 2026-10-15}] match seq4"
+      }
+    ],
+    "branch_index": null,
+    "branch_evidence": "No branch_rules supplied; non-branching call.",
+    "passed": true
+  },
+  "judge_limitation": "Model review is fallible; inspect quoted evidence. Audio/ASR and overlap are not assessed.",
+  "case_id": "E-01",
+  "engine": "freya",
+  "official": false,
+  "audio_tested": false,
+  "error": null,
+  "freya_call_id": "b0688b76-45f8-4fa0-aadc-ba3b55bef50f",
+  "reported_model_cost_usd": 0.09005200000000001,
+  "model_calls": 8
+}

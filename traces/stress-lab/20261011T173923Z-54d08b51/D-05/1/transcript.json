@@ -1,0 +1,101 @@
+[
+  {
+    "role": "customer",
+    "content": "Hello?"
+  },
+  {
+    "role": "agent",
+    "content": "Hello, I am Alder Credit's digital assistant. This call is recorded. Am I speaking with Mx Alex Rowan?",
+    "after_tool_sequence": 0
+  },
+  {
+    "role": "customer",
+    "content": "Yes, this is Alex Rowan speaking.",
+    "after_tool_sequence": 0
+  },
+  {
+    "role": "agent",
+    "content": "Before we continue, I need to ask two short security questions. What is your postcode?",
+    "after_tool_sequence": 0
+  },
+  {
+    "role": "customer",
+    "content": "Sure, it's AB07.",
+    "after_tool_sequence": 0
+  },
+  {
+    "role": "agent",
+    "content": "Thank you. What is your year of birth?",
+    "after_tool_sequence": 1
+  },
+  {
+    "role": "customer",
+    "content": "1988.",
+    "after_tool_sequence": 1
+  },
+  {
+    "role": "agent",
+    "content": "Thank you. I am calling about overdue payments on your account. Your credit card has 900.00 past due and is 4 days late. Can you pay the full past-due amount today?",
+    "after_tool_sequence": 3
+  },
+  {
+    "role": "customer",
+    "content": "Yes, nine hundred today.",
+    "after_tool_sequence": 3
+  },
+  {
+    "role": "agent",
+    "content": "To confirm: the credit card, 900.00 on Wednesday 14 October 2026. Do you confirm this?",
+    "after_tool_sequence": 3
+  },
+  {
+    "role": "customer",
+    "content": "Yes, I confirm.",
+    "after_tool_sequence": 3
+  },
+  {
+    "role": "agent",
+    "content": "I could not record the promise for the credit card. Is there anything else I can help you with?",
+    "after_tool_sequence": 6
+  },
+  {
+    "role": "customer",
+    "content": "Oh, why couldn't it be recorded? I still want to pay the nine hundred today, so what do I need to do?",
+    "after_tool_sequence": 6
+  },
+  {
+    "role": "agent",
+    "content": "I am sorry, I do not have that information. I could not record the promise for the credit card. Is there anything else I can help you with?",
+    "after_tool_sequence": 6
+  },
+  {
+    "role": "customer",
+    "content": "That's frustrating, I still want to pay the nine hundred today. Can you transfer me to someone who can record it or tell me how to pay?",
+    "after_tool_sequence": 6
+  },
+  {
+    "role": "agent",
+    "content": "I am sorry, I do not have that information. I could not record the promise for the credit card. Is there anything else I can help you with?",
+    "after_tool_sequence": 6
+  },
+  {
+    "role": "customer",
+    "content": "Okay, it seems you can't help with this, so I'll call Alder Credit directly to sort out the nine hundred payment. No, there's nothing else, thank you.",
+    "after_tool_sequence": 6
+  },
+  {
+    "role": "agent",
+    "content": "I could not record the promise for the credit card. Is there anything else I can help you with?",
+    "after_tool_sequence": 6
+  },
+  {
+    "role": "customer",
+    "content": "No, that's all, thanks; I'll call back to arrange the payment. Goodbye.",
+    "after_tool_sequence": 6
+  },
+  {
+    "role": "agent",
+    "content": "Thank you for your time. Goodbye.",
+    "after_tool_sequence": 7
+  }
+]

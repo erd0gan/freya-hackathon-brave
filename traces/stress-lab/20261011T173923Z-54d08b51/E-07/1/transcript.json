@@ -1,0 +1,81 @@
+[
+  {
+    "role": "customer",
+    "content": "Hello?"
+  },
+  {
+    "role": "agent",
+    "content": "Hello, I am Vector Bank's digital assistant. This call is recorded. Am I speaking with Mx Alex Rowan?",
+    "after_tool_sequence": 0
+  },
+  {
+    "role": "customer",
+    "content": "Yes, this is Alex Rowan speaking.",
+    "after_tool_sequence": 0
+  },
+  {
+    "role": "agent",
+    "content": "First, I need to ask you two security questions. Please tell me your member code.",
+    "after_tool_sequence": 0
+  },
+  {
+    "role": "customer",
+    "content": "Sure, my member code is 004271.",
+    "after_tool_sequence": 0
+  },
+  {
+    "role": "agent",
+    "content": "Correct. What is your year of birth?",
+    "after_tool_sequence": 1
+  },
+  {
+    "role": "customer",
+    "content": "It's 1988.",
+    "after_tool_sequence": 1
+  },
+  {
+    "role": "agent",
+    "content": "Thank you. I'm calling about overdue payments on your account. Your credit card has 900.00 past due and is 4 days late. Your personal loan has 600.00 past due and is 4 days late. Can you pay the full overdue amount for all of these today?",
+    "after_tool_sequence": 3
+  },
+  {
+    "role": "customer",
+    "content": "Yes, I can pay both full amounts today.",
+    "after_tool_sequence": 3
+  },
+  {
+    "role": "agent",
+    "content": "To confirm: the credit card, 900.00 on Wednesday 14 October 2026; the personal loan, 600.00 on Wednesday 14 October 2026. Do you confirm this? Please say yes to confirm.",
+    "after_tool_sequence": 3
+  },
+  {
+    "role": "customer",
+    "content": "Yes, I confirm both.",
+    "after_tool_sequence": 3
+  },
+  {
+    "role": "agent",
+    "content": "Your promise is recorded: the credit card, 900.00 on Wednesday 14 October 2026. The record is available in the secure portal. I could not record the promise for the personal loan. Is there anything else I can help you with?",
+    "after_tool_sequence": 6
+  },
+  {
+    "role": "customer",
+    "content": "Wait, why couldn't you record the promise for the personal loan? I confirmed I'd pay the 600.00 today as well, so can you try again or tell me what I need to do?",
+    "after_tool_sequence": 6
+  },
+  {
+    "role": "agent",
+    "content": "I'm sorry, I don't have that information. Is there anything else I can help you with?",
+    "after_tool_sequence": 6
+  },
+  {
+    "role": "customer",
+    "content": "Okay, but I still want the personal loan payment of 600.00 on record, so could you have someone follow up with me or tell me who to contact about it? Otherwise, that's all for now, thank you.",
+    "after_tool_sequence": 6
+  },
+  {
+    "role": "agent",
+    "content": "I'll connect you with a colleague now. Thank you for your time. Goodbye.",
+    "after_tool_sequence": 7
+  }
+]

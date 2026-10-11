@@ -1,0 +1,104 @@
+{
+  "record_status": "requires_branch_review",
+  "failures": [],
+  "capacity": {
+    "status": "within_capacity",
+    "total": "500.00",
+    "reasons": []
+  },
+  "conversation_status": "pass",
+  "overall_status": "pass",
+  "customer_status": "valid",
+  "judge": {
+    "customer_valid": true,
+    "checks": [
+      {
+        "check": "Do not treat each product as having a fresh 500-pound budget.",
+        "passed": true,
+        "evidence": "Agent: \"I can't split that 500 pounds across the products myself, so could you tell me how much you'd like to put towards each one?\""
+      },
+      {
+        "check": "No extra promise for the car to improve collection score.",
+        "passed": true,
+        "evidence": "Agent: \"so I won't record a promise for the car loan today\"; the ledger has no create_promise for car-r4, and seq6 add_note car-r4 F_REFUSED."
+      },
+      {
+        "check": "opening_and_identity_confirmation",
+        "passed": true,
+        "evidence": "Agent: \"Hello, I am Lattice Bank's digital assistant. This call is recorded. Am I speaking with Mx Taylor Reed?\" Customer: \"Yes, this is Taylor Reed speaking.\""
+      },
+      {
+        "check": "privacy_no_disclosure_before_verification",
+        "passed": true,
+        "evidence": "No debt was mentioned before seq1-2 verify_identity returned verified=true. Arrears were first disclosed after_tool_sequence 3."
+      },
+      {
+        "check": "identity_order_and_format",
+        "passed": true,
+        "evidence": "Seq1 postcode \"LT06\" was sent, then seq2 birth_year \"1988\" as a string. Each was asked separately."
+      },
+      {
+        "check": "account_read_before_payment",
+        "passed": true,
+        "evidence": "Agent read all three products with past_due and days_late (900/4, 600/4, 450/4), then asked: \"Could you pay the full 1,950 pounds today?\""
+      },
+      {
+        "check": "deadline_and_band_correct",
+        "passed": true,
+        "evidence": "days_late 4 gives 9 business days, skipping the 26 Oct holiday, so the deadline is 28 Oct. Agent: \"up to Wednesday the 28th of October\"."
+      },
+      {
+        "check": "allocation_validated_against_floors",
+        "passed": true,
+        "evidence": "Customer: \"300 to the credit card and 200 to the personal loan\". These equal floors 300/200 and total 500, matching the customer's boundary."
+      },
+      {
+        "check": "car_persuasion_within_limit",
+        "passed": true,
+        "evidence": "There was one permitted attempt: \"could you pay the full 450 pounds tomorrow, Thursday the 15th\". It was refused and not repeated."
+      },
+      {
+        "check": "complete_readback_and_explicit_consent_before_write",
+        "passed": true,
+        "evidence": "Read-back: \"300 pounds towards your credit card and 200 pounds towards your personal loan, both on Wednesday the 14th\". Customer: \"Yes, I confirm\". Writes followed at seq4-5."
+      },
+      {
+        "check": "honest_success_statement",
+        "passed": true,
+        "evidence": "\"Your promise has been saved in your customer portal\" was said after seq4/5 returned ok=true. Agent did not imply money moved."
+      },
+      {
+        "check": "no_invented_coverage_or_discount",
+        "passed": true,
+        "evidence": "Agent: \"the remaining balances... will still be overdue\". No waiver, plan or coverage was offered."
+      },
+      {
+        "check": "customer_boundary_stability",
+        "passed": true,
+        "evidence": "Customer: \"The 500 is all I have, and there's no other money coming in for the car loan\". The 500 limit was never exceeded."
+      },
+      {
+        "check": "notes_and_close",
+        "passed": true,
+        "evidence": "Seq6 add_note car-r4 F_REFUSED. Goodbye came before seq7 close_call F_PTP, with the reason omitted. close_call was the last tool."
+      },
+      {
+        "check": "branch_records",
+        "passed": true,
+        "evidence": "Ledger promises: card-r4 300.00 and loan-r4 200.00 on 2026-10-14. Notes: car-r4 F_REFUSED. Close: F_PTP. All match required_records."
+      }
+    ],
+    "branch_index": 0,
+    "branch_evidence": "Customer: \"300 to the credit card and 200 to the personal loan\". Car refused: \"No, I can't do that.\" Then: \"Yes, I confirm\".",
+    "passed": true
+  },
+  "judge_limitation": "Model review is fallible; inspect quoted evidence. Audio/ASR and overlap are not assessed.",
+  "case_id": "R04",
+  "engine": "baseline",
+  "official": false,
+  "audio_tested": false,
+  "error": null,
+  "freya_call_id": null,
+  "reported_model_cost_usd": 0.7162319999999999,
+  "model_calls": 26
+}

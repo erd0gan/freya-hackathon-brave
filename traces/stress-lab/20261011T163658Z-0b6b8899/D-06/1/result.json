@@ -1,0 +1,97 @@
+{
+  "record_status": "pass",
+  "failures": [],
+  "capacity": {
+    "status": "unknown"
+  },
+  "conversation_status": "fail",
+  "overall_status": "fail",
+  "customer_status": "valid",
+  "judge": {
+    "customer_valid": true,
+    "checks": [
+      {
+        "check": "paid atlanır, get_account sırasındaki ilk non-paid dispute seçilir.",
+        "passed": true,
+        "evidence": "get_account order A,B,C; A note D_PAID (seq4); close seq7 reason D_DISPUTE matches B, the first non-paid product."
+      },
+      {
+        "check": "Tüm görüşme paid kapanmaz; her ürüne bir not.",
+        "passed": true,
+        "evidence": "Notes seq4 A D_PAID, seq5 B D_DISPUTE, seq6 C D_REFUSED; close outcome D_NO_PTP, not D_PAID."
+      },
+      {
+        "check": "opening_and_identity_order",
+        "passed": true,
+        "evidence": "Agent gave the required opening; customer: 'Yes, this is Alex Rowan speaking.' Postcode (seq1), then birth_year (seq2), both verified=true."
+      },
+      {
+        "check": "privacy_no_disclosure_before_verification",
+        "passed": true,
+        "evidence": "First debt mention 'I am calling about overdue payments' comes after seq3 get_account, which followed both verifications."
+      },
+      {
+        "check": "read_all_products_before_payment_ask",
+        "passed": true,
+        "evidence": "'Your credit card has 900.00 past due and is 4 days late...car loan has 450.00...4 days late' before the today ask."
+      },
+      {
+        "check": "paid_product_no_persuasion",
+        "passed": false,
+        "evidence": "After 'I paid the credit card's overdue amount yesterday', agent still asked: 'Could you pay 900.00 for the credit card on Thursday 15 October 2026?'"
+      },
+      {
+        "check": "dispute_product_no_persuasion",
+        "passed": false,
+        "evidence": "After 'the personal loan isn't mine', agent asked: 'Could you pay 600.00 for the personal loan on Thursday 15 October 2026?'"
+      },
+      {
+        "check": "paid_posting_explanation",
+        "passed": true,
+        "evidence": "'Please note that a payment may take up to two business days to show.'"
+      },
+      {
+        "check": "car_loan_attempt_plan_band_1_14",
+        "passed": true,
+        "evidence": "One permitted attempt: '450.00 for the car loan on Thursday 15 October 2026' (first business day after Wed 14 Oct). Refused; no promise was recorded."
+      },
+      {
+        "check": "consent_before_writes",
+        "passed": true,
+        "evidence": "No create_promise calls in the ledger; promises: [] and no consent was required."
+      },
+      {
+        "check": "honest_statements_no_invented_coverage",
+        "passed": true,
+        "evidence": "No success claims, letter statement or coverage claims. 'I have noted that' was followed by the B dispute note at seq5."
+      },
+      {
+        "check": "farewell_and_close_last",
+        "passed": true,
+        "evidence": "'Thank you for your time. Goodbye.' after_tool_sequence 7; close_call seq7 is the last tool."
+      },
+      {
+        "check": "customer_boundary_stability",
+        "passed": true,
+        "evidence": "Customer consistently stated paid, not mine, and won't pay the car loan: 'No, I will not pay the car loan on Thursday.'"
+      },
+      {
+        "check": "branch_records",
+        "passed": true,
+        "evidence": "branch_rules null; no branch required. Ledger notes seq4-6 and close seq7 are consistent with the dialogue."
+      }
+    ],
+    "branch_index": null,
+    "branch_evidence": "No branching pilot (branch_rules null).",
+    "passed": false
+  },
+  "judge_limitation": "Model review is fallible; inspect quoted evidence. Audio/ASR and overlap are not assessed.",
+  "case_id": "D-06",
+  "engine": "freya",
+  "official": false,
+  "audio_tested": false,
+  "error": null,
+  "freya_call_id": "e6586c2f-2eea-4789-8156-160a0884415e",
+  "reported_model_cost_usd": 0.087816,
+  "model_calls": 8
+}

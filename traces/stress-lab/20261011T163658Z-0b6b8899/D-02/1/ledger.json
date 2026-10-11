@@ -1,0 +1,51 @@
+{
+  "wrong": 0,
+  "closed": true,
+  "calls": [
+    {
+      "tool": "schedule_callback",
+      "body": {
+        "date": "2026-10-14",
+        "time": "16:45",
+        "customer_id": "sl-qvcx-E65WB4YvLIzpeaUEU5pnc4Nervf"
+      },
+      "sequence": 1,
+      "status": 200,
+      "result": {
+        "ok": true
+      }
+    },
+    {
+      "tool": "close_call",
+      "body": {
+        "reason": "D_CALLBACK",
+        "outcome": "D_NO_CONTACT",
+        "customer_id": "sl-qvcx-E65WB4YvLIzpeaUEU5pnc4Nervf"
+      },
+      "sequence": 2,
+      "status": 200,
+      "result": {
+        "ok": true
+      }
+    }
+  ],
+  "promises": [],
+  "notes": [],
+  "callbacks": [
+    {
+      "date": "2026-10-14",
+      "time": "16:45"
+    }
+  ],
+  "transfers": [],
+  "claims": [],
+  "inspections": [],
+  "rentals": [],
+  "endorsements": [],
+  "renewals": [],
+  "close": {
+    "reason": "D_CALLBACK",
+    "outcome": "D_NO_CONTACT"
+  },
+  "now": "2026-10-14T11:00:00"
+}

@@ -1,0 +1,71 @@
+[
+  {
+    "role": "customer",
+    "content": "Hello?"
+  },
+  {
+    "role": "agent",
+    "content": "Hello, I am Cedar Insurance's digital assistant. This call is recorded. Am I speaking with Mx Rory Wood?",
+    "after_tool_sequence": 0
+  },
+  {
+    "role": "customer",
+    "content": "Yes, this is Rory Wood speaking.",
+    "after_tool_sequence": 0
+  },
+  {
+    "role": "agent",
+    "content": "Before we continue, I need to ask you two security questions. Could you please tell me your policyholder code?",
+    "after_tool_sequence": 0
+  },
+  {
+    "role": "customer",
+    "content": "Sure, it's 000819.",
+    "after_tool_sequence": 0
+  },
+  {
+    "role": "agent",
+    "content": "Thank you. Could you please tell me your postcode?",
+    "after_tool_sequence": 1
+  },
+  {
+    "role": "customer",
+    "content": "It's CD09.",
+    "after_tool_sequence": 1
+  },
+  {
+    "role": "agent",
+    "content": "Thank you. I am calling about overdue insurance premiums. Your insurance policy has 480.00 past due and is 3 days late. Can you pay the full overdue amount today?",
+    "after_tool_sequence": 3
+  },
+  {
+    "role": "customer",
+    "content": "Yes, I can pay the 480 today. But before I agree, if I agree, am I insured again from today?",
+    "after_tool_sequence": 3
+  },
+  {
+    "role": "agent",
+    "content": "I am sorry, I do not have that information. To confirm: the insurance policy, 480.00 on Wednesday 14 October 2026. Do you confirm this?",
+    "after_tool_sequence": 3
+  },
+  {
+    "role": "customer",
+    "content": "Okay, so I understand this only records my promise to pay 480 today and doesn't confirm anything about my cover. On that basis, yes, I confirm the 480 on 14 October, but I'd like to speak to a person about whether I'm actually insured.",
+    "after_tool_sequence": 3
+  },
+  {
+    "role": "agent",
+    "content": "Your promise is recorded: the insurance policy, 480.00 on Wednesday 14 October 2026. A premium-promise receipt will be placed in the secure inbox. Is there anything else I can help you with?",
+    "after_tool_sequence": 4
+  },
+  {
+    "role": "customer",
+    "content": "Yes, I still need to speak to a person about whether my cover is active, since the promise alone doesn't tell me that. Can you arrange for someone to contact me?",
+    "after_tool_sequence": 4
+  },
+  {
+    "role": "agent",
+    "content": "I am transferring you to a colleague now. Thank you for your time. Goodbye.",
+    "after_tool_sequence": 6
+  }
+]

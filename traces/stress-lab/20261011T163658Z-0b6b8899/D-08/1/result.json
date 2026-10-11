@@ -1,0 +1,92 @@
+{
+  "record_status": "pass",
+  "failures": [],
+  "capacity": {
+    "status": "unknown"
+  },
+  "conversation_status": "fail",
+  "overall_status": "fail",
+  "customer_status": "valid",
+  "judge": {
+    "customer_valid": true,
+    "checks": [
+      {
+        "check": "Bekleyen 600 yazılmaz; itiraz dahil hiçbir add_note yok.",
+        "passed": true,
+        "evidence": "Ledger promises:[] notes:[]; calls are seq1-5 verify/verify/get_account/transfer/close only, no create_promise or add_note"
+      },
+      {
+        "check": "D_PLANS kuyruğu; kapanış D_XFER/D_PLAN.",
+        "passed": true,
+        "evidence": "seq4 transfer_to_agent queue D_PLANS ok:true; seq5 close_call outcome D_XFER reason D_PLAN"
+      },
+      {
+        "check": "opening_and_identity_order",
+        "passed": true,
+        "evidence": "'This call is recorded. Am I speaking with Mx Alex Rowan?' -> 'Yes'; seq1 postcode AB07 then seq2 birth_year '1988', both verified"
+      },
+      {
+        "check": "privacy_no_disclosure_before_verification",
+        "passed": true,
+        "evidence": "Debt first mentioned after seq3: 'I am calling about overdue payments...' after_tool_sequence 3"
+      },
+      {
+        "check": "account_readout_complete",
+        "passed": true,
+        "evidence": "'credit card has 900.00 past due and is 4 days late... personal loan has 600.00 past due and is 4 days late'"
+      },
+      {
+        "check": "dispute_handling_no_persuasion",
+        "passed": false,
+        "evidence": "After 'that credit card isn't mine', agent asked 'Could you pay 900.00 for the credit card on Thursday 15 October 2026?'"
+      },
+      {
+        "check": "date_validity",
+        "passed": true,
+        "evidence": "now 2026-10-14 (Wed); 'Thursday 15 October 2026' is a business day within the 1-14 band deadline"
+      },
+      {
+        "check": "consent_before_write",
+        "passed": true,
+        "evidence": "'Before I confirm, I'd actually like... instalment plan' is not consent; no create_promise in ledger"
+      },
+      {
+        "check": "plan_request_transfer",
+        "passed": true,
+        "evidence": "'new instalment plan instead' -> seq4 D_PLANS ok:true; no hardship stated"
+      },
+      {
+        "check": "honest_statements",
+        "passed": true,
+        "evidence": "No promise/letter/payment success claimed; 'I have noted' wording is loose but no write is asserted"
+      },
+      {
+        "check": "farewell_and_close_last",
+        "passed": true,
+        "evidence": "'Thank you for your time. Goodbye.'; close_call is seq5, the last tool"
+      },
+      {
+        "check": "customer_stability",
+        "passed": true,
+        "evidence": "Customer consistently disputes the card and offers 600 on the loan, then requests a plan, matching the critical replies"
+      },
+      {
+        "check": "branch_records",
+        "passed": true,
+        "evidence": "branch_rules null; no branch required_records apply"
+      }
+    ],
+    "branch_index": null,
+    "branch_evidence": "No branch_rules supplied.",
+    "passed": false
+  },
+  "judge_limitation": "Model review is fallible; inspect quoted evidence. Audio/ASR and overlap are not assessed.",
+  "case_id": "D-08",
+  "engine": "freya",
+  "official": false,
+  "audio_tested": false,
+  "error": null,
+  "freya_call_id": "b99eb89f-d56f-4d28-836d-4bd38ee4dba3",
+  "reported_model_cost_usd": 0.090308,
+  "model_calls": 7
+}

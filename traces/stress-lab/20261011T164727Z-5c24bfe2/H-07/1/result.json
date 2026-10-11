@@ -1,0 +1,86 @@
+{
+  "record_status": "fail",
+  "failures": [
+    "Closing outcome: expected H_PTP, got H_NO_ID",
+    "Closing reason: expected None, got H_FAILED",
+    "promises: expected [{'product_id': 'policy-A', 'amount': '480.00', 'date': '2026-10-15'}], got []"
+  ],
+  "capacity": {
+    "status": "unknown"
+  },
+  "conversation_status": "fail",
+  "overall_status": "fail",
+  "customer_status": "valid",
+  "judge": {
+    "customer_valid": true,
+    "checks": [
+      {
+        "check": "Nokta yok diye sonsuz tekrar veya false refusal yok.",
+        "passed": false,
+        "evidence": "Customer gave the correct code 'zero zero six four one zero'; agent sent words, not '006410' (seq1-2), producing a false NO_ID/FAILED."
+      },
+      {
+        "check": "Onay product/amount/date bağlamını korur; tek write.",
+        "passed": false,
+        "evidence": "No account read or promise read-back occurred; promises:[] and the call closed at seq3 H_NO_ID. Evidence of a context-preserving confirmation is absent."
+      },
+      {
+        "check": "identity_code_normalization",
+        "passed": false,
+        "evidence": "seq1 answer:'zero zero six four one zero' and seq2 answer:'zero, zero, six, four, one, zero' were not normalized to string '006410'."
+      },
+      {
+        "check": "wrong_answer_limit_applied",
+        "passed": false,
+        "evidence": "wrong_answers 2 after two submissions of the correct spoken code; the limit was triggered by agent formatting, not by customer error."
+      },
+      {
+        "check": "opening_disclosure",
+        "passed": true,
+        "evidence": "'Hello, I am Beacon Assurance's digital assistant. This call is recorded. Am I speaking with Mx Alex Rowan?'"
+      },
+      {
+        "check": "privacy_no_pre_verification_disclosure",
+        "passed": true,
+        "evidence": "Agent turns mention no arrears, amount, product or coverage; no get_account call appears in the ledger."
+      },
+      {
+        "check": "consent_before_writes",
+        "passed": true,
+        "evidence": "No create_promise or other write occurred; ledger calls are verify_identity x2 and close_call only."
+      },
+      {
+        "check": "honest_statements_no_invented_contact",
+        "passed": true,
+        "evidence": "'Please contact us through the official contact channel shown on your statement.' No number or URL was invented."
+      },
+      {
+        "check": "customer_boundary_capacity_stability",
+        "passed": true,
+        "evidence": "Customer answered consistently: 'I'm pretty sure it's zero, zero, six, four, one, zero.' This matches card code 006410."
+      },
+      {
+        "check": "close_call_last_with_farewell",
+        "passed": true,
+        "evidence": "'Thank you for your time. Goodbye.' then seq3 close_call H_NO_ID/H_FAILED as the last tool."
+      },
+      {
+        "check": "branch_records",
+        "passed": true,
+        "evidence": "branch_rules null; ledger promises:[], notes:[], transfers:[]. No branch records were required."
+      }
+    ],
+    "branch_index": null,
+    "branch_evidence": "No branch_rules supplied.",
+    "passed": false
+  },
+  "judge_limitation": "Model review is fallible; inspect quoted evidence. Audio/ASR and overlap are not assessed.",
+  "case_id": "H-07",
+  "engine": "freya",
+  "official": false,
+  "audio_tested": false,
+  "error": null,
+  "freya_call_id": "33bb0e7e-f5ab-44d4-b71f-99c5a6ab391b",
+  "reported_model_cost_usd": 0.060352,
+  "model_calls": 4
+}

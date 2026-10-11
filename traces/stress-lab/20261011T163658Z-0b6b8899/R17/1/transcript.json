@@ -1,0 +1,36 @@
+[
+  {
+    "role": "customer",
+    "content": "Hello?"
+  },
+  {
+    "role": "agent",
+    "content": "Hello, I am Alder Credit's digital assistant. This call is recorded. Am I speaking with Mx Blair Linden?",
+    "after_tool_sequence": 0
+  },
+  {
+    "role": "customer",
+    "content": "Yes, this is Blair Linden speaking.",
+    "after_tool_sequence": 0
+  },
+  {
+    "role": "agent",
+    "content": "Before we continue, I need to ask you two security questions. Could you please tell me your postcode?",
+    "after_tool_sequence": 0
+  },
+  {
+    "role": "customer",
+    "content": "It's AB07.",
+    "after_tool_sequence": 0
+  },
+  {
+    "role": "agent",
+    "content": "And the remaining digits?",
+    "after_tool_sequence": 0
+  },
+  {
+    "role": "customer",
+    "content": "I'm not sure what you mean. AB07 is the postcode I'd give you. Is there something else you can check, like my year of birth?",
+    "after_tool_sequence": 0
+  }
+]

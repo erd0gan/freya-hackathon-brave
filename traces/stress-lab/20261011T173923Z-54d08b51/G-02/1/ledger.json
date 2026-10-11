@@ -1,0 +1,153 @@
+{
+  "wrong": 0,
+  "closed": true,
+  "calls": [
+    {
+      "tool": "verify_identity",
+      "body": {
+        "field": "policyholder_code",
+        "answer": "000819",
+        "customer_id": "sl-TqvkT3e4RAH1SmDJlhMNEyCu8RKWZgkI"
+      },
+      "sequence": 1,
+      "status": 200,
+      "result": {
+        "ok": true,
+        "verified": true,
+        "wrong_answers": 0
+      }
+    },
+    {
+      "tool": "verify_identity",
+      "body": {
+        "field": "postcode",
+        "answer": "CD09",
+        "customer_id": "sl-TqvkT3e4RAH1SmDJlhMNEyCu8RKWZgkI"
+      },
+      "sequence": 2,
+      "status": 200,
+      "result": {
+        "ok": true,
+        "verified": true,
+        "wrong_answers": 0
+      }
+    },
+    {
+      "tool": "get_account",
+      "body": {
+        "customer_id": "sl-TqvkT3e4RAH1SmDJlhMNEyCu8RKWZgkI"
+      },
+      "sequence": 3,
+      "status": 200,
+      "result": {
+        "ok": true,
+        "products": [
+          {
+            "product_id": "policy-A",
+            "type": "motor_premium",
+            "display_name": "motor premium",
+            "past_due": 480.0,
+            "floor": 160.0,
+            "days_late": 3
+          },
+          {
+            "product_id": "policy-B",
+            "type": "home_premium",
+            "display_name": "home premium",
+            "past_due": 360.0,
+            "floor": 120.0,
+            "days_late": 4
+          },
+          {
+            "product_id": "policy-C",
+            "type": "health_premium",
+            "display_name": "health premium",
+            "past_due": 720.0,
+            "floor": 240.0,
+            "days_late": 8
+          }
+        ]
+      }
+    },
+    {
+      "tool": "create_promise",
+      "body": {
+        "date": "2026-10-14",
+        "amount": 720.0,
+        "product_id": "policy-C",
+        "customer_id": "sl-TqvkT3e4RAH1SmDJlhMNEyCu8RKWZgkI"
+      },
+      "sequence": 4,
+      "status": 200,
+      "result": {
+        "ok": true
+      }
+    },
+    {
+      "tool": "add_note",
+      "body": {
+        "reason": "G_PAID",
+        "product_id": "policy-A",
+        "customer_id": "sl-TqvkT3e4RAH1SmDJlhMNEyCu8RKWZgkI"
+      },
+      "sequence": 5,
+      "status": 200,
+      "result": {
+        "ok": true
+      }
+    },
+    {
+      "tool": "add_note",
+      "body": {
+        "reason": "G_DISPUTE",
+        "product_id": "policy-B",
+        "customer_id": "sl-TqvkT3e4RAH1SmDJlhMNEyCu8RKWZgkI"
+      },
+      "sequence": 6,
+      "status": 200,
+      "result": {
+        "ok": true
+      }
+    },
+    {
+      "tool": "close_call",
+      "body": {
+        "outcome": "G_PTP",
+        "customer_id": "sl-TqvkT3e4RAH1SmDJlhMNEyCu8RKWZgkI"
+      },
+      "sequence": 7,
+      "status": 200,
+      "result": {
+        "ok": true
+      }
+    }
+  ],
+  "promises": [
+    {
+      "product_id": "policy-C",
+      "amount": "720.00",
+      "date": "2026-10-14"
+    }
+  ],
+  "notes": [
+    {
+      "product_id": "policy-A",
+      "reason": "G_PAID"
+    },
+    {
+      "product_id": "policy-B",
+      "reason": "G_DISPUTE"
+    }
+  ],
+  "callbacks": [],
+  "transfers": [],
+  "claims": [],
+  "inspections": [],
+  "rentals": [],
+  "endorsements": [],
+  "renewals": [],
+  "close": {
+    "outcome": "G_PTP"
+  },
+  "now": "2026-10-14T11:00:00"
+}

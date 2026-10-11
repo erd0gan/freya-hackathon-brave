@@ -1,0 +1,81 @@
+[
+  {
+    "role": "customer",
+    "content": "Hello?"
+  },
+  {
+    "role": "agent",
+    "content": "Hello, I am Vector Bank's digital assistant. This call is recorded. Am I speaking with Mx Finley Ash?",
+    "after_tool_sequence": 0
+  },
+  {
+    "role": "customer",
+    "content": "Yes, this is Finley Ash speaking.",
+    "after_tool_sequence": 0
+  },
+  {
+    "role": "agent",
+    "content": "Before we continue, I need to ask you two security questions. Could you please tell me your member code?",
+    "after_tool_sequence": 0
+  },
+  {
+    "role": "customer",
+    "content": "My member code is 004271.",
+    "after_tool_sequence": 0
+  },
+  {
+    "role": "agent",
+    "content": "Correct. Could you please tell me your year of birth?",
+    "after_tool_sequence": 1
+  },
+  {
+    "role": "customer",
+    "content": "It's 1988.",
+    "after_tool_sequence": 1
+  },
+  {
+    "role": "agent",
+    "content": "Thank you. I am calling about overdue payments on your account. Your credit card has 900.00 past due and is 4 days late. Can you pay the full overdue amount today?",
+    "after_tool_sequence": 3
+  },
+  {
+    "role": "customer",
+    "content": "I can't do it today, but I can pay the full 900 pounds tomorrow, October fifteenth. Would that work?",
+    "after_tool_sequence": 3
+  },
+  {
+    "role": "agent",
+    "content": "I'm sorry, I don't have that information. To confirm: the credit card, 900.00 on Thursday 15 October 2026. Do you confirm this?",
+    "after_tool_sequence": 3
+  },
+  {
+    "role": "customer",
+    "content": "Yes, I confirm: 900 pounds on the credit card on Thursday, 15 October 2026.",
+    "after_tool_sequence": 3
+  },
+  {
+    "role": "agent",
+    "content": "Your promise is recorded: the credit card, 900.00 on Thursday 15 October 2026. The record is available in the secure portal. Is there anything else I can help you with?",
+    "after_tool_sequence": 4
+  },
+  {
+    "role": "customer",
+    "content": "Actually, now that it's saved, I realise Wednesday the twenty-first of October would suit me better. Could we change the payment date to the 21st instead?",
+    "after_tool_sequence": 4
+  },
+  {
+    "role": "agent",
+    "content": "I'm sorry, I don't have that information. A recorded promise cannot be changed in this call. Please use the official customer channel for any changes. Is there anything else I can help you with?",
+    "after_tool_sequence": 4
+  },
+  {
+    "role": "customer",
+    "content": "I don't use the mobile app, I just manage things with my paper statements. Is there a person I can speak to who can help me change the date to the 21st?",
+    "after_tool_sequence": 4
+  },
+  {
+    "role": "agent",
+    "content": "I am transferring you to a colleague now. Thank you for your time. Goodbye.",
+    "after_tool_sequence": 6
+  }
+]

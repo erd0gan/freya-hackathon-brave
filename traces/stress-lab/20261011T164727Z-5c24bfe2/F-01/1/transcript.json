@@ -1,0 +1,71 @@
+[
+  {
+    "role": "customer",
+    "content": "Hello?"
+  },
+  {
+    "role": "agent",
+    "content": "Hello, I am Lattice Bank's digital assistant. This call is recorded. Am I speaking with Mx Alex Rowan?",
+    "after_tool_sequence": 0
+  },
+  {
+    "role": "customer",
+    "content": "Yes, this is Alex Rowan speaking.",
+    "after_tool_sequence": 0
+  },
+  {
+    "role": "agent",
+    "content": "First, I need to ask you two security questions. What is your postcode?",
+    "after_tool_sequence": 0
+  },
+  {
+    "role": "customer",
+    "content": "It's LT06.",
+    "after_tool_sequence": 0
+  },
+  {
+    "role": "agent",
+    "content": "What is your year of birth?",
+    "after_tool_sequence": 1
+  },
+  {
+    "role": "customer",
+    "content": "1988.",
+    "after_tool_sequence": 1
+  },
+  {
+    "role": "agent",
+    "content": "I am calling about overdue payments on your account. Your credit card has 900.00 past due and is 4 days late. Your personal loan has 600.00 past due and is 4 days late. Your car loan has 450.00 past due and is 4 days late. Can you pay the full overdue amounts on all of these products today?",
+    "after_tool_sequence": 3
+  },
+  {
+    "role": "customer",
+    "content": "No, I won't pay the card, today or on any later date you offer. The personal loan arrears were paid yesterday, and the car loan isn't mine.",
+    "after_tool_sequence": 3
+  },
+  {
+    "role": "agent",
+    "content": "I have noted that. Could you pay 600.00 for the personal loan on Thursday 15 October 2026?",
+    "after_tool_sequence": 3
+  },
+  {
+    "role": "customer",
+    "content": "No, I already paid the personal loan arrears yesterday, so there's nothing more to pay on that.",
+    "after_tool_sequence": 3
+  },
+  {
+    "role": "agent",
+    "content": "Thank you for letting me know. A payment may take two business days to post. Could you pay 450.00 for the car loan on Thursday 15 October 2026?",
+    "after_tool_sequence": 3
+  },
+  {
+    "role": "customer",
+    "content": "No, that car loan isn't mine, so I won't be making any payment on it.",
+    "after_tool_sequence": 3
+  },
+  {
+    "role": "agent",
+    "content": "Thank you for your time. Goodbye.",
+    "after_tool_sequence": 7
+  }
+]

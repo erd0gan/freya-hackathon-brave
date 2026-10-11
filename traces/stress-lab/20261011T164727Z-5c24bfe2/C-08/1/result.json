@@ -1,0 +1,21 @@
+{
+  "record_status": "fail",
+  "failures": [
+    "Closing outcome: expected C_PTP, got C_NO_CONTACT",
+    "Closing reason: expected None, got C_UNCLEAR",
+    "promises: expected [{'product_id': 'asset-A', 'amount': '900.00', 'date': '2027-01-03'}], got []"
+  ],
+  "capacity": {
+    "status": "unknown"
+  },
+  "conversation_status": "not_reviewed",
+  "overall_status": "error",
+  "case_id": "C-08",
+  "engine": "freya",
+  "official": false,
+  "audio_tested": false,
+  "error": "LLMError: model call failed after 1 attempts: empty reply: {\"model\": \"claude-opus-5-5\", \"id\": \"msg_011Cfvnt9WTtuS33p8scp7tU\", \"type\": \"message\", \"role\": \"assistant\", \"content\": [], \"container\": null, \"stop_reason\": \"refusal\", \"stop_sequence\": null, \"stop_deta",
+  "freya_call_id": "670d0b22-808e-4c9e-aaba-df78aedc83de",
+  "reported_model_cost_usd": 0.001836,
+  "model_calls": 1
+}

@@ -1,0 +1,91 @@
+[
+  {
+    "role": "customer",
+    "content": "Hello?"
+  },
+  {
+    "role": "agent",
+    "content": "Hello, I am Alder Credit's digital assistant. This call is recorded. Am I speaking with Mx Blair Linden?",
+    "after_tool_sequence": 0
+  },
+  {
+    "role": "customer",
+    "content": "Yes, this is Blair Linden speaking.",
+    "after_tool_sequence": 0
+  },
+  {
+    "role": "agent",
+    "content": "Before we continue, I need to ask two short security questions. What is your postcode?",
+    "after_tool_sequence": 0
+  },
+  {
+    "role": "customer",
+    "content": "It's AB07.",
+    "after_tool_sequence": 0
+  },
+  {
+    "role": "agent",
+    "content": "What is your year of birth?",
+    "after_tool_sequence": 1
+  },
+  {
+    "role": "customer",
+    "content": "1988.",
+    "after_tool_sequence": 1
+  },
+  {
+    "role": "agent",
+    "content": "Thank you. I am calling about overdue payments on your account. Your personal loan has 900.00 past due and is 16 days late. Can you pay the full past-due amount today?",
+    "after_tool_sequence": 3
+  },
+  {
+    "role": "customer",
+    "content": "No, I can't pay anything today, but my salary comes in on October twenty-third, and I can pay the full 900 that day.",
+    "after_tool_sequence": 3
+  },
+  {
+    "role": "agent",
+    "content": "The latest date I can record for the personal loan is Thursday 22 October 2026. Could you pay 900.00 on that day?",
+    "after_tool_sequence": 3
+  },
+  {
+    "role": "customer",
+    "content": "No, I'm sorry. My salary doesn't arrive until the twenty-third, so I won't have any money on the twenty-second, not even a smaller amount. The twenty-third is the earliest I can pay.",
+    "after_tool_sequence": 3
+  },
+  {
+    "role": "agent",
+    "content": "Could you pay 900.00 for the personal loan on Thursday 15 October 2026?",
+    "after_tool_sequence": 3
+  },
+  {
+    "role": "customer",
+    "content": "No, that's even earlier, and as I said, I have nothing available until my salary arrives on the twenty-third. If the twenty-third can't be recorded, then I can't promise a payment on any earlier date.",
+    "after_tool_sequence": 3
+  },
+  {
+    "role": "agent",
+    "content": "Could you pay 300.00 for the personal loan on Thursday 22 October 2026? The remaining balance stays overdue.",
+    "after_tool_sequence": 3
+  },
+  {
+    "role": "customer",
+    "content": "No, I can't pay even 300 on the twenty-second, because there's nothing in my account until my salary lands on the twenty-third. I'm not able to promise any payment before then, so if the twenty-third isn't possible, I'll have to leave it there for now.",
+    "after_tool_sequence": 3
+  },
+  {
+    "role": "agent",
+    "content": "The latest date I can record for the personal loan is Thursday 22 October 2026. Could you pay 300.00 on that day?",
+    "after_tool_sequence": 3
+  },
+  {
+    "role": "customer",
+    "content": "No, the answer's the same: I won't have any money on the twenty-second, so I can't agree to 300 or any amount that day. I can't make a promise today, but I'll be able to pay 900 once my salary arrives on the twenty-third.",
+    "after_tool_sequence": 3
+  },
+  {
+    "role": "agent",
+    "content": "Thank you for your time. Goodbye.",
+    "after_tool_sequence": 4
+  }
+]

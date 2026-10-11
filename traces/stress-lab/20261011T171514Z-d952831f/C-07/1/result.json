@@ -1,0 +1,21 @@
+{
+  "record_status": "fail",
+  "failures": [
+    "Closing outcome: expected C_PTP, got C_NO_PTP",
+    "Closing reason: expected None, got C_REFUSED",
+    "promises: expected [{'product_id': 'asset-A', 'amount': '900.00', 'date': '2026-10-15'}], got []"
+  ],
+  "capacity": {
+    "status": "unknown"
+  },
+  "conversation_status": "not_reviewed",
+  "overall_status": "error",
+  "case_id": "C-07",
+  "engine": "freya",
+  "official": false,
+  "audio_tested": false,
+  "error": "RuntimeError: POST /api/v2/chat/message -> 404: {\"success\":false,\"data\":{\"message\":\"Agent service error\",\"result\":{\"error\":\"Agent service error\"}}}",
+  "freya_call_id": "fb4282f6-1b4c-4ba4-9ccd-603e7b85b479",
+  "reported_model_cost_usd": 0.3828359999999999,
+  "model_calls": 37
+}

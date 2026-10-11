@@ -1,0 +1,91 @@
+[
+  {
+    "role": "customer",
+    "content": "Hello?"
+  },
+  {
+    "role": "agent",
+    "content": "Hello, I am Vector Bank's digital assistant. This call is recorded. Am I speaking with Mx Alex Rowan?",
+    "after_tool_sequence": 0
+  },
+  {
+    "role": "customer",
+    "content": "Yes, this is Alex Rowan speaking.",
+    "after_tool_sequence": 0
+  },
+  {
+    "role": "agent",
+    "content": "Before we continue, I need to ask you two security questions. Could you please tell me your member code?",
+    "after_tool_sequence": 0
+  },
+  {
+    "role": "customer",
+    "content": "Sure, my member code is 004271.",
+    "after_tool_sequence": 0
+  },
+  {
+    "role": "agent",
+    "content": "Correct. Could you please tell me your year of birth?",
+    "after_tool_sequence": 1
+  },
+  {
+    "role": "customer",
+    "content": "It's 1988.",
+    "after_tool_sequence": 1
+  },
+  {
+    "role": "agent",
+    "content": "Thank you. I am calling about overdue payments on your account. Your credit card has 900.00 past due and is 4 days late. Your personal loan has 600.00 past due and is 4 days late. Can you pay the full overdue amount for all of these today?",
+    "after_tool_sequence": 3
+  },
+  {
+    "role": "customer",
+    "content": "Yes, I can pay both full amounts today.",
+    "after_tool_sequence": 3
+  },
+  {
+    "role": "agent",
+    "content": "To confirm: the credit card, 900.00 on Wednesday 14 October 2026; the personal loan, 600.00 on Wednesday 14 October 2026. Do you confirm this?",
+    "after_tool_sequence": 3
+  },
+  {
+    "role": "customer",
+    "content": "Yes, I confirm both: 900.00 for the credit card and 600.00 for the personal loan, today.",
+    "after_tool_sequence": 3
+  },
+  {
+    "role": "agent",
+    "content": "Your promise is recorded: the credit card, 900.00 on Wednesday 14 October 2026. The record is available in the secure portal. I could not record the promise for the personal loan. Is there anything else I can help you with?",
+    "after_tool_sequence": 6
+  },
+  {
+    "role": "customer",
+    "content": "Wait, why couldn't you record the personal loan promise? I still want to pay that 600.00 today, so what do I need to do to get it sorted?",
+    "after_tool_sequence": 6
+  },
+  {
+    "role": "agent",
+    "content": "I'm sorry, I don't have that information. A recorded promise cannot be changed in this call. Please use the official customer channel for any changes. Is there anything else I can help you with?",
+    "after_tool_sequence": 6
+  },
+  {
+    "role": "customer",
+    "content": "Okay, I'll contact the official customer channel about the personal loan payment, since I still intend to pay the 600.00 today. That's all for now, thanks.",
+    "after_tool_sequence": 6
+  },
+  {
+    "role": "agent",
+    "content": "A recorded promise cannot be changed in this call. Please use the official customer channel for any changes. Is there anything else I can help you with?",
+    "after_tool_sequence": 6
+  },
+  {
+    "role": "customer",
+    "content": "No, that's everything, thank you. I'll reach out through the official channel about the personal loan. Goodbye.",
+    "after_tool_sequence": 6
+  },
+  {
+    "role": "agent",
+    "content": "Thank you for your time. Goodbye.",
+    "after_tool_sequence": 8
+  }
+]

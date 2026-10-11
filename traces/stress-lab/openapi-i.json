@@ -1,0 +1,392 @@
+{
+  "openapi": "3.0.3",
+  "info": {
+    "title": "Stress lab I",
+    "version": "1.0.0",
+    "description": "Runnable synthetic fixture service; no real customers or payments."
+  },
+  "paths": {
+    "/verify_policyholder": {
+      "post": {
+        "operationId": "verify_policyholder",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "session_id": {
+                    "type": "string"
+                  },
+                  "policy_number": {
+                    "type": "string"
+                  },
+                  "postcode": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "session_id",
+                  "policy_number",
+                  "postcode"
+                ],
+                "additionalProperties": false
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Business result. ok=false proves no commit; transport loss does not."
+          }
+        }
+      }
+    },
+    "/get_policy": {
+      "post": {
+        "operationId": "get_policy",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "session_id": {
+                    "type": "string"
+                  },
+                  "policy_number": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "session_id",
+                  "policy_number"
+                ],
+                "additionalProperties": false
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Business result. ok=false proves no commit; transport loss does not."
+          }
+        }
+      }
+    },
+    "/find_claim": {
+      "post": {
+        "operationId": "find_claim",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "session_id": {
+                    "type": "string"
+                  },
+                  "policy_id": {
+                    "type": "string"
+                  },
+                  "incident_datetime": {
+                    "type": "string"
+                  },
+                  "location": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "session_id",
+                  "policy_id",
+                  "incident_datetime",
+                  "location"
+                ],
+                "additionalProperties": false
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Business result. ok=false proves no commit; transport loss does not."
+          }
+        }
+      }
+    },
+    "/open_claim": {
+      "post": {
+        "operationId": "open_claim",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "session_id": {
+                    "type": "string"
+                  },
+                  "policy_id": {
+                    "type": "string"
+                  },
+                  "incident_datetime": {
+                    "type": "string"
+                  },
+                  "location": {
+                    "type": "string"
+                  },
+                  "description": {
+                    "type": "string"
+                  },
+                  "anyone_injured": {
+                    "type": "boolean"
+                  },
+                  "request_key": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "session_id",
+                  "policy_id",
+                  "incident_datetime",
+                  "location",
+                  "description",
+                  "anyone_injured",
+                  "request_key"
+                ],
+                "additionalProperties": false
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Business result. ok=false proves no commit; transport loss does not."
+          }
+        }
+      }
+    },
+    "/list_inspection_slots": {
+      "post": {
+        "operationId": "list_inspection_slots",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "session_id": {
+                    "type": "string"
+                  },
+                  "claim_id": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "session_id",
+                  "claim_id"
+                ],
+                "additionalProperties": false
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Business result. ok=false proves no commit; transport loss does not."
+          }
+        }
+      }
+    },
+    "/book_inspection": {
+      "post": {
+        "operationId": "book_inspection",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "session_id": {
+                    "type": "string"
+                  },
+                  "claim_id": {
+                    "type": "string"
+                  },
+                  "slot_id": {
+                    "type": "string"
+                  },
+                  "request_key": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "session_id",
+                  "claim_id",
+                  "slot_id",
+                  "request_key"
+                ],
+                "additionalProperties": false
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Business result. ok=false proves no commit; transport loss does not."
+          }
+        }
+      }
+    },
+    "/arrange_rental": {
+      "post": {
+        "operationId": "arrange_rental",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "session_id": {
+                    "type": "string"
+                  },
+                  "claim_id": {
+                    "type": "string"
+                  },
+                  "request_key": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "session_id",
+                  "claim_id",
+                  "request_key"
+                ],
+                "additionalProperties": false
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Business result. ok=false proves no commit; transport loss does not."
+          }
+        }
+      }
+    },
+    "/get_operation": {
+      "post": {
+        "operationId": "get_operation",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "session_id": {
+                    "type": "string"
+                  },
+                  "request_key": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "session_id",
+                  "request_key"
+                ],
+                "additionalProperties": false
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Business result. ok=false proves no commit; transport loss does not."
+          }
+        }
+      }
+    },
+    "/transfer_to_agent": {
+      "post": {
+        "operationId": "transfer_to_agent",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "session_id": {
+                    "type": "string"
+                  },
+                  "queue": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "session_id",
+                  "queue"
+                ],
+                "additionalProperties": false
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Business result. ok=false proves no commit; transport loss does not."
+          }
+        }
+      }
+    },
+    "/close_call": {
+      "post": {
+        "operationId": "close_call",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "session_id": {
+                    "type": "string"
+                  },
+                  "outcome": {
+                    "type": "string"
+                  },
+                  "detail": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "session_id",
+                  "outcome"
+                ],
+                "additionalProperties": false
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Business result. ok=false proves no commit; transport loss does not."
+          }
+        }
+      }
+    }
+  },
+  "servers": [
+    {
+      "url": "http://127.0.0.1:8765/v1"
+    }
+  ]
+}

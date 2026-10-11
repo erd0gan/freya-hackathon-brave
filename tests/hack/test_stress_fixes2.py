@@ -218,3 +218,93 @@ def test_the_third_party_model_does_not_judge_a_time_itself():
     assert (
         "Never decide yourself whether a day or time" in wf["nodes"]["third_party"]["task_message"]
     )
+
+
+def _now_cfg(base):
+    return {**base, "neg": {**base["neg"], "human_requests_to_transfer": 1}}
+
+
+# F-03 / R28 / D-05 / R03: with a person at once, an explicit request for a person in a message
+# that also says something else (a dispute, a confirmation, a question) was not transferred
+def test_a_person_asked_for_beside_a_confirmation_is_transferred_without_a_write():
+    both = {
+        "kind": "yes",
+        "text": "Yes, I confirm the 420, but could I speak to a person about my cover?",
+    }
+    r = simulate(CASES["PUB-01"], [Y, both], _now_cfg(CFG_A))
+    assert r.vars.get("neg_action") == "transfer", r.says
+    assert promises(r) == []
+
+
+def test_a_person_asked_for_beside_a_dispute_is_transferred():
+    said = {
+        "kind": "dispute",
+        "product": "p1",
+        "text": "That card debt is not mine. Please put me through to a person now.",
+    }
+    r = simulate(CASES["PUB-13"], [said], _now_cfg(CFG))
+    assert r.vars.get("neg_action") == "transfer", r.says
+
+
+def test_a_follow_up_later_is_no_request_for_a_person():
+    # E-07: "could you have someone follow up with me" is no request to be put through now
+    said = {
+        "kind": "question",
+        "question": "yes",
+        "text": "Could you have someone follow up with me about it? Otherwise, that's all.",
+    }
+    r = simulate(CASES["PUB-01"], [said], _now_cfg(CFG_A))
+    assert r.vars.get("neg_action") != "transfer", r.says
+
+
+def test_help_first_briefs_keep_asking_first():
+    said = {"kind": "yes", "text": "Yes, I confirm, but could I speak to a person?"}
+    r = simulate(CASES["PUB-01"], [Y, said], CFG_A)
+    assert r.vars.get("neg_action") != "transfer" or CFG_A["neg"].get(
+        "human_requests_to_transfer", 2
+    ) <= 1
+
+
+# D-03 / R04: a no that repeats the offer's values ("No, I'm not going to be able to pay 300 on
+# the 22nd either") or what the customer has ("No, I can't. The 500 today is all I have") was
+# turned into an agreement to them, read back and asked to confirm
+def test_a_no_that_repeats_the_offer_is_a_no():
+    no = {"kind": "no", "text": "No, I won't be paying that today."}
+    no2 = {"kind": "no", "text": "No, I can't pay it on that day either."}
+    again = {
+        "kind": "no",
+        "amount": "126",
+        "date": "23 October",
+        "text": "No, I'm not going to be able to pay 126 on the 23rd either.",
+    }
+    r = simulate(CASES["PUB-01"], [no, no2, again, BYE], CFG_A)
+    assert not any(s.startswith("To confirm") for s in r.says), r.says
+    assert promises(r) == []
+
+
+def test_a_no_today_with_another_day_is_still_an_offer():
+    said = {
+        "kind": "no",
+        "amount": "420",
+        "date": "Friday",
+        "text": "No, I can't pay today. I can pay 420 on Friday.",
+    }
+    r = simulate(CASES["PUB-01"], [said], CFG_A)
+    assert r.says[1].startswith("To confirm"), r.says
+
+
+def test_zero_for_a_product_keeps_it_out_of_the_read_back():
+    # R04: "Zero on the car loan" after "please take that off" got "Sorry, I did not catch the
+    # amount" and the refused car loan stayed in the read-back
+    split = {
+        "kind": "offer",
+        "amount": "300 and 450",
+        "date": "today",
+        "text": "Three hundred to the credit card and four hundred and fifty to the personal loan today. "
+        "Zero on the car loan.",
+    }
+    no = {"kind": "no", "text": "No, nothing on the car loan."}
+    r = simulate(CASES["PUB-12"], [split, no, no, no], CFG)
+    reads = [s for s in r.says if s.startswith("To confirm") or "To confirm" in s]
+    assert reads, r.says
+    assert all("car loan" not in s for s in reads), r.says

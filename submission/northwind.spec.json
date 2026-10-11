@@ -1,0 +1,276 @@
+{
+ "bank_name": "Northwind Credit",
+ "notes": [
+  "Sources read: mail of 18 Sep 2026, Arrears Handling Policy v4 (effective 1 Jul 2026), memo of 5 Oct 2026 (effective immediately) and the close-out code list. The mail says the policy wins where the mail is vague. The memo overrides the policy and the mail from 5 Oct 2026, so it applies to calls made now.",
+  "Memo item 1 overrides policy 4.2 and 4.4. Stage 2 now has 2 persuasion attempts, not 3. The old attempt 2 (minimum on the attempt-1 date) is dropped. The attempt plan is: full arrears on the 3rd business day after today, then the minimum on the latest promise date.",
+  "Stage 1 has 1 persuasion attempt, so only the first entry of attempt_plan (full arrears on the attempt-1 date) is used for stage 1.",
+  "Memo item 2 adds 2026-10-30 to the company holidays in policy 4.1.",
+  "Memo item 3 overrides the mail: callbacks end at 17:00, not 17:30. The window is 09:00 to 17:00, today or one of the next two business days, after now. If the offered time is outside the window, ask one more time. If it is still outside, close as NO_CONTACT / NO_CALLBACK.",
+  "Days in arrears above 60 are not covered by the policy. Only the two stated stages are defined and no band is invented.",
+  "Policy 4.5 says hardship (illness, bereavement, redundancy) is transferred straight away to HARDSHIP_TEAM with no persuasion and no question first. So hardship = 'transfer'. support_offer is left empty because no offer question is asked.",
+  "Policy 4.6 says a request for a person is transferred at once to SERVICE. So human_requests_to_transfer = 1 and help_first is left empty. A payment-plan request goes to PLANS with close reason PLAN.",
+  "Transfer close reasons come from the code list: XFER with HARDSHIP (hardship team), PLAN (plans team) or AGENT (a person).",
+  "Policy 4.7 says to give up after three failed create_promise calls in total and tell the customer. So promise_attempts = 3 and record_failure = 'continue', with a SYS_ERR note for that product.",
+  "record_failure_queue: the brief is silent and it is unused with 'continue'. It is set to 'human' (SERVICE) as the most literal reading.",
+  "Policy 4.8 says notes are also added when the call is transferred, so notes_on_transfer = true. With no promise, the close reason is the most serious note: DISPUTE, then HARDSHIP, then SYS_ERR, then DECLINED. So no_promise_reason = 'priority'.",
+  "Policy 4.9: close after the customer says twice that they do not want to talk.",
+  "Policy 4.3: offer the minimum (min_due for overdraft and store card, monthly_payment for auto loan) at most once, and say the remaining arrears stay outstanding. That wording is used for rest_overdue.",
+  "Policy 4.4: after a vague date, ask once for the exact day, then propose the latest promise date.",
+  "The brief gives no wording for ai_answer, paid, sympathy, callback_booked, goodbye, no_info, identity_intro or confirming the transfer. Short plain lines were written, based on the brief's own words where possible (for example 'automated assistant' from the opening).",
+  "scam_answer is left empty because the brief is silent.",
+  "The mail says to say nothing about an account before security, but it also requires explaining that security 'protects their account'. The required explanation is kept. 'account' is therefore not in forbidden_before_verify; the agent must still say nothing about the customer's account, money or arrears before security is passed.",
+  "The security questions are postcode (text) and year of birth (year). No full date is asked, so the day/month swap hint should not occur and swap_hint and swap_instruction are left empty.",
+  "date_order: the brief is silent. DMY was chosen because the bank uses UK conventions (postcode) and writes dates day first ('18 September 2026').",
+  "Only full_name is provided as a name variable, so title, first_name and last_name are empty.",
+  "account_name is used as the spoken product name for every product type, as the tool API describes it as 'how to name the account to the customer'.",
+  "An already-paid product gets an add_note with code PAID. The call closes as PAID when the customer says the arrears are already paid."
+ ],
+ "call_variables": {
+  "customer_id": "customer_id",
+  "title": "",
+  "first_name": "",
+  "last_name": "",
+  "full_name": "full_name",
+  "now": "now"
+ },
+ "lines": {
+  "opening": "Good day, this is Northwind Credit's automated assistant, and this call is being monitored.",
+  "who_question": "Is this {{full_name}}?",
+  "ai_answer": "Yes, I am Northwind Credit's automated assistant.",
+  "scam_answer": "",
+  "deceased": "I am very sorry to hear that.",
+  "identity_intro": "First I need to ask you two short security questions.",
+  "identity_why": "These questions protect your account.",
+  "identity_failed": "I could not complete the security check. Please call us back on the number on your statement.",
+  "present_intro": "We are calling about arrears on your account.",
+  "today_question": "Are you able to clear the arrears today?",
+  "multi_today_question": "Are you able to clear all of these today?",
+  "confirm_question": "Is that correct?",
+  "recorded": "A confirmation letter is on its way.",
+  "paid": "Thank you for letting me know. I will make a note of that.",
+  "sympathy": "I am sorry to hear that.",
+  "support_offer": "",
+  "help_first": "",
+  "callback_booked": "Thank you, we will call back then.",
+  "goodbye": "Thank you for your time. Goodbye.",
+  "no_info": "I am sorry, I do not have that information.",
+  "rest_overdue": "The remaining arrears stay outstanding."
+ },
+ "forbidden_before_verify": [
+  "arrears",
+  "money",
+  "debt",
+  "overdue",
+  "owe",
+  "payment",
+  "balance",
+  "overdraft",
+  "store card",
+  "auto loan",
+  "outstanding"
+ ],
+ "identity": {
+  "questions": [
+   {
+    "field": "postcode",
+    "ask": "What is the postcode of your registered address?",
+    "kind": "text"
+   },
+   {
+    "field": "birth_year",
+    "ask": "What is your year of birth?",
+    "kind": "year"
+   }
+  ],
+  "swap_hint": "",
+  "swap_instruction": "",
+  "date_order": "DMY"
+ },
+ "outcomes": {
+  "unclear": [
+   "NO_CONTACT",
+   "UNCLEAR"
+  ],
+  "callback": [
+   "NO_CONTACT",
+   "CALLBACK"
+  ],
+  "no_callback": [
+   "NO_CONTACT",
+   "NO_CALLBACK"
+  ],
+  "wrong_number": [
+   "NO_CONTACT",
+   "WRONG_NUMBER"
+  ],
+  "deceased": [
+   "NO_CONTACT",
+   "DECEASED"
+  ],
+  "failed": [
+   "NO_ID",
+   "FAILED"
+  ],
+  "declined": [
+   "NO_ID",
+   "REFUSED"
+  ]
+ },
+ "callback": {
+  "start": "09:00",
+  "end": "17:00",
+  "include_today": true,
+  "business_days_ahead": 2,
+  "business_days_only": true,
+  "reasks": 1
+ },
+ "calendar": {
+  "holidays": [
+   "2026-10-12",
+   "2026-10-30",
+   "2026-11-02",
+   "2026-12-25"
+  ],
+  "workdays": [
+   0,
+   1,
+   2,
+   3,
+   4
+  ]
+ },
+ "bands": [
+  {
+   "name": "stage 1",
+   "min_days_late": 1,
+   "max_days_late": 14,
+   "deadline_days": 10,
+   "deadline_unit": "business",
+   "attempts": 1
+  },
+  {
+   "name": "stage 2",
+   "min_days_late": 15,
+   "max_days_late": 60,
+   "deadline_days": 5,
+   "deadline_unit": "business",
+   "attempts": 2
+  }
+ ],
+ "attempt1": {
+  "rule": "nth_business_day",
+  "n": 3
+ },
+ "attempt_plan": [
+  {
+   "amount": "full",
+   "date": "attempt1"
+  },
+  {
+   "amount": "floor",
+   "date": "deadline"
+  }
+ ],
+ "tool_fields": {
+  "_": "the request field name of each role, per tool, exactly as in the tool API",
+  "verify_identity": {
+   "customer_id": "customer_id",
+   "field": "field",
+   "answer": "answer",
+   "response": {
+    "verified": "verified",
+    "all_verified": "all_verified",
+    "wrong_answers_left": "wrong_answers_left",
+    "hint": "hint"
+   }
+  },
+  "get_account": {
+   "customer_id": "customer_id"
+  },
+  "create_promise": {
+   "customer_id": "customer_id",
+   "product_id": "account_ref",
+   "amount": "amount",
+   "date": "pay_date"
+  },
+  "add_note": {
+   "customer_id": "customer_id",
+   "product_id": "account_ref",
+   "reason": "code"
+  },
+  "schedule_callback": {
+   "customer_id": "customer_id",
+   "date": "date",
+   "time": "time"
+  },
+  "transfer_to_agent": {
+   "customer_id": "customer_id",
+   "queue": "team"
+  },
+  "close_call": {
+   "customer_id": "customer_id",
+   "outcome": "result",
+   "reason": "reason"
+  }
+ },
+ "product_fields": {
+  "list": "accounts",
+  "product_id": "account_ref",
+  "type": "product",
+  "past_due": "arrears",
+  "days_late": "days_in_arrears"
+ },
+ "floor_field": {
+  "overdraft": "min_due",
+  "store_card": "min_due",
+  "auto_loan": "monthly_payment"
+ },
+ "product_names": {
+  "overdraft": "{account_name}",
+  "store_card": "{account_name}",
+  "auto_loan": "{account_name}"
+ },
+ "neg": {
+  "outcomes": {
+   "promise": "PTP",
+   "paid": "PAID",
+   "transferred": "XFER",
+   "no_promise": "NO_PTP"
+  },
+  "reasons": {
+   "refused": "DECLINED",
+   "hardship": "HARDSHIP",
+   "dispute": "DISPUTE",
+   "service_error": "SYS_ERR",
+   "paid": "PAID"
+  },
+  "queues": {
+   "restructuring": "PLANS",
+   "human": "SERVICE",
+   "support": "HARDSHIP_TEAM"
+  },
+  "transfer_reasons": {
+   "restructuring": "PLAN",
+   "human": "AGENT",
+   "support": "HARDSHIP"
+  },
+  "notes": true,
+  "human_requests_to_transfer": 1,
+  "stop_requests_to_close": 2,
+  "promise_attempts": 3,
+  "record_failure": "continue",
+  "record_failure_queue": "human",
+  "hardship": "transfer",
+  "hardship_queue": "support",
+  "no_promise_reason": "priority",
+  "reason_priority": [
+   "dispute",
+   "hardship",
+   "service_error",
+   "refused"
+  ],
+  "notes_on_transfer": true,
+  "vague_date_asks": 1,
+  "floor_offers": 1
+ }
+}

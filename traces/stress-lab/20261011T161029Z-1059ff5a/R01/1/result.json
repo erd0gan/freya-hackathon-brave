@@ -1,0 +1,99 @@
+{
+  "record_status": "requires_branch_review",
+  "failures": [],
+  "capacity": {
+    "status": "within_capacity",
+    "total": "0.00",
+    "reasons": []
+  },
+  "conversation_status": "pass",
+  "overall_status": "pass",
+  "customer_status": "valid",
+  "judge": {
+    "customer_valid": true,
+    "checks": [
+      {
+        "check": "Agent may handle this successfully without collecting a promise.",
+        "passed": true,
+        "evidence": "Ledger promises:[]; seq4 add_note G_REFUSED; seq5 close_call G_NO_PTP/G_REFUSED after customer: 'I'll have to decline for now'"
+      },
+      {
+        "check": "Simulator acceptance of 160 invalidates affordability; agent coercion still logged separately.",
+        "passed": true,
+        "evidence": "Customer never accepted 160: 'No, sorry, I won't have 160 by tomorrow either.' Agent made one permitted attempt only, no coercion."
+      },
+      {
+        "check": "opening_and_identity_confirmation",
+        "passed": true,
+        "evidence": "Agent: 'Hello, I am Cedar Insurance's digital assistant. This call is recorded.' Customer: 'Yes, this is Robin Hale speaking.'"
+      },
+      {
+        "check": "privacy_no_disclosure_before_verification",
+        "passed": true,
+        "evidence": "No product/amount was mentioned until after seq2 verified=true; first disclosure came at after_tool_sequence 3: 'past due amount of 480.0'"
+      },
+      {
+        "check": "identity_sequence_and_exact_answers",
+        "passed": true,
+        "evidence": "seq1 policyholder_code '000819' (leading zeroes kept), seq2 postcode 'CD09', both verified=true; get_account seq3 after both"
+      },
+      {
+        "check": "account_readout_before_payment_ask",
+        "passed": true,
+        "evidence": "'insurance policy, which has a past due amount of 480.0 and is 8 days late. Are you able to pay the full 480.0 today?'"
+      },
+      {
+        "check": "deadline_and_attempt_rules",
+        "passed": true,
+        "evidence": "days_late 8 gives a deadline of Fri 16 Oct. Floor 160 today answered a counteroffer; the single attempt was 160 on 15 Oct (full explicitly unaffordable)."
+      },
+      {
+        "check": "below_floor_and_balance_explanation",
+        "passed": true,
+        "evidence": "'The lowest amount I can arrange is 160.0, so 120 would be below that... the rest of the balance would remain overdue.'"
+      },
+      {
+        "check": "consent_before_writes",
+        "passed": true,
+        "evidence": "No create_promise calls in the ledger; customer never gave transaction consent: 'I'll have to decline for now'"
+      },
+      {
+        "check": "honest_success_statements",
+        "passed": true,
+        "evidence": "Agent said 'I've noted...' only after seq4 add_note ok=true; no receipt line and no claim that money moved"
+      },
+      {
+        "check": "no_invented_coverage_or_contacts",
+        "passed": true,
+        "evidence": "'please use the official contact channel on your statement' - no number or URL invented; no coverage status stated"
+      },
+      {
+        "check": "customer_boundary_capacity_stability",
+        "passed": true,
+        "evidence": "Customer kept to 120 throughout: 'I've only got 120 until the twentieth'; no job loss, illness or bereavement was invented"
+      },
+      {
+        "check": "farewell_and_single_close_last",
+        "passed": true,
+        "evidence": "'Thank you for your time, Robin... Goodbye.' then seq5 close_call as the last tool"
+      },
+      {
+        "check": "branch_records",
+        "passed": true,
+        "evidence": "promises:[]; notes:[{pol-r1,G_REFUSED}] (single note); close {G_NO_PTP,G_REFUSED}; transfers:[]"
+      }
+    ],
+    "branch_index": 0,
+    "branch_evidence": "Verified; customer kept the 120 budget and declined: 'No, sorry, I won't have 160 by tomorrow either... I'll have to decline for now'",
+    "passed": true
+  },
+  "judge_limitation": "Model review is fallible; inspect quoted evidence. Audio/ASR and overlap are not assessed.",
+  "case_id": "R01",
+  "engine": "baseline",
+  "official": false,
+  "audio_tested": false,
+  "error": null,
+  "freya_call_id": null,
+  "reported_model_cost_usd": 0.5481880000000001,
+  "model_calls": 20
+}

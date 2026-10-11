@@ -588,3 +588,22 @@ def test_a_change_at_a_two_promise_readback_is_still_a_change():
         change = {"kind": "offer", "date": "the 23rd", "text": said}
         says, _ = engine_call(CASES["PUB-13"], [BOTH_30, change], CFG)
         assert "Your promise is recorded" not in says[2], (said, says)
+
+
+def _with_holiday(cfg, day="2026-10-16"):
+    return changed(cfg, lambda c: c.update(holidays=[*list(c.get("holidays") or []), day]))
+
+
+# stress C-01 on Freya, 11 Oct: "both on Sunday the 18th" (a holiday) moved the card only,
+# called the holiday "not a business day" and the loan was asked again and again
+def test_one_day_for_all_on_a_holiday_moves_every_product_in_one_readback():
+    both = {"kind": "offer", "date": "Friday the 16th", "all": True, "text": "Both on Friday."}
+    says, led = engine_call(CASES["PUB-13"], [both, Y, BYE], _with_holiday(CFG))
+    assert says[1].count("Monday 19 October 2026, the next business day") == 2, says
+    assert led_promises(led) == [("p1", 300.0, "2026-10-19"), ("p2", 900.0, "2026-10-19")]
+
+
+def test_a_holiday_is_called_a_holiday():
+    fri = {"kind": "offer", "date": "Friday the 16th", "text": "Friday the 16th."}
+    says, _ = engine_call(CASES["PUB-10"], [fri], _with_holiday(CFG_A))
+    assert says[1].startswith("Friday 16 October 2026 is a holiday."), says

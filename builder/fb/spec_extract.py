@@ -639,9 +639,11 @@ Semantic reasons/outcomes map to the exact enum values of the tool API."""
 PROMPT = """You turn a bank's brief into a JSON specification for a debt-collection phone agent.
 The brief may be a clean specification or raw bank material, possibly several documents (mails,
 a policy or analysis, announcements that change the policy, a Q&A, a code list, a service
-contract), in any language. Read ALL of it. When two sources disagree, the later or explicitly
-overriding one wins; a draft or an unapproved text never wins. Record each such decision in
-"notes".
+contract), in any language. Read ALL of it. The main policy or analysis document is the base;
+an approved announcement changes it (from its effective date, see below); a Q&A answer or a
+mail fills in what the policy leaves open and overrides it only where it says so. Otherwise,
+when two sources disagree, the later or explicitly overriding one wins; a draft or an
+unapproved text never wins. Record each such decision in "notes".
 
 Dates: documents may carry announcements that change a value from an effective date. The date
 of a call is only known when the call is made (the variable `now`); it is not today and you
@@ -1289,7 +1291,9 @@ def responses(
     for b in spec.get("bands") or []:
         dff = b.get("deadline_from_field") if isinstance(b, dict) else None
         if isinstance(dff, str) and dff.strip() and dff.strip() not in items:
-            bad.append(f"band {b.get('name')!r}: deadline_from_field {dff!r} is not a field {where}")
+            bad.append(
+                f"band {b.get('name')!r}: deadline_from_field {dff!r} is not a field {where}"
+            )
     fr = spec.get("floor_rule") if isinstance(spec.get("floor_rule"), dict) else {}
     for k in ("field", "percent_of"):
         if fr.get(k) and str(fr[k]) not in items:
@@ -2129,6 +2133,7 @@ class _Docs:
             cell = cells[col] if 0 <= col < len(cells) else line
             hcell = hcells[col] if 0 <= col < len(hcells) else header
             return f"{hcell} {cell} {head}"
+
         # the block: one numbered rule or top-level bullet with its continuation lines, or one
         # paragraph (consecutive rules are separate blocks: 'three' in the identity rule is
         # not about the attempts of the next one). A heading is a block of its own: it says
@@ -2922,7 +2927,8 @@ def to_generator(spec: dict[str, Any]) -> dict[str, Any]:
     )
     english = {**ENGINE_LINES, **langpack.engine_lines(langpack.DEFAULT_LANGUAGE)}
     said = {
-        k: str(lines.get(k) or "").strip() or own.get(k) or tx.get(k) or english[k] for k in english
+        k: str(lines.get(k) or "").strip() or own.get(k) or tx.get(k) or english.get(k) or ""
+        for k in {**english, **own}  # a key only the call's pack has is set too
     }
     # a line equal to the engine's own default (its English words, which the English pack
     # holds) is left out: the code nodes say it anyway, and every byte of CFG is code-node

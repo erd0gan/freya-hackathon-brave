@@ -1,0 +1,106 @@
+[
+  {
+    "role": "customer",
+    "content": "Hello?"
+  },
+  {
+    "role": "agent",
+    "content": "Hello, I am Lattice Bank's digital assistant. This call is recorded. Am I speaking with Mx Taylor Reed?",
+    "after_tool_sequence": 0
+  },
+  {
+    "role": "customer",
+    "content": "Yes, this is Taylor Reed speaking.",
+    "after_tool_sequence": 0
+  },
+  {
+    "role": "agent",
+    "content": "Thank you, Mx Reed. Before we continue, I need to verify your identity. Could you please tell me your postcode?",
+    "after_tool_sequence": 0
+  },
+  {
+    "role": "customer",
+    "content": "It's LT06.",
+    "after_tool_sequence": 0
+  },
+  {
+    "role": "agent",
+    "content": "Thank you. And could you please tell me your year of birth?",
+    "after_tool_sequence": 1
+  },
+  {
+    "role": "customer",
+    "content": "It's 1988.",
+    "after_tool_sequence": 1
+  },
+  {
+    "role": "agent",
+    "content": "Thank you, you're verified. I'm calling about overdue amounts on three of your accounts. First, a car loan with 900 pounds past due, 4 days late. Second, a personal loan with 600 pounds past due, 4 days late. Third, another car loan with 450 pounds past due, also 4 days late. That's 1,950 in total. Are you able to pay the full 1,950 today?",
+    "after_tool_sequence": 3
+  },
+  {
+    "role": "customer",
+    "content": "No, I can't pay that today; I have five hundred pounds altogether, not per account. Also, I don't have a second car loan. I thought one of those was my card?",
+    "after_tool_sequence": 3
+  },
+  {
+    "role": "agent",
+    "content": "I understand. On your question: our records list both of those accounts as car loans, the first with 900 overdue and the third with 450 overdue. I'm not able to see anything showing either as a card, and I don't want to guess. If you believe one of them isn't yours, please tell me which one and I'll record it as disputed. As for the 500 you have available, I can't split it automatically. Could you tell me how much you'd like to put toward each account, and on which date?",
+    "after_tool_sequence": 3
+  },
+  {
+    "role": "customer",
+    "content": "Today, I'd put 200 on the personal loan and 300 on my credit card, with nothing going to the car loan. I'm not sure which of those two accounts you think is my card, so please check before we put the 300 anywhere.",
+    "after_tool_sequence": 3
+  },
+  {
+    "role": "agent",
+    "content": "Thank you. 200 pounds today on the personal loan is noted. On the 300, I've checked again: our records show both of those accounts as car loans, and nothing identifies either one as a credit card, so I can't pick one for you. Did you mean the car loan with 900 pounds overdue, or the one with 450 pounds overdue? If you don't recognise one of them at all, please tell me and I'll record it as disputed.",
+    "after_tool_sequence": 3
+  },
+  {
+    "role": "customer",
+    "content": "I honestly don't know which one is meant to be my card, because I only have one car loan, and I don't want that 300 going onto a car loan by mistake. Please note that I don't recognise having a second car loan, and let's hold off on the 300 until that's sorted out. The 200 to the personal loan can still go ahead today.",
+    "after_tool_sequence": 3
+  },
+  {
+    "role": "agent",
+    "content": "Understood, I won't put the 300 anywhere, and we'll handle the 200 on the personal loan in a moment. To record the dispute on the right account, I need to know which one you don't recognise. Do you recognise either amount as your actual car loan, the one with 900 pounds overdue or the one with 450 pounds overdue?",
+    "after_tool_sequence": 3
+  },
+  {
+    "role": "customer",
+    "content": "I'm honestly not sure which of those amounts is my real car loan; I don't have the figures in front of me. Can you note that I don't recognise having two car loans and look into both, rather than me guessing which one?",
+    "after_tool_sequence": 3
+  },
+  {
+    "role": "agent",
+    "content": "Of course. I'll record both car loans as disputed so they can be looked into, and no promise will be made on either of them today. Please also check your statement or contact us through its official channel if you find more details. Now, the personal loan: you'd pay 200 pounds today, Wednesday 14 October 2026. The remaining 400 pounds on that loan would still be overdue. Shall I record that promise of 200 pounds on the personal loan for today? Please say yes to confirm.",
+    "after_tool_sequence": 3
+  },
+  {
+    "role": "customer",
+    "content": "Yes, I confirm 200 pounds on the personal loan today, and please make sure both car loans are noted as disputed with nothing going on them.",
+    "after_tool_sequence": 3
+  },
+  {
+    "role": "agent",
+    "content": "Your promise has been saved in your customer portal. That's 200 pounds on the personal loan for today, Wednesday 14 October. No money has been moved by this call. I'll now record both car loans as disputed.",
+    "after_tool_sequence": 4
+  },
+  {
+    "role": "customer",
+    "content": "Thank you, that's right: just the 200 on the personal loan today. Once you've looked into the two car loans and found my card, I'd still like the 300 to go to it, but nothing to any car loan.",
+    "after_tool_sequence": 4
+  },
+  {
+    "role": "agent",
+    "content": "Both car loans are now noted as disputed, with nothing promised on either. I can't set up the 300 pounds today or promise how it will be applied later, so once the dispute is looked into, please use the official contact channel on your statement to arrange that payment. Your 200 pound promise on the personal loan for today is saved. Thank you for your time, Mx Reed. Goodbye.",
+    "after_tool_sequence": 6
+  },
+  {
+    "role": "customer",
+    "content": "Okay, thank you. I'll check my statement and get in touch about the 300 once the car loans have been looked into. Goodbye.",
+    "after_tool_sequence": 6
+  }
+]
