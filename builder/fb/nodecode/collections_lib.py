@@ -50,7 +50,22 @@ def next_business_day_on_or_after(d, cfg):
     return d
 
 
+def count_or(value, default):
+    """A whole number >= 0 from a policy value; `default` only when it is missing (None or
+    ''). 0 is a real value: `x or 1` would turn it into 1."""
+    if value is None or str(value).strip() == "":
+        return default
+    try:
+        return max(0, int(float(value)))
+    except Exception:
+        return default
+
+
 def nth_business_day_after(today, n, cfg):
+    """The Nth business day after today; N = 0 is today, or the next business day when today
+    is not one (a deadline or a promise day is always a business day)."""
+    if n <= 0:
+        return next_business_day_on_or_after(today, cfg)
     d = today
     count = 0
     for _ in range(400):
@@ -72,10 +87,14 @@ def prev_business_day_on_or_before(d, cfg):
 
 def deadline_for(today, band, cfg):
     """Band deadline: the Nth business day after today (`deadline_unit` "business", default),
-    or N calendar days after today moved back to a business day ("calendar")."""
-    n = int(band.get("deadline_business_days") or band.get("deadline_days") or 0)
+    or N calendar days after today moved back to a business day ("calendar"). 0 means today
+    (the next business day when today is not one); a deadline is never before today."""
+    n = count_or(band.get("deadline_business_days"), None)
+    if n is None:
+        n = count_or(band.get("deadline_days"), 0)
     if str(band.get("deadline_unit") or "business") == "calendar":
-        return prev_business_day_on_or_before(today + datetime.timedelta(days=n), cfg)
+        d = prev_business_day_on_or_before(today + datetime.timedelta(days=n), cfg)
+        return d if d >= today else next_business_day_on_or_after(today, cfg)
     return nth_business_day_after(today, n, cfg)
 
 
@@ -143,14 +162,14 @@ def calendar_facts(now, cfg):
     cb = cfg.get("callback") or {}
     start = str(cb.get("start") or "10:00")
     end = str(cb.get("end") or "19:00")
-    # CFG["callback"]: include_today (default true), business_days_ahead (default 1),
-    # business_days_only (default true: a callback day must be a business day).
+    # CFG["callback"]: include_today (default true), business_days_ahead (default 1; 0 = only
+    # today), business_days_only (default true: a callback day must be a business day).
     days = []
     bd_only = cb.get("business_days_only", True) is not False
     if cb.get("include_today", True) is not False and out["now_time"] < end:
         if is_business_day(today, cfg) or not bd_only:
             days.append(("today", today, max(start, out["now_time"])))
-    for n in range(1, int(cb.get("business_days_ahead") or 1) + 1):
+    for n in range(1, count_or(cb.get("business_days_ahead"), 1) + 1):
         nb = (
             nth_business_day_after(today, n, cfg) if bd_only else today + datetime.timedelta(days=n)
         )

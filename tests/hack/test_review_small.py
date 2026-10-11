@@ -1,5 +1,7 @@
 """Reviewer findings: spoken decimals, callback corrections, policy zero values."""
 
+import datetime
+
 from fb.nodecode import bodies
 from fb.nodecode.embed import namespace
 from test_fixes import run
@@ -79,3 +81,49 @@ def test_callback_today_past_time_keeps_today():
     assert (v["cb_pending_date"], v["cb_pending_time"]) == ("2026-10-14", "")
     v = cb_at("2026-10-14T15:00", ("today", "eleven"), ("", "five pm"))
     assert (v["cb_state"], v["cb_date"], v["cb_time"]) == ("ok", "2026-10-14", "17:00")
+
+
+# ---- 3. policy zero values: 0 is a value, not 'missing'
+TODAY = datetime.date(2026, 10, 14)  # a Wednesday
+BRIEF_A = {
+    "holidays": ["2026-10-26", "2026-11-11", "2026-11-26", "2026-12-25", "2027-01-01"],
+    "callback": {"start": "10:00", "end": "19:00"},
+}
+
+
+def deadline(today, band):
+    return NS["deadline_for"](today, band, BRIEF_A).isoformat()
+
+
+def test_deadline_zero_is_today():
+    assert deadline(TODAY, {"deadline_business_days": 0, "deadline_days": 0}) == "2026-10-14"
+    assert deadline(TODAY, {"deadline_days": 0}) == "2026-10-14"
+    # 0 wins over a second key; it is not read as 'missing'
+    assert deadline(TODAY, {"deadline_business_days": 0, "deadline_days": 5}) == "2026-10-14"
+    # not a business day today: the next one (Saturday -> Monday, holiday Monday -> Tuesday)
+    assert deadline(datetime.date(2026, 10, 17), {"deadline_days": 0}) == "2026-10-19"
+    assert deadline(datetime.date(2026, 10, 26), {"deadline_days": 0}) == "2026-10-27"
+    calendar0 = {"deadline_days": 0, "deadline_unit": "calendar"}
+    assert deadline(TODAY, calendar0) == "2026-10-14"
+    # a calendar deadline is never before today (Saturday + 1 day = Sunday, back to Friday)
+    calendar1 = {"deadline_days": 1, "deadline_unit": "calendar"}
+    assert deadline(datetime.date(2026, 10, 17), calendar1) == "2026-10-19"
+
+
+def test_brief_a_deadlines_unchanged():
+    assert deadline(TODAY, {"deadline_business_days": 12, "deadline_days": 12}) == "2026-11-02"
+    assert deadline(TODAY, {"deadline_business_days": 7, "deadline_days": 7}) == "2026-10-23"
+    assert deadline(TODAY, {"deadline_days": 7}) == "2026-10-23"
+
+
+def callback_days(**cb):
+    cfg = {**BRIEF_A, "callback": {"start": "10:00", "end": "19:00", **cb}}
+    return NS["calendar_facts"]("2026-10-14T11:00", cfg)["callback_days"]
+
+
+def test_callback_business_days_ahead_zero_is_only_today():
+    assert callback_days(business_days_ahead=0) == "2026-10-14"
+    assert callback_days() == "2026-10-14,2026-10-15"
+    assert callback_days(business_days_ahead=None) == "2026-10-14,2026-10-15"
+    assert callback_days(business_days_ahead="") == "2026-10-14,2026-10-15"
+    assert callback_days(business_days_ahead=2) == "2026-10-14,2026-10-15,2026-10-16"
