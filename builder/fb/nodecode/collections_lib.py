@@ -238,9 +238,18 @@ def load_products(raw, key="products"):
     return []
 
 
+def to_float(x):
+    """1250, '1250.5', '1,250.00', '£1,250.00' -> float; raises on anything else (a European
+    '1.250,00' too, it is not guessed)."""
+    s = str(x).strip()
+    if re.search(r"\.\d{3},", s):
+        raise ValueError(s)
+    return float(re.sub(r"^[£€$]|^(?:gbp|eur|usd)\s*|,(?=\d{3}\b)", "", s, flags=re.I))
+
+
 def money(x):
     try:
-        return "%.2f" % float(x)
+        return "%.2f" % to_float(x)
     except Exception:
         return str(x)
 
@@ -467,7 +476,7 @@ def find_products(v, cfg=None):
         for f in money_fields:
             if f in p:
                 try:  # noqa: SIM105  (the sandbox's module list is not documented)
-                    p[f] = float(p[f])
+                    p[f] = to_float(p[f])
                 except Exception:
                     pass
         out.append(p)

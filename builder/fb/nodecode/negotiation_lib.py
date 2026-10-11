@@ -118,11 +118,11 @@ def new_state(pf, neg, now):
     for k in range(1, n + 1):
         key = "p" + str(k)
         try:
-            full = float(pf.get(key + "_past_due") or 0)
+            full = to_float(pf.get(key + "_past_due") or 0)  # '1,250.00', '£1,250.00' too
         except Exception:
             full = 0.0
         try:
-            floor = float(pf.get(key + "_floor") or 0) or full
+            floor = to_float(pf.get(key + "_floor") or 0) or full
         except Exception:
             floor = full
         try:
@@ -275,7 +275,7 @@ def _rest(neg):
 
 def _num(x):
     try:
-        return float(x)
+        return to_float(x)
     except Exception:
         return 0.0
 
@@ -331,7 +331,7 @@ def _invalid_agreed(st, now, cfg, cal):
         if ok_amt and not why:
             continue
         amt = q["full"] if amt is None else min(max(float(amt), q["floor"]), q["full"])
-        return j, round(amt, 2), d
+        return j, _cents(amt), d
     return None
 
 
@@ -409,9 +409,14 @@ def _flat_refusal(st, k, neg, cal):
     return None
 
 
+def _cents(x):
+    # half up: round(2.675, 2) is 2.67
+    return int(float(x) * 100 + 0.500001) / 100.0
+
+
 def _agree(p, amount, date, own_deadline=False):
     p["status"] = "agreed"
-    p["amount"] = round(float(amount), 2)
+    p["amount"] = _cents(amount)
     p["date"] = date
     p["offer"] = None
     p["pending_amount"] = None
@@ -462,10 +467,17 @@ def _apply_offer(st, k, amount, date_iso, date_kind, neg, cal, now, cfg, all_pro
             + _rest(neg)
         )
     if not date_iso:
-        if date_kind == "vague":
-            if p["vague_asked"] < _pol(neg, "vague_date_asks"):
-                p["vague_asked"] += 1
+        vague = date_kind == "vague"
+        if not vague and (p.get("offer") or {}).get("date"):
+            date_iso = p["offer"]["date"]
+        else:
+            # rule 21; then the deadline, so no day question loops
+            key = "vague_asked" if vague else "day_asks"
+            if int(p.get(key) or 0) < (_pol(neg, "vague_date_asks") if vague else 2):
+                p[key] = int(p.get(key) or 0) + 1
                 p["pending_amount"] = amount
+                if not vague:
+                    return "On which day can you pay " + _m(amount) + "?"
                 # "both next week": the exact day that answers this is for all of them too
                 st["vague_all"] = len(targets) > 1
                 return _line(neg, "vague_ask", "On which exact day will you pay?")
@@ -477,11 +489,6 @@ def _apply_offer(st, k, amount, date_iso, date_kind, neg, cal, now, cfg, all_pro
                 + _m(amount)
                 + " on that day?"
             )
-        if p.get("offer") and p["offer"].get("date"):
-            date_iso = p["offer"]["date"]
-        else:
-            p["pending_amount"] = amount
-            return "On which day can you pay " + _m(amount) + "?"
     # Every product the day is for is checked first; a counter-offer for one of them must not
     # drop the day for the others (review: "both on the 26th" lost the loan's own date).
     said = []
@@ -909,6 +916,11 @@ def step(st, r, neg, cal, now, cfg):
             st["phase"] = "offer"
     say = None
     pk = st["p"][k]
+    if r.get("amount_is"):
+        r["amount"] = pk[r["amount_is"]]  # 'the minimum' / 'all of it'
+    ad = st.pop("amount_date", "")
+    if r.get("amount") is not None and not r.get("date") and ad:
+        r["date"] = ad  # said with the amount asked again
     if r.get("amount") is not None and r["amount"] < pk["floor"] - 0.005 and r.get("amount_text"):
         # "three fifty" for a 420 debt with a 126 floor means 350, not 3.50
         alt = parse_amount(r["amount_text"], pk["floor"], pk["full"])
@@ -1202,6 +1214,15 @@ def step(st, r, neg, cal, now, cfg):
     # ask_today or offer
     p = st["p"][k]
     multi = len(st["p"]) > 1
+    if r.get("amount_bad") and kind in ("offer", "vague"):
+        # asked again, never defaulted; the third time a non-answer (A30)
+        st["amount_asks"] = int(st.get("amount_asks") or 0) + 1
+        if st["amount_asks"] > 2:
+            kind = "evasive"
+        else:
+            st["amount_date"] = r.get("date") or ""
+            st["say"] = st["last_ask"] = "Sorry, how much can you pay?"
+            return st
     if kind == "yes":
         if phase == "ask_today":
             only = _yes_products(st, r, ("open",))
@@ -1452,12 +1473,21 @@ ABOUT_WORDS = re.compile(
     r"\bwhy (do|would) you (need|want)\b|\bwho (is this|are you)\b",
     re.I,
 )
-# Words of a number in an amount text.
+# Words of a number or a share in an amount text: one we cannot read is asked again.
 AMOUNT_WORDS = re.compile(
     r"\d|\b(one|two|three|four|five|six|seven|eight|nine|ten|eleven|twelve|twenty|thirty|"
-    r"forty|fifty|sixty|seventy|eighty|ninety|hundred|thousand|grand)\b",
+    r"forty|fifty|sixty|seventy|eighty|ninety|hundred|thousand|grand|half|quarter|third|"
+    r"percent|minimum|lowest|least|full|whole)\b",
     re.I,
 )
+# The whole amount text names the floor (group 1) or the full amount (group 2).
+AMOUNT_IS = re.compile(
+    r"(?:just |only )?(?:(?:the )?(minimum|lowest|least)(?: payment| amount| i can(?: pay)?)?"
+    r"|(all of it|everything|in full|all|(?:the )?(?:full|whole)(?: amount| thing| lot)?))",
+    re.I,
+)
+# A day text that points at the day on the table ('that day', 'then'), not a new day.
+SAME_DAY = re.compile(r"(?:on |by )?(?:that|then|the same|same|it)(?: day| date| one)?", re.I)
 END_MARK = re.compile(r"[.!?…\"')\]]\s*$")
 
 
@@ -1472,12 +1502,20 @@ def read_reply(v, today):
     kind = str(v.get("reply_kind") or "").strip().lower()
     if kind not in SEMANTIC_KINDS:
         kind = "unclear"
-    iso, dk = parse_spoken_date(v.get("said_date_text"), today)
+    date_text = str(v.get("said_date_text") or "")
+    iso, dk = parse_spoken_date(date_text, today)
+    dt = re.sub(r"[\s.,!?]+", " ", date_text.lower()).strip()
+    if not iso and dt and not SAME_DAY.fullmatch(dt):
+        dk = "vague"  # 'this weekend': asked once, then the deadline
     amount_text = str(v.get("said_amount_text") or "")
     amount = parse_amount(amount_text)
-    if amount is None and AMOUNT_WORDS.search(amount_text):
-        pass  # a number we cannot read ('200 or maybe 300'): asked again, not the model's guess
-    elif amount is None:
+    m = AMOUNT_IS.fullmatch(re.sub(r"[\s.,!?]+", " ", amount_text.lower()).strip())
+    # 'the minimum' / 'all of it' only in an offer: "I can't pay the full amount" is a no
+    offer = kind in ("offer", "yes", "vague")
+    amount_is = ("floor" if m.group(1) else "full") if m and offer and amount is None else None
+    # '200 or maybe 300', 'half of it': asked again, no guess, no full amount
+    bad = amount is None and not amount_is and bool(AMOUNT_WORDS.search(amount_text))
+    if amount is None and not bad:
         try:
             amount = (
                 float(v.get("said_amount")) if str(v.get("said_amount") or "").strip() else None
@@ -1485,9 +1523,11 @@ def read_reply(v, today):
         except Exception:
             amount = None
     said_yes = kind == "yes"
-    if kind in ("yes", "no", "too_much", "evasive") and (iso or amount is not None):
+    if (kind in ("yes", "no", "too_much", "evasive") and (iso or amount is not None)) or (
+        offer and (bad or amount_is)
+    ):
         kind = "offer"  # a date or an amount the customer names is never a refusal
-    if kind == "offer" and not iso and amount is None and dk == "vague":
+    if kind == "offer" and not iso and amount is None and not amount_is and dk == "vague":
         kind = "vague"
     prod = str(v.get("about_product") or "").strip().lower()
     # "p1, p2" (seen once) is not a single product: take the first one named
@@ -1511,6 +1551,8 @@ def read_reply(v, today):
     return {
         "kind": kind,
         "amount": amount,
+        "amount_is": amount_is,
+        "amount_bad": bad,
         "date": iso,
         "date_kind": dk,
         "all": allp,
@@ -1521,7 +1563,7 @@ def read_reply(v, today):
         "question": str(v.get("has_question") or "").strip().lower() in ("yes", "true"),
         "said_yes": said_yes,
         "raw": raw,
-        "date_text": str(v.get("said_date_text") or ""),
+        "date_text": date_text,
         "amount_text": str(v.get("said_amount_text") or ""),
     }
 

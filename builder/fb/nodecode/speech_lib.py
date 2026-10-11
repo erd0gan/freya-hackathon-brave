@@ -23,6 +23,7 @@ _WDAYS = ["monday", "tuesday", "wednesday", "thursday", "friday", "saturday", "s
 _UNITS = {
     "zero": 0,
     "oh": 0,
+    "nought": 0,
     "one": 1,
     "two": 2,
     "three": 3,
@@ -79,9 +80,12 @@ _ORD = {
 _VAGUE = [
     "next week",
     "week after next",
-    "end of the month",
-    "end of month",
-    "end of the week",
+    "end of",
+    "weekend",
+    "month from",
+    "in a month",
+    "few days",
+    "couple of days",
     "salary",
     "payday",
     "pay day",
@@ -90,7 +94,6 @@ _VAGUE = [
     "soon",
     "later this month",
     "next month",
-    "in a few days",
     "couple of weeks",
     "a few weeks",
     "sometime",
@@ -118,6 +121,11 @@ def _words_to_number_tokens(s):
     toks = s.split()
     out = []
     i = 0
+    big = ("hundred", "thousand")
+
+    def lead(j):  # 'a' or '2' before 'hundred' / 'thousand'
+        return j + 1 < len(toks) and toks[j + 1] in big and re.fullmatch(r"a|\d{1,3}", toks[j])
+
     while i < len(toks):
         t = toks[i]
         if t in _TENS and i + 1 < len(toks) and toks[i + 1] in _ORD and _ORD[toks[i + 1]] < 10:
@@ -128,18 +136,16 @@ def _words_to_number_tokens(s):
             out.append(str(_ORD[t]) + "th")
             i += 1
             continue
-        if (
-            t in _UNITS
-            or t in _TENS
-            or (t == "a" and i + 1 < len(toks) and toks[i + 1] in ("hundred", "thousand"))
-        ):
+        if t in _UNITS or t in _TENS or t in big or lead(i):
             total = 0
             cur = 0
             j = i
             used = False
             while j < len(toks):
                 w = toks[j]
-                if w in _UNITS:
+                if lead(j) and not cur:
+                    cur = 1 if w == "a" else int(w)
+                elif w in _UNITS:
                     if cur % 10 or (cur % 100 and _UNITS[w] >= 10):
                         break  # 'thirty seven fifty': a new number starts
                     cur += _UNITS[w]
@@ -147,8 +153,6 @@ def _words_to_number_tokens(s):
                     if cur % 100:
                         break
                     cur += _TENS[w]
-                elif w == "a" and j + 1 < len(toks) and toks[j + 1] in ("hundred", "thousand"):
-                    cur += 1
                 elif w == "hundred":
                     cur = max(cur, 1) * 100
                 elif w == "thousand":
@@ -266,11 +270,40 @@ def _relative_days(s):
     return None
 
 
+_ABBR = dict(mon=0, tue=1, tues=1, wed=2, thu=3, thur=3, thurs=3, fri=4, sat=5, sun=6)
+
+
+def _abbr(s):
+    # 'fri', 'on sat', 'mon 19th' -> the weekday; 'I sat down' stays
+    def f(m):
+        if m.group(1) or m.group(3) or m.group(0).strip(" .") == s.strip(" .?!"):
+            return (m.group(1) or "") + _WDAYS[_ABBR[m.group(2)]] + (m.group(3) or "")
+        return m.group(0)
+
+    return re.sub(
+        r"\b((?:on|this|next|by|until|till|coming|following)\s+)?("
+        + "|".join(_ABBR)
+        + r")\b\.?(\s+(?:the\s+)?\d)?",
+        f,
+        s,
+    )
+
+
+def _day_n(today, n, nxt=False):
+    # day n of this month (the next one when past or `nxt`); None: no such day, asked again
+    y, mo = today.year, today.month
+    if nxt or n < today.day:
+        y, mo = (y + 1, 1) if mo == 12 else (y, mo + 1)
+    return _safe_date(y, mo, n)
+
+
 def parse_spoken_date(text, today):
-    """-> (iso or '', 'vague' | 'date' | 'none'). `today` is a datetime.date."""
+    """-> (iso or '', 'vague' | 'date' | 'unclear' | 'none'). `today` is a datetime.date.
+    'unclear' ('Friday the 20th' on a Tuesday, 'the 31st' in November) is asked again."""
     # a correction ('..., sorry I mean tomorrow', 'the 21st, no, the 20th') wins over
     # everything said before it; split before the commas are dropped (', no,' is the mark)
-    seg = _last_segment(str(text or "").lower().replace("’", "'"), _DATE_WORDS)
+    text = _abbr(str(text or "").lower().replace("’", "'"))
+    seg = _last_segment(text, _DATE_WORDS)
     iso = re.findall(r"\b(\d{4})-(\d{1,2})-(\d{1,2})\b", seg)
     if iso:
         y, mo, dd = iso[-1]
@@ -279,19 +312,49 @@ def parse_spoken_date(text, today):
     raw = _norm_text(text)
     if not raw:
         return "", "none"
+    seg = re.sub(r"\bfirst thing\b", " ", seg)  # 'first thing Monday' is Monday
+    m = re.search(
+        r"\b(first|second|third|fourth|last)\s+("
+        + "|".join(_WDAYS)
+        + r")\b(?:\s+(?:in|of)\s+(\w+))?",
+        seg,
+    )
+    if m:
+        # 'first Monday in November'; 'second Friday' is asked again, 'last Friday' is past
+        mo = _month_of(m.group(3) or "")
+        if mo and m.group(1) != "last":
+            d = _safe_date(today.year + (mo < today.month), mo, 1)
+            n = ["first", "second", "third", "fourth"].index(m.group(1))
+            d += datetime.timedelta(days=(_WDAYS.index(m.group(2)) - d.weekday()) % 7 + 7 * n)
+            if d.month == mo and d >= today:
+                return d.isoformat(), "date"
+        return "", "none" if m.group(1) == "last" else "unclear"
     s = _norm_text(seg, drop_times=True)
+    hits = sorted(
+        (m.start(), m.end(), i)
+        for i, w in enumerate(_WDAYS)
+        for m in re.finditer(r"\b" + w + r"\b", s)
+    )
+    # 'not Monday, Friday', 'I can't do Monday but Friday works': a refused day is no
+    # answer; when one was refused the last day left wins, else the first one named
+    ok = [h for h in hits if not _refused(s, h[0], h[1])]
     rel = _relative_days(s)
-    if rel is not None:
+    if rel is not None and not hits:
         return (today + datetime.timedelta(days=rel)).isoformat(), "date"
     if "day after tomorrow" in s:
         return (today + datetime.timedelta(days=2)).isoformat(), "date"
     if "tomorrow" in s:
         return (today + datetime.timedelta(days=1)).isoformat(), "date"
-    if re.search(r"\btoday\b|\bright now\b|\bnow\b", s) and not re.search(r"\d", s):
-        return today.isoformat(), "date"
-    # 'after the 20th', 'before Friday': a period, not a day (rule: ask once for the day)
-    if re.search(r"\b(?:after|before)\s+(?:the\s+)?(?:\d|(?:" + _DAY_NAMES + r")\b)", s):
+    # 'after the 20th', 'before Friday', 'a month from now': a period, not a day (rule: ask
+    # once for the day)
+    if re.search(r"\b(?:after|before)\s+(?:the\s+)?(?:\d|(?:" + _DAY_NAMES + r")\b)", s) or (
+        re.search(r"\b(?:from|after)\s+(?:today|now)\b", s)
+    ):
         return "", "vague"
+    if re.search(r"\b(?:today|tonight|right now|now|this (?:evening|afternoon|morning))\b", s):
+        if not re.search(r"\d", s):
+            return today.isoformat(), "date"
+    nxt = bool(re.search(r"\bnext\s+month\b", s))
     # day + month name, either order
     toks = s.split()
     day = None
@@ -325,32 +388,33 @@ def parse_spoken_date(text, today):
         day, month = int(m.group(1)), int(m.group(2))
         if m.group(3):
             year = int(m.group(3)) + (2000 if len(m.group(3)) == 2 else 0)
+    wd = (ok[-1] if len(ok) < len(hits) else ok[0])[2] if ok else None
     if month and day:
         y = year or today.year
         d = _safe_date(y, month, day)
         if d and not year and d < today:
             d = _safe_date(y + 1, month, day)
-        return (d.isoformat(), "date") if d else ("", "none")
+        if d and wd is not None and d.weekday() != wd:
+            return "", "unclear"  # 'Friday 20 October' when the 20th is a Tuesday
+        return (d.isoformat(), "date") if d else ("", "unclear")
     # weekday, with this / next / a week on / after next
-    hits = sorted(
-        (m.start(), m.end(), i)
-        for i, w in enumerate(_WDAYS)
-        for m in re.finditer(r"\b" + w + r"\b", s)
-    )
     if hits:
-        # 'not Monday, Friday', 'I can't do Monday but Friday works': a refused day is no
-        # answer; when one was refused the last day left wins, else the first one named
-        ok = [h for h in hits if not _refused(s, h[0], h[1])]
         if not ok:
             return "", "none"
-        _start, _end, i = ok[-1] if len(ok) < len(hits) else ok[0]
+        if len({h[2] for h in ok}) > 1 and re.search(r"\bor\b", s):
+            return "", "unclear"  # 'Thursday or Friday'
+        i = wd
         w = _WDAYS[i]
         monday = today - datetime.timedelta(days=today.weekday())
         this_day = monday + datetime.timedelta(days=i)
         coming = this_day if this_day >= today else this_day + datetime.timedelta(days=7)
         week = datetime.timedelta(days=7)
+        wk = re.search(r"\b(\d|a)\s+weeks?\b", s)
         if re.search(r"\b" + w + r"\s+after\s+next\b|\bweek\s+after\s+next\b", s):
             d = this_day + 2 * week  # 'the Friday after next'
+        elif wk:
+            # 'two weeks from Friday', 'Friday in two weeks', 'a week on Friday'
+            d = coming + week * (1 if wk.group(1) == "a" else int(wk.group(1)))
         elif (
             re.search(r"\bnext\s+(?:week\s+(?:on\s+)?)?" + w, s)
             or re.search(r"\b" + w + r"\s+(?:of\s+)?next\s+week\b", s)
@@ -365,16 +429,13 @@ def parse_spoken_date(text, today):
             d = this_day
         else:
             d = coming
-        num = re.search(r"\b(\d{1,2})\b", s)
+        num = None if wk else re.search(r"\b(\d{1,2})\b", s)
         if num:
-            # 'Monday the 26th': trust the number, it is more specific
-            n = int(num.group(1))
-            dd = _safe_date(today.year, today.month, n) if 1 <= n <= 31 else None
-            if dd and dd < today:
-                nm = today.month % 12 + 1
-                dd = _safe_date(today.year + (1 if nm == 1 else 0), nm, n)
-            if dd:
-                return dd.isoformat(), "date"
+            # 'Monday the 26th': the number when the weekday matches it, else asked again
+            dd = _day_n(today, int(num.group(1)), nxt)
+            if dd is None or dd.weekday() != i:
+                return "", "unclear"
+            return dd.isoformat(), "date"
         return d.isoformat(), "date"
     # 'the 26th' alone
     m = re.search(r"\b(?:the\s+)?(\d{1,2})\b", s)
@@ -383,12 +444,8 @@ def parse_spoken_date(text, today):
     ):
         n = int(m.group(1))
         if 1 <= n <= 31:
-            d = _safe_date(today.year, today.month, n)
-            if d is None or d < today:
-                nm = today.month % 12 + 1
-                d = _safe_date(today.year + (1 if nm == 1 else 0), nm, n)
-            if d:
-                return d.isoformat(), "date"
+            d = _day_n(today, n, nxt)
+            return (d.isoformat(), "date") if d else ("", "unclear")
     for v in _VAGUE:
         if v in raw:
             return "", "vague"
@@ -454,7 +511,7 @@ def _drop_dates(s):
 
 
 def _thousands(m):
-    v = float(m.group(1)) * 1000
+    v = float(m.group(1) or m.group(2)) * 1000
     return str(int(v)) if v == int(v) else str(v)
 
 
@@ -471,8 +528,11 @@ def parse_amount(text, lo=None, hi=None):
     `lo` / `hi` (optional, e.g. the floor and the full amount): a number said like a price,
     'three fifty' or 'one twenty six', reads as 3.50 / 1.26 as said; when that is below `lo`
     and the hundreds reading (350 / 126) lies in [lo, hi], the hundreds reading is taken.
-    Without `lo` the amount is read as said."""
+    Without `lo` the amount is read as said. A share ('50%', '20 percent') and a European
+    '1.250,50' are None."""
     raw = str(text or "").lower().replace("’", "'")
+    if re.search(r"%|\bper\s*cent|\d\.\d{3},\d", raw):
+        return None
     raw = re.sub(r"[£€$]", " ", raw)
     raw = re.sub(r"(\d),(\d{2})(?!\d)", r"\1.\2", raw)
     raw = re.sub(
@@ -482,7 +542,10 @@ def parse_amount(text, lo=None, hi=None):
     )
     if not raw.strip():
         return None
-    raw = re.sub(r"(\d+(?:\.\d+)?)\s*(?:k|grand|thousand)\b", _thousands, _drop_dates(raw))
+    # '2 thousand 5 hundred' is read with the words below
+    raw = re.sub(
+        r"(\d+(?:\.\d+)?)\s*(?:k|grand)\b|(\d+\.\d+)\s*thousand\b", _thousands, _drop_dates(raw)
+    )
     raw = re.sub(r"\bgrand\b", "thousand", raw)
     s = _last_segment(raw)
     if re.search(r"\bpoint\b", s):
@@ -503,7 +566,8 @@ def parse_amount(text, lo=None, hi=None):
         if len(nums) == 1:
             k, v = nums[0]
             nxt = toks[k + 1] if k + 1 < len(toks) else ""
-            if re.fullmatch(_SUB, nxt) and not any(re.fullmatch(_CUR, t) for t in toks):
+            cur = any(re.fullmatch(_CUR, t) for t in toks)
+            if re.fullmatch(_SUB, nxt) and v == int(v) and not cur:
                 return round(v / 100.0, 2)  # '50p', 'fifty pence'
             return v
         if len(nums) != 2:
@@ -539,12 +603,16 @@ def parse_spoken_time(text, day_start=10, day_end=19):
     'ten to five', 'twenty past ten', 'half five' (half past five) -> 'HH:MM', or ''. A bare
     hour that cannot be a working hour as said (1 to 7) is read as afternoon; 'morning' /
     'afternoon' / 'evening' / am / pm decide when given. A day of the month is no time ('the
-    15th', '15 October'): the callback check also reads the day text for a time."""
-    raw = str(text or "").lower().replace(".", " ").replace("-", " ")
-    if not raw.strip():
+    15th', '15 October'): the callback check also reads the day text for a time. A range or a
+    bound ('between 2 and 4', '11 or 12', 'after 5', '2-4pm') is no time: '' (asked again)."""
+    raw = str(text or "").lower()
+    if not raw.strip() or re.search(r"\d\s*-\s*\d", raw):
         return ""
+    raw = raw.replace(".", " ").replace("-", " ")
     s = re.sub(r"(\d)\s*(?:st|nd|rd|th)\b", r"\1th", _last_segment(raw))
-    s = re.sub(r"(\d)(?!th\b)([a-z])", r"\1 \2", s)
+    if re.search(r"\b(?:between|after|before|until|till|or(?! so\b)|from \S+ to)\b", s):
+        return ""
+    s = re.sub(r"(\d)(?!th\b|h\d)([a-z])", r"\1 \2", s)
     if re.search(r"\bmidday\b", s) or ("noon" in s and "after" not in s):
         return "12:00"
     pm = bool(re.search(r"\b(pm|p m|afternoon|evening|tonight)\b", s))
@@ -599,7 +667,7 @@ def digits_from_speech(text):
     s = _last_segment(raw)
     if re.search(r"\b(?:hundred|thousand)\b", s):
         s = re.sub(
-            r"(?:\b(?:a|" + "|".join(list(_UNITS) + list(_TENS)) + r")\s+)*"
+            r"(?:\b(?:a|\d{1,3}|" + "|".join(list(_UNITS) + list(_TENS)) + r")\s+)*"
             r"(?:hundred|thousand)\b(?:\s+(?:and|hundred|thousand|"
             + "|".join(list(_UNITS) + list(_TENS))
             + r")\b)*",
