@@ -396,6 +396,29 @@ def test_engine_closes_with_the_priority_reason():
     assert st["final_reason"] == "DSP"
 
 
+# ---------------------------------------------------------------- 7. product types of the enum
+def mortgage_type(o):
+    items = ok200(o, "get_account")["properties"]["products"]["items"]["properties"]
+    items["type"]["enum"].append("mortgage")
+
+
+def test_product_type_missing_from_floor_field_and_names_is_reported():
+    o = api_with(mortgage_type)
+    out = check(spec_with(), parse_openapi(o), BRIEF, o)
+    assert any(
+        p.startswith("floor_field has no entry for product type(s) ['mortgage']") for p in out
+    )
+    assert any(
+        p.startswith("product_names has no entry for product type(s) ['mortgage']") for p in out
+    )
+
+    def covered(s):
+        s["floor_field"]["mortgage"] = ""  # the brief gives it no floor
+        s["product_names"]["mortgage"] = "mortgage"
+
+    assert check(spec_with(covered), parse_openapi(o), BRIEF, o) == []
+
+
 def structure_of(s):
     from fb.spec_extract import structure
 

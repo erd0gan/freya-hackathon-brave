@@ -163,7 +163,11 @@ SCHEMA = {
         "past_due": "...",
         "days_late": "...",
     },
-    "floor_field": {"<product type>": "<response field holding the floor (minimum) amount>"},
+    "floor_field": {
+        "<product type>": "<response field holding the floor (minimum) amount, '' if the "
+        "brief gives none>; one entry per value of the get_account type enum, here and in "
+        "product_names"
+    },
     "product_names": {
         "<product type>": "spoken name, response fields in single braces, "
         "for example 'credit card ending {card_last4}'"
@@ -635,6 +639,22 @@ def responses(
     for ptype, name in (spec.get("floor_field") or {}).items():
         if name and str(name) not in items:
             bad.append(f"floor_field.{ptype}: {name!r} is not a field {where}")
+    # every product type the tool can return needs a floor field and a spoken name: a type
+    # left out never gets a floor offer and is named after its code ('car_loan' -> 'car loan')
+    tdef = _deref(items.get(str(pf.get("type") or "type")), openapi)
+    types = [str(e) for e in (tdef.get("enum") or [])] if isinstance(tdef, dict) else []
+    for key, what in (
+        ("floor_field", "the response field holding its floor (minimum) amount, '' if the "
+         "brief gives that product no floor"),
+        ("product_names", "its spoken name"),
+    ):  # fmt: skip
+        got = spec.get(key) if isinstance(spec.get(key), dict) else {}
+        missing = [x for x in types if x not in got]
+        if missing:
+            bad.append(
+                f"{key} has no entry for product type(s) {missing} of the get_account type "
+                f"enum {types}: set {what}"
+            )
     for ptype, tpl in (spec.get("product_names") or {}).items():
         for ph in _placeholders(str(tpl)):
             if ph not in items:
