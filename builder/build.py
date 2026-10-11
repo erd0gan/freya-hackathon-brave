@@ -132,6 +132,7 @@ def _spec_summary(spec: dict, gen: dict | None, brief: str) -> list[str]:
     neg = cfg.get("neg") or s.get("neg") or {}
     outs = s.get("outcomes") or {}
     warns = warnings(s, brief)
+    cvars = sorted(str(v) for v in (s.get("call_variables") or {}).values() if v)
     band_txt = ", ".join(
         f"{b.get('name')} {b.get('min_days_late')}-{b.get('max_days_late')}d x{b.get('attempts')}"
         for b in bands
@@ -139,7 +140,7 @@ def _spec_summary(spec: dict, gen: dict | None, brief: str) -> list[str]:
     )
     return [
         f"spec summary: identity factors={fields}; bands={len(bands)} ({band_txt}); "
-        f"holidays={len(hol)}; call variables={sorted((s.get('call_variables') or {}).values())}",
+        f"holidays={len(hol)}; call variables={cvars}",
         f"spec summary: close outcomes={sorted(map(str, (neg.get('outcomes') or {}).values()))} "
         f"reasons={sorted(map(str, (neg.get('reasons') or {}).values()))} "
         f"other endings={sorted(outs)}; spec warnings={len(warns)}"
