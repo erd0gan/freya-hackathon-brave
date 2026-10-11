@@ -104,7 +104,7 @@ def attempt1_date(today, cfg):
     week's when today is that day or later), or rule "nth_business_day" with `n`."""
     a = cfg.get("attempt1") or dict()
     if str(a.get("rule") or "last_business_day_of_week") == "nth_business_day":
-        return nth_business_day_after(today, int(a.get("n") or 1), cfg)
+        return nth_business_day_after(today, count_or(a.get("n"), 1), cfg)
     this_last = last_business_day_of_week(today, cfg)
     if this_last is not None and this_last > today:
         return this_last
@@ -121,17 +121,23 @@ def last_business_day_of_week(d, cfg):
     return best
 
 
-def band_for(days_late, cfg):
+def band_for(days_late, cfg, nearest=False):
+    """The band holding `days_late`; with `nearest`, outside every band (0 days, more than the
+    last band) the nearest one, so the product still gets a deadline and attempts."""
     try:
         n = int(float(days_late))
     except Exception:
         return None
+    best, gap = None, None
     for b in cfg.get("bands") or []:
         lo = b.get("min_days_late")
         hi = b.get("max_days_late")
-        if (lo is None or n >= lo) and (hi is None or n <= hi):
+        d = max((lo - n) if lo is not None else 0, (n - hi) if hi is not None else 0, 0)
+        if d == 0:
             return b
-    return None
+        if nearest and (gap is None or d < gap):
+            best, gap = b, d
+    return best
 
 
 def calendar_facts(now, cfg):
@@ -279,7 +285,9 @@ def product_facts(products, now, cfg):
             spoken = name_tpl.format(**{kk: str(vv) for kk, vv in p.items()})
         except Exception:
             spoken = ptype.replace("_", " ")
-        band = band_for(pf(p, "days_late"), cfg)
+        band = band_for(pf(p, "days_late"), cfg, True)
+        # days late outside every band: the nearest band's rules, noted (never no deadline)
+        out[k + "_band_nearest"] = "yes" if band and not band_for(pf(p, "days_late"), cfg) else ""
         deadline = ""
         attempts = ""
         if band is not None and today is not None:

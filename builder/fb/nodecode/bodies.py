@@ -103,15 +103,7 @@ if n >= 2 or was == 'record':
     vars['final_reason'] = '' if held else close_reason(neg, 'service_error')
     vars['final_say'] = bye if held else (
         str(ln.get('service_error') or 'I am sorry, we have a technical problem.') + ' ' + bye)
-    rs = neg.get('reasons') or dict()
-    ks = ('refused', 'hardship', 'dispute', 'paid')
-    notes = [[q.get('id'), rs.get(s, s)] for q in ps if q.get('id') not in held
-             for s in [q.get('status') if q.get('status') in ks else 'service_error']]
-    if neg.get('notes') and notes:
-        st['notes'] = notes
-        vars['neg_state'] = json.dumps(st)
-        vars['note_count'] = str(len(notes))
-        vars['note_product_id'], vars['note_reason'] = notes[0]
+    end_notes(vars, st, neg, held)
 else:
     vars['neg_action'] = 'say'
     vars['neg_say'] = 'Sorry, could you say that again?'
@@ -152,7 +144,9 @@ vars['final_say'] = str((neg.get('lines') or dict()).get('goodbye') or 'Goodbye.
 """
 
 # After transfer_to_agent: a failed transfer is not closed as `transferred`. One more try, then
-# the call closes as no_promise / service_error with a sentence that says so.
+# the call closes as no_promise / service_error with a sentence that says so. The call was not
+# transferred, so with notes on every product without a promise gets its note (end_notes; the
+# wrap node routes to the note node on note_count).
 AFTER_TRANSFER = (
     """
 err = str(vars.get('transfer_err') or '').lower()
@@ -173,7 +167,10 @@ elif tries < 2:
 else:
     vars['transfer_next'] = 'failed'
     st = load_state(vars) or dict()
-    held = st.get('recorded') or [q for q in st.get('p') or [] if q.get('status') == 'recorded']
+    held = set(st.get('recorded') or [])
+    held |= set(q.get('id') for q in st.get('p') or [] if q.get('status') == 'recorded')
+    # not transferred: every product without a promise gets its note (B8), like an error end
+    end_notes(vars, st, neg, held)
     if held:
         # a promise the bank holds stays the outcome when the transfer does not happen
         vars['final_outcome'] = (neg.get('outcomes') or dict()).get('promise', 'promise')

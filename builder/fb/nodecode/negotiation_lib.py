@@ -160,6 +160,8 @@ def new_state(pf, neg, now):
                 "own_deadline": False,
             }
         )
+        if pf.get(key + "_band_nearest"):
+            ps[-1]["band_nearest"] = True  # days late outside every band: the nearest one's
     st = {
         "phase": "ask_today",
         "i": 0,
@@ -642,11 +644,17 @@ def _finish(st, neg):
     for q in st["p"]:
         if q["id"] in recorded:
             q["status"] = "recorded"  # a promise the bank holds is never undone by later words
+    what = st.get("transfer") or ""
+    # notes on a transfer (Northwind 4.8 "also when the call is transferred"): a product still
+    # open takes the transfer's code when it is a note code too (add_note's enum is the reasons'
+    # values; Northwind has none for a plan or a person), else its own (refused)
+    tr = (neg.get("transfer_reasons") or {}).get(what)
+    xfer = rs.get(what) or (tr if tr in rs.values() else None)
     notes = []
     for q in st["p"]:
         if q["status"] != "recorded":
             s = sem.get(q["status"], "refused")
-            notes.append([q["id"], rs.get(s, s)])
+            notes.append([q["id"], xfer if xfer and q["status"] == "open" else rs.get(s, s)])
     st["notes"] = notes if neg.get("notes") else []
     if st["transfer"]:
         st["final_outcome"] = oc.get("transferred", "transferred")
@@ -672,13 +680,14 @@ def _finish(st, neg):
     st["final_reason"] = close_reason(neg, s)
 
 
-def _transfer(st, what, neg):
+def _transfer(st, what, neg, open_as="open"):
     st["transfer"] = what
     st["transfer_queue"] = (neg.get("queues") or {}).get(what, what)
-    # Brief B rule 10: agreed but unrecorded promises are dropped.
+    # Brief B rule 10: agreed but unrecorded promises are dropped. A hardship transfer: every
+    # product still open is a hardship one (its note, when notes are written on a transfer).
     for q in st["p"]:
-        if q["status"] == "agreed":
-            q["status"] = "open"
+        if q["status"] in ("agreed", "open"):
+            q["status"] = open_as
     st["final_lines"].append(
         _line(neg, "transfer_" + what, "I am connecting you with a colleague now.")
     )
@@ -827,16 +836,33 @@ def _amount_unfinished(text, raw):
     return bool(words and rw and rw[-1] == words[-1])
 
 
-def _join_amount(part, text):
-    """A rest as big as the part is the amount said again; digits add up."""
+def _join_amount(part, text, lo=None, hi=None):
+    """The amount of a part and its rest. A smaller rest adds up ("four hundred" "fifty"); a
+    rest that is only a multiplier multiplies ("three" "hundred"). A rest as big as the part
+    after a joiner is the amount said again. Without a joiner ("4" "50"), when the rest alone
+    is below the floor `lo` and the two together lie in [lo, hi], it is the two together;
+    when both readings lie in [lo, hi] ("1" "250"): "ask", the customer is asked again."""
     a = parse_amount(part)
     b = parse_amount(text)
-    if a is None or b is None or b >= a:
+    if a is None or b is None:
         return b if b is not None else a
-    joined = parse_amount(part + " " + text)
-    if joined is not None and a < joined < 2 * a and abs(joined * 100 - round(joined * 100)) < 1e-6:
-        return joined
-    return round(a + b, 2)
+    rest = re.findall(r"[a-z]+|\d+", str(text).lower())
+    if rest and all(w in ("hundred", "thousand", "grand") for w in rest):
+        both = parse_amount(part + " " + text)
+        return both if both is not None else b
+    if b < a:
+        both = parse_amount(part + " " + text)
+        if both is not None and a < both < 2 * a and abs(both * 100 - round(both * 100)) < 1e-6:
+            return both
+        return round(a + b, 2)
+    pw = re.findall(r"[a-z]+|\d+", str(part).lower())
+    if lo is None or hi is None or (pw and pw[-1] in JOINERS):
+        return b
+    p, t = str(part).strip(), str(text).strip().rstrip(".")
+    both = float(p + t) if p.isdigit() and t.isdigit() else parse_amount(p + " " + t, lo, hi)
+    if both is None or abs(both - b) < 0.005 or not lo - 0.005 <= both <= hi + 0.005:
+        return b
+    return both if b < lo - 0.005 else ("ask" if b <= hi + 0.005 else b)
 
 
 def _pieces(st, r, kind):
@@ -846,8 +872,15 @@ def _pieces(st, r, kind):
     text = str(r.get("amount_text") or "").strip()
     if part:
         if text:
-            a = _join_amount(part, text)
-            if a is not None:
+            ps = st.get("p") or []
+            q = ps[st.get("i", 0)] if 0 <= st.get("i", 0) < len(ps) else {}
+            a = _join_amount(part, text, q.get("floor"), q.get("full"))
+            if a == "ask":
+                # two readings both possible ("1" ... "250"): asked again, never guessed
+                r["amount"], r["amount_bad"], text = None, True, ""
+                r["date"] = r.get("date") or st.get("part_date") or None
+                kind = "offer" if kind in ("yes", "no", "too_much", "evasive", "unclear") else kind
+            elif a is not None:
                 r["amount"] = a
                 text = str(a) + (" and" if _amount_unfinished(text, "") else "")
         elif kind == "unclear":
@@ -889,6 +922,15 @@ def step(st, r, neg, cal, now, cfg):
     if kind is None:
         return st  # half an amount: wait for the rest
     st["unclear_run"] = int(st.get("unclear_run") or 0) + 1 if kind == "unclear" else 0
+    # whole replies that answer nothing ("Hmm."), not cut off and no question: after three in a
+    # row the next one is a non-answer (A30: uses an attempt), so the call cannot go on forever
+    if kind != "unclear" or r.get("question"):
+        st["blank_run"] = 0
+    elif not r.get("cut"):
+        st["blank_run"] = int(st.get("blank_run") or 0) + 1
+        if st["blank_run"] > 3:
+            st["blank_run"] = 0
+            kind = "no" if st["phase"] == "confirm" else "evasive"
     vague_all = bool(st.get("vague_all"))
     if kind not in ("unclear", "question"):
         st["vague_all"] = False
@@ -966,7 +1008,7 @@ def step(st, r, neg, cal, now, cfg):
     prefix = ""
     if phase == "hardship_offer":
         if kind == "yes":
-            _transfer(st, _pol(neg, "hardship_queue"), neg)
+            _transfer(st, _pol(neg, "hardship_queue"), neg, "hardship")
             return st
         if kind in ("offer", "vague") or named:
             phase = "offer"  # A32: a date or an amount the customer names is still recorded
@@ -1003,7 +1045,7 @@ def step(st, r, neg, cal, now, cfg):
         mode = _pol(neg, "hardship")
         if mode == "transfer":
             st["final_lines"].append(_line(neg, "sympathy"))
-            _transfer(st, _pol(neg, "hardship_queue"), neg)
+            _transfer(st, _pol(neg, "hardship_queue"), neg, "hardship")
             return st
         if mode == "close" and not named:
             st["hardship"] = True
@@ -1453,6 +1495,13 @@ TODAY_REFUSAL = re.compile(
     re.I,
 )
 REFUSAL_WORDS = re.compile(r"\b(not|never|refuse|won't|can't|cannot|don't)\b|n't\b", re.I)
+# A refusal is about a part of the debt only with words that pick a part out (or a product's
+# name): "Work is so busy I can't even think. Yes." is a yes to all of them.
+PART_WORDS = re.compile(
+    r"\b(except|apart from|but not|not the|not for the|only|just the|the other|one of|"
+    r"the (first|second|third|last) one|either|neither|none of|the rest)\b",
+    re.I,
+)
 
 
 # A wish to end the call that is whole without an end mark.
@@ -1535,6 +1584,9 @@ def read_reply(v, today):
     pi = int(codes[0]) - 1 if codes else None
     raw = last_customer_text(v)
     mixed = bool(raw and REFUSAL_WORDS.search(TODAY_REFUSAL.sub(" ", raw)))
+    if mixed and not PART_WORDS.search(raw):
+        st0 = load_state(v) or {}
+        mixed = bool(isinstance(st0.get("p"), list) and _named_in(st0, raw))
     allp = str(v.get("all_products") or "").strip().lower() in ("yes", "true", "all")
     if raw and ALL_WORDS.search(raw) and not mixed:
         # "both" in "I cannot pay both" is no day for all of them
@@ -1608,6 +1660,27 @@ def load_state(v):
         return st if isinstance(st, dict) else None
     except Exception:
         return None
+
+
+def end_notes(v, st, neg, held):
+    """A call our side ends (an error, a transfer that did not happen): with notes on, every
+    product without a promise (ids not in `held`) gets its note, as _finish writes them; one
+    still being talked about is a service_error. Sets the note_* variables."""
+    rs = neg.get("reasons") or {}
+    ks = ("refused", "hardship", "dispute", "paid")
+    ps = sorted([q for q in st.get("p") or [] if isinstance(q, dict)], key=lambda q: q.get("n", 0))
+    notes = [
+        [q.get("id"), rs.get(s, s)]
+        for q in ps
+        if q.get("id") not in held
+        for s in [q.get("status") if q.get("status") in ks else "service_error"]
+    ]
+    notes = notes if neg.get("notes") else []
+    st["notes"] = notes
+    v["neg_state"] = json.dumps(st)
+    v["note_count"] = str(len(notes))
+    if notes:
+        v["note_product_id"], v["note_reason"] = notes[0]
 
 
 def pop_note(v, check=False):
