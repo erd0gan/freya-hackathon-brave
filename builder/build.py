@@ -65,6 +65,9 @@ EXPORT_RESERVE_S = 3 * 60
 SMOKE_RESERVE_S = 60
 # The smoke test's whole time, retries included.
 SMOKE_MAX_S = 150
+# general path: what the builder keeps after the coding agent for its own checks, save, export,
+# chat smoke and simulation smoke (inside the 30 min budget)
+AGENT_RESERVE_S = 150
 # The offline engine selftest's time (fb.harness.selftest).
 SELFTEST_S = 6.0
 # Kept back from the budget for the trace's last lines and a local copy of the workflow.
@@ -746,16 +749,18 @@ def _wf_body(doc: object) -> dict:
 
 
 def run_agentic(
-    trace: Trace, inp: Inputs, slot: str, facts: dict, mock_url: str | None
+    trace: Trace, inp: Inputs, slot: str, facts: dict, mock_url: str | None, deadline: float
 ) -> int:
     """The general path (fb.agentic): the coding agent writes, dry-runs, saves and tests the
     workflow in a work folder; the builder then checks it, saves it in the slot, exports it and
     smoke-tests it, as on the template path."""
-    minutes = float(os.environ.get("BUILDER_AGENT_MINUTES", "50"))
+    # The whole run, tests included, stays inside the rules' 30 minutes (BUDGET_S, counted from
+    # the start of main): the agent gets what is left after the reserve for the builder's own
+    # check, save, export and smoke tests. freya.api keeps main's bound.
+    left = deadline - time.monotonic() - AGENT_RESERVE_S
+    cap = float(os.environ.get("BUILDER_AGENT_MINUTES", "0") or 0) * 60
+    minutes = (min(left, cap) if cap > 0 else left) / 60
     t_agent_end = time.time() + minutes * 60
-    # the agent's clock replaces the template's 30 min budget; save, export and smoke get
-    # their own reserve after it
-    freya.api = bounded_api(time.monotonic() + minutes * 60 + EXPORT_RESERVE_S + SMOKE_MAX_S)
     ws = ROOT / ".builder" / "agentic" / slot
     state = ROOT / ".freya-agents.json"
     task = agentic.prepare(
@@ -770,7 +775,7 @@ def run_agentic(
         finish(trace, slot, facts, status=f"agent failed: {type(e).__name__}: {str(e)[:300]}")
         return 1
     trace.note(f"agent: exit {rc}; session log -> {session_log.relative_to(ROOT)}")
-    for name in ("rules.md", "workflow.json", "call_variables.json"):
+    for name in ("rules.md", "workflow.json", "call_variables.json", "personas.json"):
         src = ws / name
         if src.exists():
             (ROOT / "submission").mkdir(exist_ok=True)
@@ -833,9 +838,28 @@ def run_agentic(
         trace.test(f"chat smoke FAILED: {type(e).__name__}: {str(e)[:300]}")
         result = "failed"
     trace.test(f"chat smoke: {result}")
+    sim = "skipped"
+    room = deadline + EXPORT_RESERVE_S - END_MARGIN_S - time.monotonic()
+    if (ws / "personas.json").exists() and room > 130:
+        # the agent's simulated callers once more, on the published version: a real call (not
+        # the chat route) is what the bank scores
+        try:
+            p = subprocess.run(
+                [sys.executable, "ft.py", "sim"], cwd=str(ws), capture_output=True, text=True,
+                encoding="utf-8", errors="replace", timeout=room - 15,
+            )
+            lines = [ln for ln in p.stdout.splitlines() if ln.startswith(("PASS", "FAIL", "SIM"))]
+            for ln in lines:
+                trace.test("simulation: " + ln[:400])
+            sim = next((ln.split()[1] for ln in lines if ln.startswith("SIM")), "failed")
+        except Exception as e:
+            trace.test(f"simulation FAILED: {type(e).__name__}: {str(e)[:200]}")
+            sim = "failed"
+    else:
+        trace.test(f"simulation skipped: {room:.0f} s left in the budget")
     status = "ok" + ("" if result == "passed" else f"_smoke_{result}")
     status += "" if export == "platform" else "_export_failed"
-    finish(trace, slot, facts, status=status, smoke=result, export=export,
+    finish(trace, slot, facts, status=status, smoke=result, simulation=sim, export=export,
            path="general (coding agent)", workflow_id=saved["workflow_id"],
            agent_id=saved["agent_id"], agent_log=str(session_log.relative_to(ROOT)))
     return 0
@@ -884,7 +908,7 @@ def run(
             f"{list(agentic.ROLES_NEEDED)}; the deterministic template cannot express this "
             "call, building on the general path (coding agent)"
         )
-        return run_agentic(trace, inp, slot, facts, mock_url)
+        return run_agentic(trace, inp, slot, facts, mock_url, deadline)
     if len(brief) + len(examples) > LONG_INPUT_CHARS:
         # nothing is cut (a cut rule is a wrong agent); the trace says why the call is slow
         trace.note(

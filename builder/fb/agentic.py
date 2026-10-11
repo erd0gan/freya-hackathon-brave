@@ -103,6 +103,33 @@ def main(argv):
                         print("  TOOL:", json.dumps(m, ensure_ascii=False)[:600])
             except Exception as e:
                 print("  (call events unavailable:", str(e)[:200], ")")
+    elif cmd == "sim":
+        # personas.json: [{{"name", "prompt", "successCriteria", "variables": {{...}}}}]
+        state = json.load(open(STATE, encoding="utf-8"))
+        agent_id = state[SLOT]["agent_id"]
+        ps = json.load(open(argv[2] if len(argv) > 2 else "personas.json", encoding="utf-8"))
+        made = freya.create_personas([{{k: p[k] for k in ("name", "prompt", "successCriteria")}}
+                                      | {{"tags": ["builder-sim"]}} for p in ps])["personas"]
+        vmap = {{m["id"]: p["variables"] for m, p in zip(made, ps)}}
+        names = {{m["id"]: p["name"] for m, p in zip(made, ps)}}
+        t = time.time()
+        sim_id, it_id, status = freya.run_simulation(agent_id, SLOT + " self-test", vmap,
+                                                     max_seconds=300, concurrency=len(ps))
+        runs = freya.get_iteration(sim_id, it_id)["runs"]
+        ok = 0
+        for r in runs:
+            good = r.get("outcome") == "pass"
+            ok += good
+            print(("PASS" if good else "FAIL"), names.get(r.get("personaId")),
+                  f"turns={{r.get('turnCount')}}", "|", " ".join(str(r.get("reason")).split())[:700])
+            if not good and r.get("callId"):
+                try:
+                    c = freya.get_call(r["callId"])
+                    for m in (c.get("messages") or [])[:40]:
+                        print("    ", m.get("role"), ":", str(m.get("content") or m.get("message") or "")[:300])
+                except Exception as e:
+                    print("    (transcript unavailable:", str(e)[:150], ")")
+        print(f"SIM {{ok}}/{{len(runs)}} passed, status {{status}}, {{time.time()-t:.0f}}s")
     else:
         print(__doc__)
         return 2
@@ -167,7 +194,16 @@ Time: you must be finished, with the final version saved, by {deadline_utc} UTC.
    documents give it. A specific rule always beats a generic one (a request for a person is
    never answered with the out-of-scope question), and a finished action never stops the
    agent from handling what the caller says next.
+   - Then the real test, the way the bank scores: write `personas.json`, a list of simulated
+     callers, one per example conversation in the documents plus the edge cases above (each
+     `{{"name", "prompt", "successCriteria", "variables"}}`: `prompt` tells the simulated
+     caller, in the call's language, who they are and what they say; `successCriteria` lists
+     what the agent must do, from the documents; `variables` are the call variables). Run
+     `python ft.py sim` (about 2 minutes, all callers at once). A caller with `turns=0` means
+     the workflow does not even start in a real call: fix that first (chat can work when a
+     real call does not). Read every FAIL reason and transcript, fix, save, run it again.
    Fix what fails, save again. Prefer a working, tested simpler agent to an untested big one.
+   The last `python ft.py sim` must run on the saved version you finish with.
 6. Write `call_variables.json`: one example of the call variables (a real test customer) the
    builder uses for its own smoke test.
 
