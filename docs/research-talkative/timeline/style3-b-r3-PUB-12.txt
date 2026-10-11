@@ -1,0 +1,152 @@
+# style3-b-r3-PUB-12 pass=True ended=assistant-ended-call duration=123s call=e8e6d0a3-8a17-4e8b-b205-4f38b724ec9d
+# judge: {"success": true, "reason": "The assistant met all success criteria: the phone question was asked twice due to an incorrect answer while the DOB was asked only once (Messages 2, 4, 6); exactly one promise was created for the credit card (Message 20 and system event); 'refused' notes were added for the other two products via system events; and the agent performed two collection attempts on the late-band personal loan (Messages 12, 14) and one on the early-band car loan (Message 16). The call ended correctly via a terminal action.", "relevantMessages": {"2": "The date of birth question was asked exactly once.", "4": "The phone question was asked for the first time.", "6": "The phone question was asked again after an incorrect response.", "12": "First collection attempt on the personal loan (late band).", "14": "Second collection attempt on the personal loan.", "16": "Only collection attempt on the car loan (early band).", "20": "The agent records the single promise made on the credit card."}}
+
+   0.0   > enter opening (from None)
+   0.0 AGENT    [opening] Hello, I am a digital assistant calling from Freya Bank, and we are recording this call. Am I speaking with Mr Bell?
+   1.5 CUSTOMER [opening] Yes, this is Marcus Bell. I've just been so busy with work today, it's been nonstop since I got in this morning.
+   4.4   = who1=confirms conf=1.0 src=extraction@opening
+   4.4   ? route opening matched=True -> setup_id [who1 == 'confirms']
+   4.4   > enter setup_id (from opening)
+   4.4   * function_call_start {"function": "code_exec", "args": {"timeout_ms": 20000, "code": "# Runs INSIDE Freya code nodes (code_exec sandbox: json, re, datetime) and in local tests.\n# Rules for this file: stdlib only, never raise to the caller, and never two braces in a row\n# (the platform may treat them as a template placeholder).\nimport datetime\nimport json\nimport re\n\nWEEKDAYS = [\"Monday\", \"Tuesday\", \"Wednes…
+   4.9   * function_call_complete {"function": "code_exec", "result": {"status": "success", "data": null, "message": "Code executed successfully", "status_code": 200}}
+   4.9   ? route setup_id matched=True -> identity [always]
+   4.9   > enter identity (from setup_id)
+   4.9 AGENT    [identity] First, I need to ask you two security questions. What is your date of birth?
+   6.7 CUSTOMER [identity] The traffic was absolutely terrible this morning, it took me an hour just to get across town. My date of birth is the nineteenth of October nineteen eighty three.
+   8.8   = id1=answers conf=1.0 src=extraction@identity
+  19.3   = id_heard=The traffic was absolutely terrible this morning, it took me an hour just to ge… conf=0.8599880859178833 src=extraction@identity
+  19.3   = id_last=the nineteenth of October nineteen eighty three conf=0.5924547542806027 src=extraction@identity
+  19.3   ? route identity matched=False -> None []
+  23.0   * function_call_start {"function": "verify_identity", "args": {"url": "https://freya-bank-mock.freyavoice.workers.dev/v1/verify_identity", "method": "POST", "headers": {"Content-Type": "application/json"}, "body": {"field": "date_of_birth", "answer": "1983-10-19", "customer_id": "c_0e50926e-fd6"}}}
+  23.2   * function_call_complete {"function": "verify_identity", "result": {"status": "success", "data": {"ok": true, "verified": true, "wrong_answers_left": 3, "all_verified": false, "what_to_do_next": "Correct. Now ask: What are the last four digits of the phone number on file?"}, "message": "Successfully executed POST request", "status_code": 200}}
+  23.2   ? route identity matched=False -> None []
+  23.3 AGENT    [identity] What are the last four digits of the phone number on file?
+  27.5 CUSTOMER [identity] I've been trying to get through my emails all day but they just keep coming in. The last four digits are four four zero one.
+  35.7   = id1=answers conf=1.0 src=extraction@identity
+  36.3   = id_heard=four four zero one conf=1.0 src=extraction@identity
+  36.3   = id_last=four four zero one conf=1.0 src=extraction@identity
+  36.3   ? route identity matched=False -> None []
+  39.1   * function_call_start {"function": "verify_identity", "args": {"url": "https://freya-bank-mock.freyavoice.workers.dev/v1/verify_identity", "method": "POST", "headers": {"Content-Type": "application/json"}, "body": {"field": "phone_last4", "answer": "4401", "customer_id": "c_0e50926e-fd6"}}}
+  41.4   * function_call_complete {"function": "verify_identity", "result": {"status": "success", "data": {"ok": true, "verified": false, "wrong_answers_left": 2, "all_verified": false, "what_to_do_next": "That answer is not correct. Ask the same question again."}, "message": "Successfully executed POST request", "status_code": 200}}
+  41.4   ? route identity matched=False -> None []
+  41.4 AGENT    [identity] That answer is not correct. What are the last four digits of the phone number on file?
+  54.2 CUSTOMER [identity] I'm sorry about that, my head is just spinning with all the things I have to do before my cousin's wedding on the thirtieth. The last four digits are four four one zero.
+  55.3   = id1=answers conf=1.0 src=extraction@identity
+  55.7   = id_heard=four four zero one four four one zero conf=0.9240647474087538 src=extraction@identity
+  55.7   = id_last=four four one zero conf=1.0 src=extraction@identity
+  55.7   ? route identity matched=False -> None []
+  61.0   * function_call_start {"function": "verify_identity", "args": {"url": "https://freya-bank-mock.freyavoice.workers.dev/v1/verify_identity", "method": "POST", "headers": {"Content-Type": "application/json"}, "body": {"field": "phone_last4", "answer": "4410", "customer_id": "c_0e50926e-fd6"}}}
+  63.6   * function_call_complete {"function": "verify_identity", "result": {"status": "success", "data": {"ok": true, "verified": true, "wrong_answers_left": 2, "all_verified": true, "what_to_do_next": "Both answers are correct. Thank the customer in a few words."}, "message": "Successfully executed POST request", "status_code": 200}}
+  63.6   ? route identity matched=True -> account [(verify_identity_response.data.all_verified == 'true' OR verify_identity_response.data.all_verified == 'True')]
+  63.6   > enter account (from identity)
+  63.6   * function_call_start {"function": "api_call", "args": {"url": "https://freya-bank-mock.freyavoice.workers.dev/v1/get_account", "method": "POST", "headers": {"Content-Type": "application/json"}, "body": {"customer_id": "c_0e50926e-fd6"}}}
+  63.8   * function_call_complete {"function": "api_call", "result": {"status": "success", "data": {"ok": true, "products": [{"product_id": "p1", "type": "credit_card", "card_last4": "9015", "past_due": 510, "days_late": 16, "minimum_payment": 153}, {"product_id": "p2", "type": "personal_loan", "past_due": 1320, "days_late": 16, "instalment_amount": 440}, {"product_id": "p3", "type": "car_loan", "past_due": 140, "days_late": 7, "…
+  63.8   ? route account matched=True -> facts [always]
+  63.8   > enter facts (from account)
+  63.8   * function_call_start {"function": "code_exec", "args": {"timeout_ms": 20000, "code": "# Runs INSIDE Freya code nodes (code_exec sandbox: json, re, datetime) and in local tests.\n# Rules for this file: stdlib only, never raise to the caller, and never two braces in a row\n# (the platform may treat them as a template placeholder).\nimport datetime\nimport json\nimport re\n\nWEEKDAYS = [\"Monday\", \"Tuesday\", \"Wednes…
+  66.3   * function_call_complete {"function": "code_exec", "result": {"status": "success", "data": null, "message": "Code executed successfully", "status_code": 200, "validation_errors": ["variable 'reply_kind' rejected by schema validation", "variable 'all_products' rejected by schema validation", "variable 'about_product' rejected by schema validation", "variable 'has_question' rejected by schema validation"]}}
+  66.3   ? route facts matched=True -> negotiate_say [always]
+  66.3   > enter negotiate_say (from facts)
+  66.3 AGENT    [negotiate_say] I am calling from the collections team about a late payment. Your credit card ending 9015 has 510.00 past due and is 16 days late. Your personal loan has 1320.00 past due and is 16 days late. Your car loan has 140.00 past due and is 7 days late. Can you pay all of them today?
+  68.2 CUSTOMER [negotiate_say] It's just been one of those days  [CUT]
+  72.9   = reply_kind=unclear conf=1.0 src=extraction@negotiate_say
+  72.9   ? route negotiate_say matched=True -> decide [always]
+  72.9   > enter decide (from negotiate_say)
+  72.9   * function_call_start {"function": "code_exec", "args": {"timeout_ms": 20000, "code": "# Runs INSIDE Freya code nodes (code_exec sandbox: json, re, datetime) and in local tests.\n# Rules for this file: stdlib only, never raise to the caller, and never two braces in a row\n# (the platform may treat them as a template placeholder).\nimport datetime\nimport json\nimport re\n\nWEEKDAYS = [\"Monday\", \"Tuesday\", \"Wednes…
+  73.2   * function_call_complete {"function": "code_exec", "result": {"status": "success", "data": null, "message": "Code executed successfully", "status_code": 200, "validation_errors": ["variable 'reply_kind' rejected by schema validation", "variable 'all_products' rejected by schema validation", "variable 'about_product' rejected by schema validation", "variable 'has_question' rejected by schema validation"]}}
+  73.2   ? route decide matched=True -> negotiate_say [always]
+  73.2   > enter negotiate_say (from decide)
+  73.2 AGENT    [negotiate_say] Sorry, I did not catch that. Can you pay all of them today?
+  75.1 CUSTOMER [negotiate_say] Work has been so stressful lately that I can't even think straight most of the time. I will pay the credit card tomorrow, but I'm not paying the personal loan or the car loan.
+  76.1   = said_date_text=tomorrow conf=1.0 src=extraction@negotiate_say
+  76.2   = reply_kind=offer conf=1.0 src=extraction@negotiate_say
+  76.2   = about_product=p1 conf=1.0 src=extraction@negotiate_say
+  76.2   ? route negotiate_say matched=True -> decide [always]
+  76.2   > enter decide (from negotiate_say)
+  76.2   * function_call_start {"function": "code_exec", "args": {"timeout_ms": 20000, "code": "# Runs INSIDE Freya code nodes (code_exec sandbox: json, re, datetime) and in local tests.\n# Rules for this file: stdlib only, never raise to the caller, and never two braces in a row\n# (the platform may treat them as a template placeholder).\nimport datetime\nimport json\nimport re\n\nWEEKDAYS = [\"Monday\", \"Tuesday\", \"Wednes…
+  77.3   * function_call_complete {"function": "code_exec", "result": {"status": "success", "data": null, "message": "Code executed successfully", "status_code": 200, "validation_errors": ["variable 'reply_kind' rejected by schema validation", "variable 'about_product' rejected by schema validation", "variable 'all_products' rejected by schema validation", "variable 'has_question' rejected by schema validation"]}}
+  77.3   ? route decide matched=True -> negotiate_say [always]
+  77.3   > enter negotiate_say (from decide)
+  77.3 AGENT    [negotiate_say] I have noted the credit card ending 9015 for 510.00 on Thursday 15 October 2026. Could you pay 1320.00 for the personal loan on Friday 16 October 2026?
+  79.0 CUSTOMER [negotiate_say] I've been running from meeting to meeting and I haven't even had a chance to grab a coffee yet. No, I'm not paying the personal loan.
+  82.1   = reply_kind=no conf=1.0 src=extraction@negotiate_say
+  82.1   = about_product=p2 conf=1.0 src=extraction@negotiate_say
+  82.1   ? route negotiate_say matched=True -> decide [always]
+  82.1   > enter decide (from negotiate_say)
+  82.1   * function_call_start {"function": "code_exec", "args": {"timeout_ms": 20000, "code": "# Runs INSIDE Freya code nodes (code_exec sandbox: json, re, datetime) and in local tests.\n# Rules for this file: stdlib only, never raise to the caller, and never two braces in a row\n# (the platform may treat them as a template placeholder).\nimport datetime\nimport json\nimport re\n\nWEEKDAYS = [\"Monday\", \"Tuesday\", \"Wednes…
+  82.3   * function_call_complete {"function": "code_exec", "result": {"status": "success", "data": null, "message": "Code executed successfully", "status_code": 200, "validation_errors": ["variable 'reply_kind' rejected by schema validation", "variable 'about_product' rejected by schema validation", "variable 'all_products' rejected by schema validation", "variable 'has_question' rejected by schema validation"]}}
+  82.4   ? route decide matched=True -> negotiate_say [always]
+  82.4   > enter negotiate_say (from decide)
+  82.4 AGENT    [negotiate_say] Could you pay 440.00 for the personal loan on Friday 23 October 2026? The rest stays overdue.
+  83.9 CUSTOMER [negotiate_say] I've had to stay late every night this week just to keep up with the workload. No, I refuse to pay the personal loan.
+  97.0   = reply_kind=no conf=1.0 src=extraction@negotiate_say
+  97.0   = about_product=p2 conf=1.0 src=extraction@negotiate_say
+  97.0   ? route negotiate_say matched=True -> decide [always]
+  97.0   > enter decide (from negotiate_say)
+  97.0   * function_call_start {"function": "code_exec", "args": {"timeout_ms": 20000, "code": "# Runs INSIDE Freya code nodes (code_exec sandbox: json, re, datetime) and in local tests.\n# Rules for this file: stdlib only, never raise to the caller, and never two braces in a row\n# (the platform may treat them as a template placeholder).\nimport datetime\nimport json\nimport re\n\nWEEKDAYS = [\"Monday\", \"Tuesday\", \"Wednes…
+  97.3   * function_call_complete {"function": "code_exec", "result": {"status": "success", "data": null, "message": "Code executed successfully", "status_code": 200, "validation_errors": ["variable 'reply_kind' rejected by schema validation", "variable 'about_product' rejected by schema validation", "variable 'all_products' rejected by schema validation", "variable 'has_question' rejected by schema validation"]}}
+  97.3   ? route decide matched=True -> negotiate_say [always]
+  97.3   > enter negotiate_say (from decide)
+  97.3 AGENT    [negotiate_say] Could you pay 140.00 for the car loan on Friday 16 October 2026?
+  98.9 CUSTOMER [negotiate_say] I've been so overwhelmed with these deadlines that I barely have a moment to breathe. No, I am not paying the car loan.
+ 101.2   = reply_kind=no conf=1.0 src=extraction@negotiate_say
+ 101.2   = about_product=p3 conf=1.0 src=extraction@negotiate_say
+ 101.3   ? route negotiate_say matched=True -> decide [always]
+ 101.3   > enter decide (from negotiate_say)
+ 101.3   * function_call_start {"function": "code_exec", "args": {"timeout_ms": 20000, "code": "# Runs INSIDE Freya code nodes (code_exec sandbox: json, re, datetime) and in local tests.\n# Rules for this file: stdlib only, never raise to the caller, and never two braces in a row\n# (the platform may treat them as a template placeholder).\nimport datetime\nimport json\nimport re\n\nWEEKDAYS = [\"Monday\", \"Tuesday\", \"Wednes…
+ 101.7   * function_call_complete {"function": "code_exec", "result": {"status": "success", "data": null, "message": "Code executed successfully", "status_code": 200, "validation_errors": ["variable 'reply_kind' rejected by schema validation", "variable 'about_product' rejected by schema validation", "variable 'all_products' rejected by schema validation", "variable 'has_question' rejected by schema validation"]}}
+ 101.8   ? route decide matched=True -> negotiate_say [always]
+ 101.8   > enter negotiate_say (from decide)
+ 101.8 AGENT    [negotiate_say] To confirm: the credit card ending 9015, 510.00 on Thursday 15 October 2026. Do you confirm?
+ 103.9 CUSTOMER [negotiate_say] Yes, I confirm.
+ 106.6   = reply_kind=yes conf=1.0 src=extraction@negotiate_say
+ 106.6   ? route negotiate_say matched=True -> decide [always]
+ 106.6   > enter decide (from negotiate_say)
+ 106.6   * function_call_start {"function": "code_exec", "args": {"timeout_ms": 20000, "code": "# Runs INSIDE Freya code nodes (code_exec sandbox: json, re, datetime) and in local tests.\n# Rules for this file: stdlib only, never raise to the caller, and never two braces in a row\n# (the platform may treat them as a template placeholder).\nimport datetime\nimport json\nimport re\n\nWEEKDAYS = [\"Monday\", \"Tuesday\", \"Wednes…
+ 107.0   * function_call_complete {"function": "code_exec", "result": {"status": "success", "data": null, "message": "Code executed successfully", "status_code": 200, "validation_errors": ["variable 'reply_kind' rejected by schema validation", "variable 'about_product' rejected by schema validation", "variable 'all_products' rejected by schema validation", "variable 'has_question' rejected by schema validation"]}}
+ 107.0   ? route decide matched=True -> record [neg_action == 'record']
+ 107.0   > enter record (from decide)
+ 107.0   * function_call_start {"function": "api_call", "args": {"url": "https://freya-bank-mock.freyavoice.workers.dev/v1/create_promise", "method": "POST", "headers": {"Content-Type": "application/json"}, "body": {"date": "2026-10-15", "amount": 510.0, "product_id": "p1", "customer_id": "c_0e50926e-fd6"}}}
+ 107.0   * function_call_complete {"function": "api_call", "result": {"status": "success", "data": {"ok": true, "promise_id": "pr1"}, "message": "Successfully executed POST request", "status_code": 200, "header": {"Date": "Sun, 11 Oct 2026 08:01:44 GMT", "Content-Type": "application/json", "Content-Length": "30", "Connection": "keep-alive", "Report-To": "{\"group\":\"cf-nel\",\"max_age\":604800,\"endpoints\":[{\"url\":\"https://a…
+ 107.0   ? route record matched=True -> after_record [always]
+ 107.0   > enter after_record (from record)
+ 107.0   * function_call_start {"function": "code_exec", "args": {"timeout_ms": 20000, "code": "# Runs INSIDE Freya code nodes (code_exec sandbox: json, re, datetime) and in local tests.\n# Rules for this file: stdlib only, never raise to the caller, and never two braces in a row\n# (the platform may treat them as a template placeholder).\nimport datetime\nimport json\nimport re\n\nWEEKDAYS = [\"Monday\", \"Tuesday\", \"Wednes…
+ 107.8   * function_call_complete {"function": "code_exec", "result": {"status": "success", "data": null, "message": "Code executed successfully", "status_code": 200}}
+ 107.8   ? route after_record matched=True -> negotiate_say [always]
+ 107.8   > enter negotiate_say (from after_record)
+ 107.8 AGENT    [negotiate_say] Your promise is recorded: the credit card ending 9015, 510.00 on Thursday 15 October 2026. You will receive a text message confirming this promise. Is there anything else I can help you with?
+ 109.6 CUSTOMER [negotiate_say] I really need to get back to this pile of paperwork on my desk now. No, that's everything.
+ 110.4   = reply_kind=no conf=1.0 src=extraction@negotiate_say
+ 110.4   ? route negotiate_say matched=True -> decide [always]
+ 110.4   > enter decide (from negotiate_say)
+ 110.4   * function_call_start {"function": "code_exec", "args": {"timeout_ms": 20000, "code": "# Runs INSIDE Freya code nodes (code_exec sandbox: json, re, datetime) and in local tests.\n# Rules for this file: stdlib only, never raise to the caller, and never two braces in a row\n# (the platform may treat them as a template placeholder).\nimport datetime\nimport json\nimport re\n\nWEEKDAYS = [\"Monday\", \"Tuesday\", \"Wednes…
+ 112.3   * function_call_complete {"function": "code_exec", "result": {"status": "success", "data": null, "message": "Code executed successfully", "status_code": 200, "validation_errors": ["variable 'reply_kind' rejected by schema validation", "variable 'about_product' rejected by schema validation", "variable 'all_products' rejected by schema validation", "variable 'has_question' rejected by schema validation"]}}
+ 112.3   ? route decide matched=True -> wrap [neg_action == 'finish']
+ 112.3   > enter wrap (from decide)
+ 112.3   * function_call_start {"function": "code_exec", "args": {"timeout_ms": 20000, "code": "\nvars['wrapped'] = 'yes'\n"}}
+ 114.5   * function_call_complete {"function": "code_exec", "result": {"status": "success", "data": null, "message": "Code executed successfully", "status_code": 200}}
+ 114.5   ? route wrap matched=True -> note [note_count > 0]
+ 114.5   > enter note (from wrap)
+ 114.5   * function_call_start {"function": "api_call", "args": {"url": "https://freya-bank-mock.freyavoice.workers.dev/v1/add_note", "method": "POST", "headers": {"Content-Type": "application/json"}, "body": {"reason": "refused", "product_id": "p2", "customer_id": "c_0e50926e-fd6"}}}
+ 114.5   * function_call_complete {"function": "api_call", "result": {"status": "success", "data": {"ok": true}, "message": "Successfully executed POST request", "status_code": 200, "header": {"Date": "Sun, 11 Oct 2026 08:01:51 GMT", "Content-Type": "application/json", "Content-Length": "11", "Connection": "keep-alive", "Report-To": "{\"group\":\"cf-nel\",\"max_age\":604800,\"endpoints\":[{\"url\":\"https://a.nel.cloudflare.com/r…
+ 114.5   ? route note matched=True -> after_note [always]
+ 114.5   > enter after_note (from note)
+ 114.5   * function_call_start {"function": "code_exec", "args": {"timeout_ms": 20000, "code": "# Runs INSIDE Freya code nodes (code_exec sandbox: json, re, datetime) and in local tests.\n# Rules for this file: stdlib only, never raise to the caller, and never two braces in a row\n# (the platform may treat them as a template placeholder).\nimport datetime\nimport json\nimport re\n\nWEEKDAYS = [\"Monday\", \"Tuesday\", \"Wednes…
+ 118.3   * function_call_complete {"function": "code_exec", "result": {"status": "success", "data": null, "message": "Code executed successfully", "status_code": 200}}
+ 118.3   ? route after_note matched=True -> note [note_count > 0]
+ 118.3   > enter note (from after_note)
+ 118.3   * function_call_start {"function": "api_call", "args": {"url": "https://freya-bank-mock.freyavoice.workers.dev/v1/add_note", "method": "POST", "headers": {"Content-Type": "application/json"}, "body": {"reason": "refused", "product_id": "p3", "customer_id": "c_0e50926e-fd6"}}}
+ 118.4   * function_call_complete {"function": "api_call", "result": {"status": "success", "data": {"ok": true}, "message": "Successfully executed POST request", "status_code": 200, "header": {"Date": "Sun, 11 Oct 2026 08:01:55 GMT", "Content-Type": "application/json", "Content-Length": "11", "Connection": "keep-alive", "Report-To": "{\"group\":\"cf-nel\",\"max_age\":604800,\"endpoints\":[{\"url\":\"https://a.nel.cloudflare.com/r…
+ 118.4   ? route note matched=True -> after_note [always]
+ 118.4   > enter after_note (from note)
+ 118.4   * function_call_start {"function": "code_exec", "args": {"timeout_ms": 20000, "code": "# Runs INSIDE Freya code nodes (code_exec sandbox: json, re, datetime) and in local tests.\n# Rules for this file: stdlib only, never raise to the caller, and never two braces in a row\n# (the platform may treat them as a template placeholder).\nimport datetime\nimport json\nimport re\n\nWEEKDAYS = [\"Monday\", \"Tuesday\", \"Wednes…
+ 122.0   * function_call_complete {"function": "code_exec", "result": {"status": "success", "data": null, "message": "Code executed successfully", "status_code": 200}}
+ 122.0   ? route after_note matched=True -> goodbye [always]
+ 122.0   > enter goodbye (from after_note)
+ 122.0   * function_call_start {"function": "end_call", "args": {"message_mode": "custom", "spoken_message": "Thank you for your time. Goodbye."}}
+ 122.0   * function_call_complete_deferred {"function": "end_call", "result": null, "deferred": true}
+ 122.0   . call_ended {"reason": "assistant-ended-call"}
+ 122.0 AGENT    [goodbye] Thank you for your time. Goodbye.
+ 122.1   * function_call_complete {"function": "end_call", "result": {"status": "success", "message": "Call ended"}}
+ 123.1   * function_call_start {"function": "close_call", "args": {"url": "https://freya-bank-mock.freyavoice.workers.dev/v1/close_call", "method": "POST", "headers": {"Content-Type": "application/json"}, "body": {"outcome": "promise", "customer_id": "c_0e50926e-fd6"}}}
+ 123.1   * function_call_complete {"function": "close_call", "result": {"status": "success", "data": {"ok": true}, "message": "Successfully executed POST request", "status_code": 200, "header": {"Date": "Sun, 11 Oct 2026 08:02:00 GMT", "Content-Type": "application/json", "Content-Length": "11", "Connection": "keep-alive", "Report-To": "{\"group\":\"cf-nel\",\"max_age\":604800,\"endpoints\":[{\"url\":\"https://a.nel.cloudflare.com…

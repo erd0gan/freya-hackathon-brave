@@ -1,0 +1,39 @@
+# sim-469a79a3-PUB-02 pass=True ended=assistant-ended-call duration=7s call=a6715f2a-1c70-482d-95cf-a696163e7fb6
+# judge: {"success": true, "reason": "All success criteria were met. The agent introduced itself in [Message 0] without stating a reason for the call, naming a product, or mentioning debt. System events confirm that the functions 'verify_identity' and 'get_account' were never invoked. A callback was scheduled for 11:00 via the 'schedule_callback' API call after the user suggested that time in [Message 3]. The call ended properly with 'assistant-ended-call' via the 'end_call' function.", "relevantMessages": {"0": "The agent identifies itself but does not mention the purpose of the call, debt, or products.", "3": "The user requests a callback for tomorrow at 11:00.", "4": "The agent confirms the callback time and terminates the call gracefully."}}
+
+   0.0   > enter opening (from None)
+   0.0 AGENT    [opening] Hello, this is Freya Bank's digital assistant calling, and we are recording this call. Am I speaking with Ms Costa?
+   2.2 CUSTOMER [opening] No, I am her husband. I just got in from work and the commute was absolutely exhausting with all the road construction  [CUT]
+   3.1   = who1=someone_else conf=1.0 src=extraction@opening
+   3.1   ? route opening matched=True -> setup_tp [who1 == 'someone_else']
+   3.1   > enter setup_tp (from opening)
+   3.1   * function_call_start {"function": "code_exec", "args": {"timeout_ms": 20000, "code": "# Runs INSIDE Freya code nodes (code_exec sandbox: json, re, datetime) and in local tests.\n# Rules for this file: stdlib only, never raise to the caller, and never two braces in a row\n# (the platform may treat them as a template placeholder).\nimport datetime\nimport json\nimport re\n\nWEEKDAYS = [\"Monday\", \"Tuesday\", \"Wednes…
+   3.3   * function_call_complete {"function": "code_exec", "result": {"status": "success", "data": null, "message": "Code executed successfully", "status_code": 200}}
+   3.3   ? route setup_tp matched=True -> third_party [always]
+   3.3   > enter third_party (from setup_tp)
+   3.3 AGENT    [third_party] I understand. When would be a good time to reach Ms Costa?
+   6.0 CUSTOMER [third_party] You can reach her tomorrow morning around eleven. I  [CUT]
+   6.4   = tp_reply=gives_time conf=1.0 src=extraction@third_party
+   6.5   = cb_day_text=tomorrow conf=0.9046282703533346 src=extraction@third_party
+   6.5   = cb_time_text=morning around eleven conf=1.0 src=extraction@third_party
+   6.5   ? route third_party matched=True -> cb_check [always]
+   6.5   > enter cb_check (from third_party)
+   6.5   * function_call_start {"function": "code_exec", "args": {"timeout_ms": 20000, "code": "# Runs INSIDE Freya code nodes (code_exec sandbox: json, re, datetime) and in local tests.\n# Rules for this file: stdlib only, never raise to the caller, and never two braces in a row\n# (the platform may treat them as a template placeholder).\nimport datetime\nimport json\nimport re\n\nWEEKDAYS = [\"Monday\", \"Tuesday\", \"Wednes…
+   6.7   * function_call_complete {"function": "code_exec", "result": {"status": "success", "data": null, "message": "Code executed successfully", "status_code": 200, "validation_errors": ["variable 'tp_reply' rejected by schema validation"]}}
+   6.7   ? route cb_check matched=True -> cb_book [cb_state == 'ok']
+   6.7   > enter cb_book (from cb_check)
+   6.7   * function_call_start {"function": "api_call", "args": {"url": "https://freya-bank-mock.freyavoice.workers.dev/v1/schedule_callback", "method": "POST", "headers": {"Content-Type": "application/json"}, "body": {"date": "2026-10-15", "time": "11:00", "customer_id": "c_3ccf75dd-754"}}}
+   6.8   * function_call_complete {"function": "api_call", "result": {"status": "success", "data": {"ok": true}, "message": "Successfully executed POST request", "status_code": 200, "header": {"Date": "Sat, 10 Oct 2026 19:09:54 GMT", "Content-Type": "application/json", "Content-Length": "11", "Connection": "keep-alive", "Report-To": "{\"group\":\"cf-nel\",\"max_age\":604800,\"endpoints\":[{\"url\":\"https://a.nel.cloudflare.com/r…
+   6.8   ? route cb_book matched=True -> fin_callback [always]
+   6.8   > enter fin_callback (from cb_book)
+   6.8   * function_call_start {"function": "code_exec", "args": {"timeout_ms": 20000, "code": "vars['final_outcome'] = 'not_reached'\nvars['final_reason'] = 'callback'\nvars['final_say'] = 'Thank you, we will call back then. Thank you for your time. Goodbye.'\n"}}
+   6.9   * function_call_complete {"function": "code_exec", "result": {"status": "success", "data": null, "message": "Code executed successfully", "status_code": 200}}
+   6.9   ? route fin_callback matched=True -> goodbye [always]
+   6.9   > enter goodbye (from fin_callback)
+   6.9   * function_call_start {"function": "end_call", "args": {"message_mode": "custom", "spoken_message": "Thank you, we will call back then. Thank you for your time. Goodbye."}}
+   6.9   * function_call_complete_deferred {"function": "end_call", "result": null, "deferred": true}
+   6.9   . call_ended {"reason": "assistant-ended-call"}
+   6.9 AGENT    [goodbye] Thank you, we will call back then. Thank you for your time. Goodbye.
+   7.0   * function_call_complete {"function": "end_call", "result": {"status": "success", "message": "Call ended"}}
+   7.7   * function_call_start {"function": "close_call", "args": {"url": "https://freya-bank-mock.freyavoice.workers.dev/v1/close_call", "method": "POST", "headers": {"Content-Type": "application/json"}, "body": {"reason": "callback", "outcome": "not_reached", "customer_id": "c_3ccf75dd-754"}}}
+   7.9   * function_call_complete {"function": "close_call", "result": {"status": "success", "data": {"ok": true}, "message": "Successfully executed POST request", "status_code": 200, "header": {"Date": "Sat, 10 Oct 2026 19:09:55 GMT", "Content-Type": "application/json", "Content-Length": "11", "Connection": "keep-alive", "Report-To": "{\"group\":\"cf-nel\",\"max_age\":604800,\"endpoints\":[{\"url\":\"https://a.nel.cloudflare.com…

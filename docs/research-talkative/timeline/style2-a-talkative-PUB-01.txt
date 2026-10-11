@@ -1,0 +1,32 @@
+# style2-a-talkative-PUB-01 pass=False ended=customer-ended-call duration=14s call=1a33a70c-b36c-45a1-a16e-ee304adf6a85
+# failed: outcome (None, None), expected ('promise', None)
+# failed: promises [], expected [('p1', 420.0, '2026-10-14')]
+# failed: conversation: The call ended prematurely when the customer hung up. As a result, several success criteria were not met: only one security question was passed instead of two, the `create_promise` function was never called, and the required text-message sentence was not spoken.
+# judge: {"success": false, "reason": "The call ended prematurely when the customer hung up. As a result, several success criteria were not met: only one security question was passed instead of two, the `create_promise` function was never called, and the required text-message sentence was not spoken.", "relevantMessages": {"Message 6": "The agent is still attempting to verify the customer's identity when the call ends, meaning the second security question was never passed and the subsequent steps (promise and text message) were not reached."}}
+
+   0.0   > enter opening (from None)
+   0.0 AGENT    [opening] Hello, I am a digital assistant calling from Freya Bank, and we are recording this call. Am I speaking with Mr Reyes?
+   2.2 CUSTOMER [opening] Yes, this is Daniel Reyes. I've been so busy at work today with all these meetings, it's just non-stop.
+   2.4   = who1=confirms conf=1.0 src=extraction@opening
+   2.4   ? route opening matched=True -> setup_id [who1 == 'confirms']
+   2.4   > enter setup_id (from opening)
+   2.4   * function_call_start {"function": "code_exec", "args": {"timeout_ms": 20000, "code": "# Runs INSIDE Freya code nodes (code_exec sandbox: json, re, datetime) and in local tests.\n# Rules for this file: stdlib only, never raise to the caller, and never two braces in a row\n# (the platform may treat them as a template placeholder).\nimport datetime\nimport json\nimport re\n\nWEEKDAYS = [\"Monday\", \"Tuesday\", \"Wednes…
+   2.9   * function_call_complete {"function": "code_exec", "result": {"status": "success", "data": null, "message": "Code executed successfully", "status_code": 200}}
+   3.0   ? route setup_id matched=True -> identity [always]
+   3.0   > enter identity (from setup_id)
+   3.0 AGENT    [identity] First, I need to ask you two security questions. What is your date of birth?
+   4.7 CUSTOMER [identity] Traffic was absolutely terrible this morning, I thought I would never make it to the office. My date of birth is 14 March 1988.
+   5.1   = id1=answers conf=1.0 src=extraction@identity
+   5.5   = id_heard=Traffic was absolutely terrible this morning, I thought I would never make it t… conf=0.926092984638497 src=extraction@identity
+   5.5   = id_last=14 March 1988 conf=0.8165348632588253 src=extraction@identity
+   5.5   ? route identity matched=False -> None []
+   6.4   * function_call_start {"function": "verify_identity", "args": {"url": "https://freya-bank-mock.freyavoice.workers.dev/v1/verify_identity", "method": "POST", "headers": {"Content-Type": "application/json"}, "body": {"field": "date_of_birth", "answer": "1988-03-14", "customer_id": "c_987aea2c-99e"}}}
+   6.5   * function_call_complete {"function": "verify_identity", "result": {"status": "success", "data": {"ok": true, "verified": true, "wrong_answers_left": 3, "all_verified": false, "what_to_do_next": "Correct. Now ask: What are the last four digits of the phone number we have on file?"}, "message": "Successfully executed POST request", "status_code": 200}}
+   6.6   ? route identity matched=False -> None []
+   6.6 AGENT    [identity] Thank you. What are the last four digits of the phone number we have on file?
+   8.8 CUSTOMER [identity] I've been trying to get everything ready because my cousin  [CUT]
+  10.8   = id1=unclear conf=1.0 src=extraction@identity
+  10.8   ? route identity matched=False -> None []
+  10.8 AGENT    [identity] I'm sorry, I didn't catch that. What are the last four digits of the phone number we have on file?
+  14.3   * function_call_start {"function": "close_call", "args": {"url": "https://freya-bank-mock.freyavoice.workers.dev/v1/close_call", "method": "POST", "headers": {"Content-Type": "application/json"}, "body": {"outcome": "", "customer_id": "c_987aea2c-99e"}}}
+  14.4   * function_call_complete {"function": "close_call", "result": {"status": "success", "data": {"ok": false, "error": "unknown outcome"}, "message": "Successfully executed POST request", "status_code": 200, "header": {"Date": "Sat, 10 Oct 2026 18:32:49 GMT", "Content-Type": "application/json", "Content-Length": "38", "Connection": "keep-alive", "Report-To": "{\"group\":\"cf-nel\",\"max_age\":604800,\"endpoints\":[{\"url\":\…

@@ -13,3 +13,6 @@ env.sh
 kit/results/
 kit/traces/
 runs/
+# raw call JSON from builder/tools/call_dump.py (~100 MB per batch; regenerate with the tool)
+docs/research-talkative/raw/
+docs/research-talkative/compare/raw/

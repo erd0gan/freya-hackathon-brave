@@ -1,0 +1,56 @@
+# style2-b-talkative-PUB-11 pass=False ended=assistant-ended-call duration=16s call=fb9a44ce-5d18-46ef-955e-602c65de23b3
+# failed: outcome ('not_verified', 'declined'), expected ('promise', None)
+# failed: promises [], expected [('p1', 220.0, '2026-10-16'), ('p2', 640.0, '2026-10-16'), ('p3', 75.0, '2026-10-16')]
+# failed: conversation: The conversation failed to meet any of the success criteria because the agent ended the call during the identity verification phase before any products were mentioned or any promises were created. - None of the three products were stated. - There were no read-backs or confirmations for any products. - No 'create_promise' calls were made.
+# judge: {"success": false, "reason": "The conversation failed to meet any of the success criteria because the agent ended the call during the identity verification phase before any products were mentioned or any promises were created. \n\n- None of the three products were stated.\n- There were no read-backs or confirmations for any products.\n- No 'create_promise' calls were made.", "relevantMessages": {"Message 10": "The agent attempted one final time to verify identity but the user was distracted, leading to the termination of the call.", "Message 12": "The agent ended the call here, which prevented any of the success criteria related to products and promises from being addressed."}}
+
+   0.0   > enter opening (from None)
+   0.0 AGENT    [opening] Hello, this is Freya Bank's digital assistant calling from Freya Bank, and we are recording this call. Am I speaking with Ms Almeida?
+   1.8 CUSTOMER [opening] Work has been absolutely non-stop today, I haven't even had a chance to sit down for lunch. Yes, this is Sofia Almeida speaking.
+   2.1   = who1=confirms conf=1.0 src=extraction@opening
+   2.1   ? route opening matched=True -> setup_id [who1 == 'confirms']
+   2.1   > enter setup_id (from opening)
+   2.1   * function_call_start {"function": "code_exec", "args": {"timeout_ms": 20000, "code": "# Runs INSIDE Freya code nodes (code_exec sandbox: json, re, datetime) and in local tests.\n# Rules for this file: stdlib only, never raise to the caller, and never two braces in a row\n# (the platform may treat them as a template placeholder).\nimport datetime\nimport json\nimport re\n\nWEEKDAYS = [\"Monday\", \"Tuesday\", \"Wednes…
+   2.2   * function_call_complete {"function": "code_exec", "result": {"status": "success", "data": null, "message": "Code executed successfully", "status_code": 200}}
+   2.2   ? route setup_id matched=True -> identity [always]
+   2.2   > enter identity (from setup_id)
+   2.2 AGENT    [identity] Before we continue, I need to ask you two security questions. What is your date of birth?
+   3.8 CUSTOMER [identity] The traffic this morning was just dreadful, it took me forever to get to the office. My date of birth is the third of June nineteen eighty seven.
+   4.0   = id1=answers conf=1.0 src=extraction@identity
+   4.2   = id_heard=the third of June nineteen eighty seven conf=0.7309910193364274 src=extraction@identity
+   4.2   = id_last=the third of June nineteen eighty seven conf=1.0 src=extraction@identity
+   4.2   ? route identity matched=False -> None []
+   4.8   * function_call_start {"function": "verify_identity", "args": {"url": "https://freya-bank-mock.freyavoice.workers.dev/v1/verify_identity", "method": "POST", "headers": {"Content-Type": "application/json"}, "body": {"field": "date_of_birth", "answer": "1987-06-03", "customer_id": "c_52161b49-b36"}}}
+   5.2   * function_call_complete {"function": "verify_identity", "result": {"status": "success", "data": {"ok": true, "verified": true, "wrong_answers_left": 3, "all_verified": false, "what_to_do_next": "Correct. Now ask: What are the last four digits of the phone number we have on file?"}, "message": "Successfully executed POST request", "status_code": 200}}
+   5.2   ? route identity matched=False -> None []
+   5.2 AGENT    [identity] Thank you. What are the last four digits of the phone number we have on file?
+   7.4 CUSTOMER [identity] I've been juggling so many meetings all morning, it's been quite a day. The last four digits are two  [CUT]
+   7.6   = id1=answers conf=1.0 src=extraction@identity
+   7.7   = id_heard=two conf=1.0 src=extraction@identity
+   7.7   = id_last=two conf=1.0 src=extraction@identity
+   7.7   ? route identity matched=False -> None []
+   7.7 AGENT    [identity] And the remaining digits?
+   9.8 CUSTOMER [identity] I'm sorry, I got distracted  [CUT]
+  10.0   = id1=unclear conf=1.0 src=extraction@identity
+  10.0   ? route identity matched=False -> None []
+  10.0 AGENT    [identity] And the remaining digits?
+  12.2 CUSTOMER [identity] I'm so busy with all these emails coming in,  [CUT]
+  12.4   = id1=declines conf=1.0 src=extraction@identity
+  12.4   ? route identity matched=True -> identity2 [id1 == 'declines']
+  12.5   > enter identity2 (from identity)
+  12.8 AGENT    [identity2] These questions protect your account, so I need them before I can continue. What are the last four digits of the phone number we have on file?
+  14.7 CUSTOMER [identity2] I've been trying to clear my desk all morning  [CUT]
+  15.0   = id2=declines conf=1.0 src=extraction@identity2
+  15.0   ? route identity2 matched=True -> fin_declined [id2 == 'declines']
+  15.0   > enter fin_declined (from identity2)
+  15.0   * function_call_start {"function": "code_exec", "args": {"timeout_ms": 20000, "code": "vars['final_outcome'] = 'not_verified'\nvars['final_reason'] = 'declined'\nvars['final_say'] = 'Thank you for your time. Goodbye.'\n"}}
+  15.2   * function_call_complete {"function": "code_exec", "result": {"status": "success", "data": null, "message": "Code executed successfully", "status_code": 200}}
+  15.2   ? route fin_declined matched=True -> goodbye [always]
+  15.2   > enter goodbye (from fin_declined)
+  15.2   * function_call_start {"function": "end_call", "args": {"message_mode": "custom", "spoken_message": "Thank you for your time. Goodbye."}}
+  15.2   * function_call_complete_deferred {"function": "end_call", "result": null, "deferred": true}
+  15.2   . call_ended {"reason": "assistant-ended-call"}
+  15.2 AGENT    [goodbye] Thank you for your time. Goodbye.
+  15.3   * function_call_complete {"function": "end_call", "result": {"status": "success", "message": "Call ended"}}
+  15.9   * function_call_start {"function": "close_call", "args": {"url": "https://freya-bank-mock.freyavoice.workers.dev/v1/close_call", "method": "POST", "headers": {"Content-Type": "application/json"}, "body": {"reason": "declined", "outcome": "not_verified", "customer_id": "c_52161b49-b36"}}}
+  15.9   * function_call_complete {"function": "close_call", "result": {"status": "success", "data": {"ok": true}, "message": "Successfully executed POST request", "status_code": 200, "header": {"Date": "Sat, 10 Oct 2026 18:39:55 GMT", "Content-Type": "application/json", "Content-Length": "11", "Connection": "keep-alive", "Report-To": "{\"group\":\"cf-nel\",\"max_age\":604800,\"endpoints\":[{\"url\":\"https://a.nel.cloudflare.com…

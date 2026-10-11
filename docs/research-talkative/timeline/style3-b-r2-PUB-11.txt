@@ -1,0 +1,98 @@
+# style3-b-r2-PUB-11 pass=False ended=assistant-ended-call duration=190s call=721c1e92-bfd3-435f-b2bc-35061dc650bc
+# failed: outcome ('not_verified', 'declined'), expected ('promise', None)
+# failed: promises [], expected [('p1', 220.0, '2026-10-16'), ('p2', 640.0, '2026-10-16'), ('p3', 75.0, '2026-10-16')]
+# failed: conversation: The assistant failed all success criteria because it never progressed beyond the identity verification stage. The user repeatedly provided irrelevant information in response to the request for the last four digits of their phone number, causing the assistant to hit a turn limit and terminate the call. As a result, no products were stated, no read-backs were performed, and no promises were created.
+# judge: {"success": false, "reason": "The assistant failed all success criteria because it never progressed beyond the identity verification stage. The user repeatedly provided irrelevant information in response to the request for the last four digits of their phone number, causing the assistant to hit a turn limit and terminate the call. As a result, no products were stated, no read-backs were performed, and no promises were created.", "relevantMessages": {"4": "The assistant begins the second security question regarding the phone number digits.", "32": "The assistant asks for the phone number for the final time before hitting the turn limit.", "34": "The assistant ends the call gracefully after failing to verify the user's identity."}}
+
+   0.0   > enter opening (from None)
+   0.0 AGENT    [opening] Hello, I am a digital assistant calling from Freya Bank, and we are recording this call. Am I speaking with Ms Almeida?
+   2.1 CUSTOMER [opening] Yes, this is Sofia Almeida. I've had such a busy morning with back-to-back meetings at work.
+   3.4   = who1=confirms conf=1.0 src=extraction@opening
+   3.4   ? route opening matched=True -> setup_id [who1 == 'confirms']
+   3.4   > enter setup_id (from opening)
+   3.4   * function_call_start {"function": "code_exec", "args": {"timeout_ms": 20000, "code": "# Runs INSIDE Freya code nodes (code_exec sandbox: json, re, datetime) and in local tests.\n# Rules for this file: stdlib only, never raise to the caller, and never two braces in a row\n# (the platform may treat them as a template placeholder).\nimport datetime\nimport json\nimport re\n\nWEEKDAYS = [\"Monday\", \"Tuesday\", \"Wednes…
+   3.7   * function_call_complete {"function": "code_exec", "result": {"status": "success", "data": null, "message": "Code executed successfully", "status_code": 200}}
+   3.7   ? route setup_id matched=True -> identity [always]
+   3.7   > enter identity (from setup_id)
+   3.7 AGENT    [identity] First, I need to ask you two security questions. What is your date of birth?
+   5.1 CUSTOMER [identity] The traffic was absolutely terrible this morning, I thought I'd never make it into the office. My date of birth is third of June nineteen eighty seven.
+  13.9   = id1=answers conf=1.0 src=extraction@identity
+  17.4   = id_heard=third of June nineteen eighty seven conf=0.8518933240279719 src=extraction@identity
+  17.4   = id_last=third of June nineteen eighty seven conf=1.0 src=extraction@identity
+  17.4   ? route identity matched=False -> None []
+  27.9   * function_call_start {"function": "verify_identity", "args": {"url": "https://freya-bank-mock.freyavoice.workers.dev/v1/verify_identity", "method": "POST", "headers": {"Content-Type": "application/json"}, "body": {"field": "date_of_birth", "answer": "1987-06-03", "customer_id": "c_6e69806e-3fb"}}}
+  28.2   * function_call_complete {"function": "verify_identity", "result": {"status": "success", "data": {"ok": true, "verified": true, "wrong_answers_left": 3, "all_verified": false, "what_to_do_next": "Correct. Now ask: What are the last four digits of the phone number on file?"}, "message": "Successfully executed POST request", "status_code": 200}}
+  28.2   ? route identity matched=False -> None []
+  28.2 AGENT    [identity] Thank you. What are the last four digits of the phone number on file?
+  34.4 CUSTOMER [identity] I'm just trying to get a quick coffee before my  [CUT]
+  36.6   = id1=unclear conf=1.0 src=extraction@identity
+  36.6   ? route identity matched=False -> None []
+  36.6 AGENT    [identity] I understand. What are the last four digits of the phone number on file?
+  41.9 CUSTOMER [identity] I'm finally sitting down for a moment, work has been non-stop since I walked in.
+  43.9   = id1=unclear conf=1.0 src=extraction@identity
+  43.9   ? route identity matched=False -> None []
+  43.9 AGENT    [identity] I understand. What are the last four digits of the phone number on file?
+  47.9 CUSTOMER [identity] I'm so sorry, I've just been  [CUT]
+  49.3   = id1=unclear conf=1.0 src=extraction@identity
+  49.3   ? route identity matched=False -> None []
+  49.3 AGENT    [identity] No problem. What are the last four digits of the phone number on file?
+  52.7 CUSTOMER [identity] I'm just trying to catch my breath because my cousin  [CUT]
+  63.6   = id1=unclear conf=1.0 src=extraction@identity
+  63.6   ? route identity matched=False -> None []
+  63.6 AGENT    [identity] I understand. What are the last four digits of the phone number on file?
+  69.5 CUSTOMER [identity] I'm just so scatterbrained today with  [CUT]
+  71.6   = id1=unclear conf=1.0 src=extraction@identity
+  71.6   ? route identity matched=False -> None []
+  71.6 AGENT    [identity] I understand. What are the last four digits of the phone number on file?
+  75.4 CUSTOMER [identity] I'm just so scatterbrained today with my  [CUT]
+  84.3   = id1=unclear conf=1.0 src=extraction@identity
+  84.3   ? route identity matched=False -> None []
+  84.4 AGENT    [identity] I understand. What are the last four digits of the phone number on file?
+  89.9 CUSTOMER [identity] It's just been a whirlwind day  [CUT]
+  94.2   = id1=unclear conf=1.0 src=extraction@identity
+  94.2   ? route identity matched=False -> None []
+  94.2 AGENT    [identity] I understand. What are the last four digits of the phone number on file?
+  99.2 CUSTOMER [identity] I'm just so overwhelmed because my cousin's wedding  [CUT]
+ 101.8   = id1=unclear conf=1.0 src=extraction@identity
+ 101.8   ? route identity matched=False -> None []
+ 101.8 AGENT    [identity] I understand. What are the last four digits of the phone number on file?
+ 106.6 CUSTOMER [identity] I'm just so overwhelmed because my cousin's  [CUT]
+ 108.8   = id1=unclear conf=1.0 src=extraction@identity
+ 108.8   ? route identity matched=False -> None []
+ 108.8 AGENT    [identity] I understand. What are the last four digits of the phone number on file?
+ 114.5 CUSTOMER [identity] I am just so overwhelmed because my cousin's wedding  [CUT]
+ 116.7   = id1=unclear conf=1.0 src=extraction@identity
+ 116.7   ? route identity matched=False -> None []
+ 116.7 AGENT    [identity] I understand. What are the last four digits of the phone number on file?
+ 122.1 CUSTOMER [identity] I'm just so overwhelmed because my cousin's wedding  [CUT]
+ 123.8   = id1=unclear conf=1.0 src=extraction@identity
+ 123.8   ? route identity matched=False -> None []
+ 123.9 AGENT    [identity] I understand. What are the last four digits of the phone number on file?
+ 131.8 CUSTOMER [identity] I'm just so overwhelmed because my cousin's wedding  [CUT]
+ 132.9   = id1=unclear conf=1.0 src=extraction@identity
+ 132.9   ? route identity matched=False -> None []
+ 132.9 AGENT    [identity] I understand. What are the last four digits of the phone number on file?
+ 142.3 CUSTOMER [identity] I am just so overwhelmed because my cousin's wedding is  [CUT]
+ 149.8   = id1=unclear conf=1.0 src=extraction@identity
+ 149.8   ? route identity matched=False -> None []
+ 149.8 AGENT    [identity] I understand. What are the last four digits of the phone number on file?
+ 156.8 CUSTOMER [identity] I am just so overwhelmed because my cousin's  [CUT]
+ 160.7   = id1=unclear conf=1.0 src=extraction@identity
+ 183.6   = id_heard=I am just so overwhelmed because my cousin's wedding I'm just so overwhelmed be… conf=1.0 src=extraction@identity
+ 183.6   = id_last=I am just so overwhelmed because my cousin's conf=1.0 src=extraction@identity
+ 183.6   ? route identity matched=False -> None []
+ 183.7 AGENT    [identity] I understand. What are the last four digits of the phone number on file?
+ 188.7 CUSTOMER [identity] I'm just so overwhelmed because my cousin's wedding  [CUT]
+ 188.7   . max_turns_exceeded {"node": "identity", "turn_count": 16, "max_turns": 16, "target": "fin_declined"}
+ 188.7   > enter fin_declined (from identity)
+ 188.7   * function_call_start {"function": "code_exec", "args": {"timeout_ms": 20000, "code": "vars['final_outcome'] = 'not_verified'\nvars['final_reason'] = 'declined'\nvars['final_say'] = 'Thank you for your time. Goodbye.'\n"}}
+ 190.0   * function_call_complete {"function": "code_exec", "result": {"status": "success", "data": null, "message": "Code executed successfully", "status_code": 200}}
+ 190.0   ? route fin_declined matched=True -> goodbye [always]
+ 190.0   > enter goodbye (from fin_declined)
+ 190.0   * function_call_start {"function": "end_call", "args": {"message_mode": "custom", "spoken_message": "Thank you for your time. Goodbye."}}
+ 190.0   * function_call_complete_deferred {"function": "end_call", "result": null, "deferred": true}
+ 190.0   . call_ended {"reason": "assistant-ended-call"}
+ 190.0 AGENT    [goodbye] Thank you for your time. Goodbye.
+ 190.1   * function_call_complete {"function": "end_call", "result": {"status": "success", "message": "Call ended"}}
+ 191.4   * function_call_start {"function": "close_call", "args": {"url": "https://freya-bank-mock.freyavoice.workers.dev/v1/close_call", "method": "POST", "headers": {"Content-Type": "application/json"}, "body": {"reason": "declined", "outcome": "not_verified", "customer_id": "c_6e69806e-3fb"}}}
+ 191.6   * function_call_complete {"function": "close_call", "result": {"status": "success", "data": {"ok": true}, "message": "Successfully executed POST request", "status_code": 200, "header": {"Date": "Sun, 11 Oct 2026 07:59:33 GMT", "Content-Type": "application/json", "Content-Length": "11", "Connection": "keep-alive", "Report-To": "{\"group\":\"cf-nel\",\"max_age\":604800,\"endpoints\":[{\"url\":\"https://a.nel.cloudflare.com…
