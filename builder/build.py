@@ -105,13 +105,27 @@ def bounded_api(hard_deadline: float):
             headers=freya.HEADERS,
             method=method,
         )
-        try:
-            with urllib.request.urlopen(req, timeout=min(FREYA_CALL_TIMEOUT_S, left)) as r:
-                out = json.load(r)
-        except urllib.error.HTTPError as e:
-            raise RuntimeError(f"{method} {path} -> {e.code}: {e.read().decode()[:1500]}") from None
-        except (OSError, ValueError) as e:  # URLError, timeouts, a body that is not JSON
-            raise RuntimeError(f"{method} {path} -> {type(e).__name__}: {e}") from None
+        # A gateway error or a dropped connection is tried again (the platform answered 504 to
+        # a dry run on 11 Oct and the build ended with nothing published); a 4xx is an answer.
+        wait = 4.0
+        while True:
+            left = hard_deadline - time.monotonic()
+            try:
+                with urllib.request.urlopen(req, timeout=min(FREYA_CALL_TIMEOUT_S, left)) as r:
+                    out = json.load(r)
+                break
+            except urllib.error.HTTPError as e:
+                msg = f"{method} {path} -> {e.code}: {e.read().decode(errors='replace')[:1500]}"
+                if not (e.code >= 500 or e.code == 429):
+                    raise RuntimeError(msg) from None
+            except (OSError, ValueError) as e:  # URLError, timeouts, a body that is not JSON
+                msg = f"{method} {path} -> {type(e).__name__}: {e}"
+            left = hard_deadline - time.monotonic()
+            if left < wait + 10:
+                raise RuntimeError(msg + " (no time left to try again)")
+            print(f"freya: {msg[:200]}; trying again in {wait:.0f} s", file=sys.stderr)
+            time.sleep(wait)
+            wait = min(wait * 2, 30.0)
         return out.get("data", {}).get("result", out) if isinstance(out, dict) else out
 
     return api
@@ -231,14 +245,32 @@ def run(trace: Trace, brief_path: Path, api_path: Path, slot: str, deadline: flo
     if not rep.ok:
         trace.end(status="invalid workflow, nothing published")
         return 1
+    out = ROOT / "submission" / f"{slot}.workflow.json"
+
+    def write_local(why: str) -> None:
+        # the submission is the workflow file: with the platform down it is still written
+        out.parent.mkdir(parents=True, exist_ok=True)
+        out.write_text(json.dumps({"updated_at": None, "workflow": wf}, indent=1))
+        trace.freya(f"{why}: wrote the workflow as built -> {out.relative_to(ROOT)}")
+
     try:
         freya.validate_workflow(f"{slot} dry run", wf)
         trace.freya("dry run: ok")
     except RuntimeError as e:
         trace.freya(f"dry run FAILED: {str(e)[:500]}")
-        trace.end(status="dry run failed, nothing published")
+        if re.search(r"-> 4\d\d:", str(e)):
+            # the platform read the workflow and refused it
+            write_local("dry run refused")
+            trace.end(status="dry run refused, nothing published")
+            return 1
+        # the platform did not answer: saving tries again (it validates too)
+    try:
+        saved = freya.save_workflow(slot, wf, state_file=str(ROOT / ".freya-agents.json"))
+    except Exception as e:
+        trace.freya(f"save_workflow FAILED: {type(e).__name__}: {str(e)[:500]}")
+        write_local("save failed")
+        trace.end(status="save failed, local file written")
         return 1
-    saved = freya.save_workflow(slot, wf, state_file=str(ROOT / ".freya-agents.json"))
     trace.freya(
         f"save_workflow slot={slot} -> workflow_id={saved['workflow_id']} "
         f"agent_id={saved['agent_id']} version={saved.get('version', 1)} (published)"
@@ -255,7 +287,6 @@ def run(trace: Trace, brief_path: Path, api_path: Path, slot: str, deadline: flo
         trace.test("chat smoke skipped: not enough time left")
         result = "skipped"
     # A saved workflow is always written out: the platform's export, else what was saved.
-    out = ROOT / "submission" / f"{slot}.workflow.json"
     try:
         freya.export_workflow(saved["workflow_id"], str(out))
         trace.freya(f"export_workflow -> {out.relative_to(ROOT)}")
