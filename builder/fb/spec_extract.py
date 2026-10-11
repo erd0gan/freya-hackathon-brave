@@ -15,7 +15,7 @@ import re
 import string
 from typing import Any
 
-from fb.generate import find_field
+from fb.generate import find_field, paid_close_reason
 from fb.llm import chat, parse_json
 from fb.nodecode.embed import namespace
 from fb.openapi_tools import ToolDef, fixed_value
@@ -180,7 +180,10 @@ SCHEMA = {
         "close_reasons": {
             "_": "only when close_call's reason values differ from add_note's for the same "
             "reason: the close_call value per key of reasons (refused, hardship, dispute, "
-            "service_error); else leave it out",
+            "service_error); else leave those keys out",
+            "paid": "the close_call reason when the call closes because every product is "
+            "already paid, exactly as the brief's outcome table gives it; '' when the table "
+            "lists no reason for that case",
         },
         "queues": {"restructuring": "...", "human": "...", "support": "..."},
         "transfer_reasons": {"restructuring": "...", "human": "...", "support": "..."},
@@ -398,7 +401,8 @@ RESPONSE_ROLES: dict[str, tuple[str, ...]] = {
     "schedule_callback": ("ok",),
 }
 # neg.reasons keys that can become a close_call reason (negotiation_lib._finish: a product
-# that is not recorded and not paid); "paid" is only ever a note reason.
+# that is not recorded and not paid). "paid" is a note reason; its close reason, when the
+# outcome table gives one, is neg.close_reasons.paid (generate.paid_close_reason).
 CLOSE_REASON_KEYS = ("refused", "hardship", "dispute", "service_error")
 
 
@@ -476,6 +480,12 @@ def close_reasons(spec: dict[str, Any], tools: dict[str, ToolDef]) -> list[str]:
             bad.append(f"neg.transfer_reasons.{k}: {v!r} is not a close_call reason {allowed}")
     rs = neg.get("reasons") or {}
     cr = neg.get("close_reasons") or {}
+    paid = paid_close_reason(neg, spec.get("outcomes") or {})
+    if paid and paid not in allowed:
+        bad.append(
+            f"neg.close_reasons.paid: {paid!r} is not a close_call reason {allowed}; it is the "
+            "close reason when every product is already paid ('' when the table lists none)"
+        )
     for k in CLOSE_REASON_KEYS:
         # what negotiation_lib.close_reason sends: neg.close_reasons first, then neg.reasons
         v = cr.get(k) or rs.get(k)
@@ -940,6 +950,17 @@ def to_generator(spec: dict[str, Any]) -> dict[str, Any]:
         )
         if lines.get(k)
     }
+    # close_call reasons per semantic key; "paid" only when the outcome table gives one
+    # (negotiation_lib._finish must read close_reasons.paid for a call where all is paid)
+    cr = {
+        k: v
+        for k, v in (neg.get("close_reasons") or {}).items()
+        if k not in ("_", "paid") and isinstance(v, str) and v.strip()
+    }
+    paid = paid_close_reason(neg, s.get("outcomes") or {})
+    if paid:
+        cr["paid"] = paid
+    neg["close_reasons"] = cr
     neg.setdefault("attempt_plan", s.get("attempt_plan") or [])
     if s.get("attempt_plan"):
         neg["attempt_plan"] = s["attempt_plan"]

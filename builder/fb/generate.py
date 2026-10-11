@@ -226,6 +226,33 @@ def success_field(t: ToolDef | None, ok_name: str) -> tuple[str, str]:
     return (errs[0], "no_error") if errs else (ok_name, "flag")
 
 
+def reason_outcomes(neg: dict[str, Any], outcomes: dict[str, Any]) -> set[str]:
+    """close_call outcomes the spec's outcome table pairs with a reason somewhere. A hidden
+    table can close "already paid" as no_promise/paid: the paid outcome is then one that
+    carries a reason, and a reason sent with it must not be stripped."""
+    noc = neg.get("outcomes") or {}
+    out = {str(noc.get("no_promise") or "no_promise")}
+    if any(str(v or "").strip() for v in (neg.get("transfer_reasons") or {}).values()):
+        out.add(str(noc.get("transferred") or "transferred"))
+    for v in (outcomes or {}).values():
+        if isinstance(v, list) and len(v) > 1 and v[0] and str(v[1] or "").strip():
+            out.add(str(v[0]))
+    return out
+
+
+def paid_close_reason(neg: dict[str, Any], outcomes: dict[str, Any]) -> str:
+    """close_call's reason when every product is already paid: the spec's value
+    (neg.close_reasons.paid), else, when the paid outcome is one that carries a reason (paid
+    closing as no_promise), the note reason for paid. '' when the table lists none."""
+    explicit = str((neg.get("close_reasons") or {}).get("paid") or "").strip()
+    if explicit:
+        return explicit
+    paid = str((neg.get("outcomes") or {}).get("paid") or "paid")
+    if paid in reason_outcomes(neg, outcomes):
+        return str((neg.get("reasons") or {}).get("paid") or "paid")
+    return ""
+
+
 def q(s: str) -> str:
     return s.replace('"', "'")
 
@@ -570,7 +597,14 @@ def build(spec: dict[str, Any], tools: dict[str, ToolDef]) -> tuple[dict[str, An
     )
     t_close = tools["close_call"]
     neg_oc = neg.get("outcomes") or {}
-    no_reason = [o for o in neg_oc.values() if o in (neg_oc.get("promise"), neg_oc.get("paid"))]
+    # Outcomes the table never pairs with a reason: a reason sent with them is dropped. An
+    # outcome that carries one elsewhere (paid closing as no_promise) keeps every reason.
+    carry = reason_outcomes(neg, oc)
+    if paid_close_reason(neg, oc):
+        carry.add(str(neg_oc.get("paid") or "paid"))
+    no_reason = sorted(
+        {str(o) for o in (neg_oc.get("promise"), neg_oc.get("paid")) if o and o not in carry}
+    )
     hangup = {
         "promise": neg_oc.get("promise") or "promise",
         "no_promise": [
