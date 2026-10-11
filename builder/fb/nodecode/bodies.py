@@ -136,18 +136,21 @@ now16 = str(vars.get('now') or '')[:16].replace(' ', 'T')
 iso = ''
 if dt is not None and txt_day.strip():
     iso, _kind = parse_spoken_date(txt_day, dt.date())
-hhmm = parse_spoken_time(txt_time) or parse_spoken_time(txt_day)
+said_time = parse_spoken_time(txt_time) or parse_spoken_time(txt_day)
 # a day and a time said in different turns belong together: a new value replaces only its part
 iso = iso or str(vars.get('cb_pending_date') or '')
-hhmm = hhmm or str(vars.get('cb_pending_time') or '')
-if hhmm and not iso and days and not txt_day.strip():
+hhmm = said_time or str(vars.get('cb_pending_time') or '')
+# a time said alone takes the first callback day it still fits; a time kept from a turn whose
+# day was not possible waits for a new day
+if said_time and not iso and days and not txt_day.strip():
     iso = days[0] if (days[0] + 'T' + hhmm) > now16 else days[-1]
 vars['cb_pending_date'] = iso
 vars['cb_pending_time'] = hhmm
 state = 'none'
+day_ok = iso in days
+time_ok = start <= hhmm <= end and (iso + 'T' + hhmm) > now16
 if iso and hhmm:
-    ok = iso in days and start <= hhmm <= end and (iso + 'T' + hhmm) > now16
-    state = 'ok' if ok else 'outside'
+    state = 'ok' if (day_ok and time_ok) else 'outside'
 elif iso or hhmm:
     state = 'partial'
 if state == 'ok':
@@ -155,11 +158,18 @@ if state == 'ok':
     vars['cb_time'] = hhmm
     vars['cb_say'] = ''
 elif state == 'outside':
-    vars['cb_pending_date'] = ''
-    vars['cb_pending_time'] = ''
+    # keep the part that was right ('Tomorrow at nine.' -> 'No, eleven.' is tomorrow at 11)
+    # and ask only for the wrong one; every 'outside' turn counts as a re-ask
+    vars['cb_pending_date'] = iso if day_ok else ''
+    vars['cb_pending_time'] = hhmm if (start <= hhmm <= end and not day_ok) else ''
     vars['cb_tries'] = str(int(vars.get('cb_tries') or 0) + 1)
-    vars['cb_say'] = ('That time is not possible. Say so and ask once for another time: '
-                      + str(vars.get('callback_window_text') or ''))
+    if day_ok:
+        wrong = 'That time is not possible on that day. Say so and ask once for another time: '
+    elif vars['cb_pending_time']:
+        wrong = 'That day is not possible. Say so and ask once for another day: '
+    else:
+        wrong = 'That time is not possible. Say so and ask once for another time: '
+    vars['cb_say'] = wrong + str(vars.get('callback_window_text') or '')
 elif state == 'partial':
     vars['cb_say'] = 'Ask for the missing ' + ('time.' if iso else 'day.')
 else:
