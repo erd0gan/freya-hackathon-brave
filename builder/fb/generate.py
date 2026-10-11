@@ -1156,7 +1156,8 @@ def build(spec: dict[str, Any], tools: dict[str, ToolDef]) -> tuple[dict[str, An
     )
     reply_desc = (
         "What the customer's LAST message means. yes: agrees to what was just proposed, or "
-        "confirms the read-back. no: refuses or cannot pay, naming no day and no amount. "
+        "confirms the read-back. no: says no to what was just proposed (a payment, a "
+        "transfer, an offer of help), refuses or cannot pay, naming no day and no amount. "
         "offer: names a day or an amount they will pay. too_much: says the amount is too much "
         "or they cannot afford it, naming no other amount. vague: names a vague time to pay "
         "(next week, end of the month, when the salary comes) and no exact day. paid: says "
@@ -1164,7 +1165,9 @@ def build(spec: dict[str, Any], tools: dict[str, ToolDef]) -> tuple[dict[str, An
         "or paid off in the past. hardship: mentions illness, a death in the family or losing "
         "their job. restructure: asks for a new payment plan or lower instalments. human: "
         "asks for a person or a human agent. stop: says they do not want to talk. question: "
-        "asks a question. evasive: answers the payment question but gives no yes, no clear "
+        "asks a question and gives no answer to what was just asked; a message that answers "
+        "and also asks (for example 'No, I don't want that. Can I get a discount?') is the "
+        "answer, here no. evasive: answers the payment question but gives no yes, no clear "
         "no, no day and no amount (for example 'I don't know', 'we will see', 'maybe "
         "later'). unclear: anything else, such as small talk, a sentence cut off before the "
         "answer, or a message that does not respond to the question."
@@ -1323,7 +1326,9 @@ def build(spec: dict[str, Any], tools: dict[str, ToolDef]) -> tuple[dict[str, An
         "fewer digits than asked for), do not repeat the question and do not call the tool "
         "yet: ask only for the missing part, for example 'And the year?' or 'And the "
         "remaining digits?'. Then call verify_identity once with all the parts together, in "
-        "the order the customer said them. After "
+        "the order the customer said them. A date with a day, a month and a year is complete "
+        "in any words ('twenty one July nineteen ninety' has its year): never ask for its "
+        "year. After "
         "every tool result, follow its what_to_do_next. Never say why you are calling and "
         f"never say {forbidden}, an amount or a product. If the customer does not want to "
         f'answer or asks what the call is about, explain once: "{q(L.get("identity_why") or "")}" '

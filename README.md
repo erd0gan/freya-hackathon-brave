@@ -114,6 +114,12 @@ honesty must all pass):
   did not stall, each step took 10–20 s instead of 1–2 s. Removing model steps from the
   identity turn would make it faster, but it would lose answers that come in pieces, so the
   flow is unchanged.
+- 11 Oct, every customer style on `f3d74fa`: B 3/3 talkative, pieces and in_words, 2/3
+  corrects and asks_back; A 10/10 corrects and asks_back, 9/10 pieces and in_words, 8/10
+  talkative. Two of the failures were ours. A refusal that also asked something ("No, I don't
+  want to be transferred. Can I get a discount?") was read as a question only, and a full date
+  said in words was asked for its year. After the fix to those two descriptions: A 10/10
+  standard and talkative, B 3/3 standard and asks_back.
 
 ## Developer tools
 
