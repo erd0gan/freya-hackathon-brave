@@ -133,10 +133,13 @@ def freya_tool(
     post_code: str = "",
     response_mapping: list[dict[str, str]] | None = None,
     extra_config: dict[str, Any] | None = None,
+    model_filled: bool = True,
 ) -> dict[str, Any]:
     """One `api_call` function. `bake` maps a field to a call variable that is always set
     (the workflow supplies it; the model never sees it). Other fields are model-filled with
-    `default: "{{<model_name>}}"` (docs: a default naming an unset variable is model-filled)."""
+    `default: "{{<model_name>}}"` (docs: a default naming an unset variable is model-filled).
+    `model_filled=False` (a call the engine runs: no model fills it): an optional field no
+    role binds is left out, so a variable of the same name never fills it."""
     bake = bake or {}
     model_names = model_names or {}
     field_notes = field_notes or {}
@@ -146,6 +149,8 @@ def freya_tool(
         leaf: dict[str, Any] = {
             "type": f.type if f.type in ("string", "number", "integer", "boolean") else "string"
         }
+        if not model_filled and f.name not in bake and not f.required:
+            continue
         if f.name in bake:
             leaf["default"] = "{{" + bake[f.name] + "}}"
         elif f.required and fixed_value(f) is not None:

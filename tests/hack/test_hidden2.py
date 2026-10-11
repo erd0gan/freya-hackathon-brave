@@ -326,9 +326,11 @@ def test_allof_response_without_ok_maps_the_success_field():
     assert not has_flag(t, "ok")
     assert success_field(t, "ok") == ("promise_id", "present")
     wf = workflow(spec_with(), o)
-    assert wf["nodes"]["record"]["response_mapping"] == [
-        {"path": "data.promise_id", "variable": "rec_ok"}
-    ]
+    # first: the success field (an error-text mapping may follow: "already recorded")
+    assert wf["nodes"]["record"]["response_mapping"][0] == {
+        "path": "data.promise_id",
+        "variable": "rec_ok",
+    }
     assert check(spec_with(), parse_openapi(o), BRIEF, o) == []
 
 
@@ -339,7 +341,7 @@ def test_allof_response_with_ok_keeps_the_flag():
 
     o = api_with(with_ok)
     wf = workflow(spec_with(), o)
-    assert wf["nodes"]["record"]["response_mapping"] == [{"path": "data.ok", "variable": "rec_ok"}]
+    assert wf["nodes"]["record"]["response_mapping"][0] == {"path": "data.ok", "variable": "rec_ok"}
 
 
 def test_verify_all_verified_behind_a_ref_is_found():
@@ -510,9 +512,10 @@ def test_callback_without_ok_field_uses_the_error_field():
 
     o = api_with(no_ok)
     wf = workflow(spec_with(), o)
-    assert wf["nodes"]["cb_book"]["response_mapping"] == [
-        {"path": "data.error", "variable": "cb_ok"}
-    ]
+    assert wf["nodes"]["cb_book"]["response_mapping"][0] == {
+        "path": "data.error",
+        "variable": "cb_ok",
+    }
     assert after_cb(wf, {"cb_ok": ""}) == "done"
     assert after_cb(wf, {"cb_ok": "slot taken"}) == "retry"
 

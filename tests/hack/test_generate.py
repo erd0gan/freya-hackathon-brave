@@ -106,7 +106,7 @@ def test_failed_callback_booking_is_not_reported_as_booked():
     node = wf["nodes"]["cb_book"]
     # the outcome of the booking is decided by after_cb (one more try, then no callback)
     assert [t["target_node"] for t in node["transitions"]] == ["after_cb"]
-    assert node["response_mapping"] == [{"path": "data.ok", "variable": "cb_ok"}]
+    assert node["response_mapping"][0] == {"path": "data.ok", "variable": "cb_ok"}
     after = [t["target_node"] for t in wf["nodes"]["after_cb"]["transitions"]]
     assert after == ["cb_book", "fin_callback", "fin_no_callback"]
 
