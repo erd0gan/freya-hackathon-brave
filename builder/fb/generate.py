@@ -687,7 +687,12 @@ def build(spec: dict[str, Any], tools: dict[str, ToolDef]) -> tuple[dict[str, An
         "every tool result, follow its what_to_do_next. Never say why you are calling and "
         f"never say {forbidden}, an amount or a product. If the customer does not want to "
         f'answer or asks what the call is about, explain once: "{q(L.get("identity_why") or "")}" '
-        f'and ask the question again. If asked whether you are a robot or an AI: "{ai}"'
+        "and ask the question again; say that explanation only for a refusal and only once in "
+        "the call. Small talk or a message that stops in the middle of a sentence is neither "
+        "an answer nor a refusal: say a short line such as 'Sorry, I think you were cut off.' "
+        "or 'Take your time.' and ask the open question in a few words. Never say the same "
+        "sentence twice in a row. "
+        f'If asked whether you are a robot or an AI: "{ai}"'
         + (f' If asked whether this is a scam: "{scam}"' if scam else "")
     )
     id_vals = ["answers", "declines", "wants_human", "question", "unclear"]
