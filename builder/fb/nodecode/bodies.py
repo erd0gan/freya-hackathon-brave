@@ -15,6 +15,9 @@ pf = product_facts(products, vars.get('now'), CFG)
 for k, val in pf.items():
     vars[k] = val
 st = new_state(pf, CFG.get('neg') or dict(), vars.get('now'))
+# requests for a person before the identity check count too (A42 'ask once', also before)
+c = str(vars.get('pre_human_count') or '0')
+st['human_asked'] = int(c) if c.isdigit() else 0
 publish(vars, st, CFG.get('neg') or dict())
 clear_reply(vars)
 """
@@ -48,7 +51,7 @@ was = str(vars.get('neg_action') or '')
 if n >= 2 or was == 'record':
     vars['neg_action'] = 'finish'
     neg = CFG.get('neg') or dict()
-    ok = str(vars.get('rec_ok') or '').strip().lower() == 'true'
+    ok = call_ok(vars.get('rec_ok'), CFG.get('rec_mode') or 'flag')
     vars['final_outcome'] = (neg.get('outcomes') or dict()).get('promise', 'promise') if ok else ''
     vars['final_reason'] = ''
     vars['note_count'] = '0'
@@ -123,12 +126,18 @@ vars['cb_tries'] = '0'
 vars['cb_state'] = ''
 vars['cb_pending_date'] = ''
 vars['cb_pending_time'] = ''
+vars['cb_turns'] = '0'
 """
 )
 
 # Third party: what the person said about a day and a time -> a callback inside the window,
 # a re-ask, or no callback. CFG["callback"]: start, end ("HH:MM", both included), reasks.
 CB_CHECK = """
+CB_DAY_WORDS = re.compile(
+    r'\\b(today|tomorrow|monday|tuesday|wednesday|thursday|friday|saturday|sunday|january|'
+    r'february|april|june|july|august|september|october|november|december)\\b|'
+    r'\\b\\d{1,2}(st|nd|rd|th)\\b', re.I)
+CB_MAX_TURNS = 6
 dt = parse_now(vars.get('now'))
 txt_day = str(vars.get('cb_day_text') or '')
 txt_time = str(vars.get('cb_time_text') or '')
@@ -141,8 +150,12 @@ end = str(cb.get('end') or '19:00')
 days = [d for d in str(vars.get('callback_days') or '').split(',') if d]
 now16 = str(vars.get('now') or '')[:16].replace(' ', 'T')
 iso = ''
+kind = 'none'
 if dt is not None and txt_day.strip():
-    iso, _kind = parse_spoken_date(txt_day, dt.date())
+    iso, kind = parse_spoken_date(txt_day, dt.date())
+elif dt is not None and CB_DAY_WORDS.search(txt_time):
+    # 'tomorrow morning around eleven' all in the time words: the day is in there too
+    iso, kind = parse_spoken_date(txt_time, dt.date())
 said_time = parse_spoken_time(txt_time) or parse_spoken_time(txt_day)
 # a day and a time said in different turns belong together: a new value replaces only its part
 iso = iso or str(vars.get('cb_pending_date') or '')
@@ -158,8 +171,19 @@ day_ok = iso in days
 time_ok = start <= hhmm <= end and (iso + 'T' + hhmm) > now16
 if iso and hhmm:
     state = 'ok' if (day_ok and time_ok) else 'outside'
+elif iso and not day_ok:
+    state = 'outside'  # a day outside the callback days: ask for another day, not a time
 elif iso or hhmm:
     state = 'partial'
+elif kind == 'vague':
+    state = 'outside'  # 'next week': no day we can book; counts as a re-ask
+# turns that bring no bookable day and time: a person who never says when stops the loop
+# (the third_party turn cap restarts on every pass through this node)
+idle = 0 if state == 'ok' else int(vars.get('cb_turns') or 0) + 1
+vars['cb_turns'] = str(idle)
+if idle > CB_MAX_TURNS and state != 'ok':
+    state = 'outside'
+    vars['cb_tries'] = str(10 ** 6)
 if state == 'ok':
     vars['cb_date'] = iso
     vars['cb_time'] = hhmm
@@ -172,8 +196,10 @@ elif state == 'outside':
     vars['cb_tries'] = str(int(vars.get('cb_tries') or 0) + 1)
     if day_ok:
         wrong = 'That time is not possible on that day. Say so and ask once for another time: '
-    elif vars['cb_pending_time']:
+    elif vars['cb_pending_time'] or (iso and not hhmm):
         wrong = 'That day is not possible. Say so and ask once for another day: '
+    elif not iso and not hhmm:
+        wrong = 'Ask once for an exact day and time: '
     else:
         wrong = 'That time is not possible. Say so and ask once for another time: '
     vars['cb_say'] = wrong + str(vars.get('callback_window_text') or '')
