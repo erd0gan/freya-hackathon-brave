@@ -265,7 +265,11 @@ def tool_summary(openapi: dict[str, Any], tools: dict[str, ToolDef]) -> str:
                 bits.append("enum " + json.dumps(f.enum))
             out.append(f"    {f.name}: {', '.join(bits)}  {f.description}".rstrip())
         if t.response:
-            out.append("    response: " + json.dumps(t.response)[:1500])
+            shown = t.response
+            if not isinstance(shown.get("properties"), dict) and t.response_props:
+                # allOf / $ref: the model sees the resolved fields, not the reference
+                shown = {"type": "object", "properties": t.response_props}
+            out.append("    response: " + json.dumps(shown)[:1500])
     return "\n".join(out)
 
 

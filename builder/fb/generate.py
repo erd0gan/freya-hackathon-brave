@@ -205,11 +205,21 @@ def bake(t: ToolDef, roles: dict[tuple[str, ...], str]) -> dict[str, str]:
     return out
 
 
+def response_fields(t: ToolDef | None) -> dict[str, Any]:
+    """The 200 response's fields: $refs and allOf/oneOf/anyOf resolved when the tool came from
+    parse_openapi (an allOf response read as plain `properties` listed nothing, and a missing
+    data.ok was mapped)."""
+    if t is None:
+        return {}
+    props = t.response_props or (t.response or {}).get("properties")
+    return props if isinstance(props, dict) else {}
+
+
 def has_flag(t: ToolDef | None, name: str) -> bool:
     """The tool's 200 response has field `name`, or lists no fields at all (unknown). A success
     check is wired only then: a flag that never comes would read every call as failed."""
-    props = ((t.response if t else None) or {}).get("properties")
-    return not isinstance(props, dict) or not props or name in props
+    props = response_fields(t)
+    return not props or name in props
 
 
 def success_field(t: ToolDef | None, ok_name: str) -> tuple[str, str]:
@@ -218,7 +228,7 @@ def success_field(t: ToolDef | None, ok_name: str) -> tuple[str, str]:
     returns (promise_id), else the error field (empty on success)."""
     if has_flag(t, ok_name):
         return ok_name, "flag"
-    props = list(((t.response if t else None) or {}).get("properties") or {})
+    props = list(response_fields(t))
     other = [k for k in props if "error" not in k.lower() and "message" not in k.lower()]
     if other:
         return other[0], "present"

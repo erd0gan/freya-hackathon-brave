@@ -37,6 +37,9 @@ class ToolDef:
     summary: str
     fields: list[ToolField]
     response: dict[str, Any] = field(default_factory=dict)
+    # The 200 response's fields with $refs resolved and allOf/oneOf/anyOf parts merged
+    # (`response` keeps the schema as written); {} when the schema lists none.
+    response_props: dict[str, Any] = field(default_factory=dict)
 
     def field(self, name: str) -> ToolField | None:
         return next((f for f in self.fields if f.name == name), None)
@@ -49,6 +52,27 @@ def _resolve(spec: dict[str, Any], node: Any) -> Any:
             cur = cur[part]
         return _resolve(spec, cur)
     return node
+
+
+def response_props(spec: dict[str, Any], node: Any, depth: int = 0) -> dict[str, Any]:
+    """The properties a response schema lists: $refs followed, allOf/oneOf/anyOf parts merged
+    (create_promise 200 = allOf[{$ref Error}, {properties: {promise_id}}]). A $ref that does
+    not resolve adds nothing."""
+    if depth > 20:
+        return {}
+    try:
+        node = _resolve(spec, node)
+    except (KeyError, TypeError, IndexError, RecursionError):
+        return {}
+    if not isinstance(node, dict):
+        return {}
+    out: dict[str, Any] = {}
+    for key in ("allOf", "oneOf", "anyOf"):
+        for part in node.get(key) or []:
+            out.update(response_props(spec, part, depth + 1))
+    if isinstance(node.get("properties"), dict):
+        out.update(node["properties"])
+    return out
 
 
 def parse_openapi(spec: dict[str, Any]) -> dict[str, ToolDef]:
@@ -91,6 +115,7 @@ def parse_openapi(spec: dict[str, Any]) -> dict[str, ToolDef]:
                 summary=str(op.get("summary") or op.get("description") or ""),
                 fields=fields,
                 response=resp,
+                response_props=response_props(spec, resp),
             )
     return tools
 

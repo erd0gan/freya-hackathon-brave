@@ -302,3 +302,54 @@ def test_the_engine_never_repeats_a_refused_offer_with_a_short_plan():
     r = simulate(case, [{"kind": "no"}] * 5, cfg)
     offers = [s for s in r.says if "Could you pay" in s]
     assert len(offers) == 2 and len(set(offers)) == 2, r.says
+
+
+# ---------------------------------------------------------------- 5. allOf / $ref responses
+def promise_by_allof(o):
+    o.setdefault("components", {}).setdefault("schemas", {})["Err"] = {
+        "type": "object",
+        "properties": {"error": {"type": "string"}},
+    }
+    sch = o["paths"]["/create_promise"]["post"]["responses"]["200"]["content"]
+    sch["application/json"]["schema"] = {
+        "allOf": [
+            {"$ref": "#/components/schemas/Err"},
+            {"type": "object", "properties": {"promise_id": {"type": "string"}}},
+        ]
+    }
+
+
+def test_allof_response_without_ok_maps_the_success_field():
+    from fb.generate import has_flag, success_field
+
+    o = api_with(promise_by_allof)
+    t = parse_openapi(o)["create_promise"]
+    assert set(t.response_props) == {"error", "promise_id"}
+    assert not has_flag(t, "ok")
+    assert success_field(t, "ok") == ("promise_id", "present")
+    wf = workflow(spec_with(), o)
+    assert wf["nodes"]["record"]["response_mapping"] == [
+        {"path": "data.promise_id", "variable": "rec_ok"}
+    ]
+    assert check(spec_with(), parse_openapi(o), BRIEF, o) == []
+
+
+def test_allof_response_with_ok_keeps_the_flag():
+    def with_ok(o):
+        promise_by_allof(o)
+        o["components"]["schemas"]["Err"]["properties"]["ok"] = {"type": "boolean"}
+
+    o = api_with(with_ok)
+    wf = workflow(spec_with(), o)
+    assert wf["nodes"]["record"]["response_mapping"] == [{"path": "data.ok", "variable": "rec_ok"}]
+
+
+def test_verify_all_verified_behind_a_ref_is_found():
+    def by_ref(o):
+        o.setdefault("components", {}).setdefault("schemas", {})["V"] = ok200(o, "verify_identity")
+        sch = o["paths"]["/verify_identity"]["post"]["responses"]["200"]["content"]
+        sch["application/json"]["schema"] = {"allOf": [{"$ref": "#/components/schemas/V"}]}
+
+    wf = workflow(spec_with(), api_with(by_ref))
+    cond = wf["nodes"]["identity"]["transitions"][0]["condition"]
+    assert all(c["variable"] != "id_all_ok" for c in cond["conditions"])
