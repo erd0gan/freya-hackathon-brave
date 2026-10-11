@@ -12,8 +12,10 @@ import datetime
 import itertools
 import json
 import re
+import string
 from typing import Any
 
+from fb.generate import find_field
 from fb.llm import chat, parse_json
 from fb.nodecode.embed import namespace
 from fb.openapi_tools import ToolDef
@@ -129,6 +131,7 @@ SCHEMA = {
             "field": "...",
             "answer": "...",
             "response": {
+                "ok": "response field that is true when the call was carried out",
                 "verified": "...",
                 "all_verified": "...",
                 "wrong_answers_left": "...",
@@ -141,9 +144,15 @@ SCHEMA = {
             "product_id": "...",
             "amount": "...",
             "date": "...",
+            "response": {"ok": "..."},
         },
         "add_note": {"customer_id": "...", "product_id": "...", "reason": "..."},
-        "schedule_callback": {"customer_id": "...", "date": "...", "time": "..."},
+        "schedule_callback": {
+            "customer_id": "...",
+            "date": "...",
+            "time": "...",
+            "response": {"ok": "..."},
+        },
         "transfer_to_agent": {"customer_id": "...", "queue": "..."},
         "close_call": {"customer_id": "...", "outcome": "...", "reason": "..."},
     },
@@ -268,8 +277,14 @@ def warnings(spec: dict[str, Any], brief: str) -> list[str]:
     return out
 
 
-def check(spec: dict[str, Any], tools: dict[str, ToolDef], brief: str) -> list[str]:
-    """Deterministic checks against the tool API. Returns problems as sentences."""
+def check(
+    spec: dict[str, Any],
+    tools: dict[str, ToolDef],
+    brief: str,
+    openapi: dict[str, Any] | None = None,
+) -> list[str]:
+    """Deterministic checks against the tool API. Returns problems as sentences. `openapi`
+    (the parsed file) resolves $refs nested in response schemas."""
     bad: list[str] = []
     tf = spec.get("tool_fields") or {}
 
@@ -338,7 +353,248 @@ def check(spec: dict[str, Any], tools: dict[str, ToolDef], brief: str) -> list[s
     for tpl in (spec.get("product_names") or {}).values():
         if "{{" in str(tpl):
             bad.append("product_names use single braces")
+    bad += close_reasons(spec, tools)
+    bad += [p for p, hard in bindings(spec, tools) if hard]
+    bad += responses(spec, tools, openapi)
     return bad + structure(spec)
+
+
+# ---------------------------------------------------------------- the spec against the tool API
+# Request roles fb.generate binds per tool (its bake(...) / role_field(...) calls in build()).
+# The first name of each tuple is the role's key in tool_fields; the rest are the fallback
+# names generate.find_field tries (exact, then substring). A required field no role binds is
+# sent as "{{field}}" (model-filled), which the api_request steps never fill.
+TOOL_ROLES: dict[str, tuple[tuple[str, ...], ...]] = {
+    "verify_identity": (("customer_id",), ("field", "question"), ("answer", "value")),
+    "get_account": (("customer_id",),),
+    "create_promise": (
+        ("customer_id",),
+        ("product_id", "product", "account", "ref"),
+        ("amount",),
+        ("date", "day"),
+    ),
+    "add_note": (
+        ("customer_id",),
+        ("product_id", "product", "account", "ref"),
+        ("reason", "code"),
+    ),
+    "schedule_callback": (("customer_id",), ("date", "day"), ("time", "hour")),
+    "transfer_to_agent": (("customer_id",), ("queue", "team", "department", "desk")),
+    "close_call": (("customer_id",), ("outcome", "result", "status"), ("reason", "code", "detail")),
+}
+# Response fields the workflow reads: verify_identity's post hook (resp() roles and data.ok),
+# the create_promise and schedule_callback steps (data.ok -> rec_ok / cb_ok).
+RESPONSE_ROLES: dict[str, tuple[str, ...]] = {
+    "verify_identity": ("ok", "verified", "all_verified", "wrong_answers_left"),
+    "create_promise": ("ok",),
+    "schedule_callback": ("ok",),
+}
+# neg.reasons keys that can become a close_call reason (negotiation_lib._finish: a product
+# that is not recorded and not paid); "paid" is only ever a note reason.
+CLOSE_REASON_KEYS = ("refused", "hardship", "dispute", "service_error")
+
+
+def _tf(spec: dict[str, Any], tool: str) -> dict[str, Any]:
+    tf = (spec.get("tool_fields") or {}).get(tool)
+    return tf if isinstance(tf, dict) else {}
+
+
+def _bind(spec: dict[str, Any], t: ToolDef, cands: tuple[str, ...]) -> str:
+    """generate.role_field without its module state: the spec's name when it is a real field,
+    else the first candidate found in the tool."""
+    explicit = _tf(spec, t.name).get(cands[0])
+    if explicit in {f.name for f in t.fields}:
+        return str(explicit)
+    return find_field(t, *cands)
+
+
+def bindings(spec: dict[str, Any], tools: dict[str, ToolDef]) -> list[tuple[str, bool]]:
+    """Required request fields no role binds. Hard (True) when a role of the same tool found no
+    field: the tool API renamed it and tool_fields can fix that. A required field with no role
+    at all (every role bound) cannot be fixed in the spec and is only a warning."""
+    out = []
+    for tool, roles in TOOL_ROLES.items():
+        t = tools.get(tool)
+        if not t:
+            continue
+        bound = {_bind(spec, t, cands) for cands in roles} - {""}
+        loose = [f.name for f in t.fields if f.required and f.name not in bound]
+        if not loose:
+            continue
+        missing = [cands[0] for cands in roles if not _bind(spec, t, cands)]
+        if missing:
+            out.append(
+                (
+                    f"{tool}: required field(s) {loose} are bound to no role and role(s) "
+                    f"{missing} found no field: set "
+                    + ", ".join(f"tool_fields.{tool}.{r}" for r in missing)
+                    + f" to the real field name (fields of {tool}: "
+                    f"{sorted(f.name for f in t.fields)})",
+                    True,
+                )
+            )
+        else:
+            out.append(
+                (
+                    f"{tool}: required field(s) {loose} play no role the workflow fills; "
+                    "the agent's model is left to fill them",
+                    False,
+                )
+            )
+    return out
+
+
+def close_reasons(spec: dict[str, Any], tools: dict[str, ToolDef]) -> list[str]:
+    """Every value the workflow can send as close_call's reason, when that field has an enum."""
+    t = tools.get("close_call")
+    if not t:
+        return []
+    f = t.field(_bind(spec, t, ("reason", "code", "detail")))
+    allowed = list(f.enum) if f else []
+    if not allowed:
+        return []
+    bad = []
+    for k, v in (spec.get("outcomes") or {}).items():
+        if isinstance(v, list) and len(v) > 1 and v[1] and v[1] not in allowed:
+            bad.append(f"outcomes.{k}: reason {v[1]!r} is not a close_call reason {allowed}")
+    neg = spec.get("neg") or {}
+    for k, v in (neg.get("transfer_reasons") or {}).items():
+        if v and v not in allowed:
+            bad.append(f"neg.transfer_reasons.{k}: {v!r} is not a close_call reason {allowed}")
+    t_note = tools.get("add_note")
+    fn = t_note.field(_bind(spec, t_note, ("reason", "code"))) if t_note else None
+    note_reasons = list(fn.enum) if fn else []
+    rs = neg.get("reasons") or {}
+    for k in CLOSE_REASON_KEYS:
+        v = rs.get(k)
+        # The same value is the note reason: with notes on and a valid note reason, a close
+        # reason enum that differs cannot be met by one value; the note enum wins.
+        if not v or v in allowed or (neg.get("notes") and v in note_reasons):
+            continue
+        bad.append(
+            f"neg.reasons.{k}: {v!r} is not a close_call reason {allowed} (it is the close "
+            "reason when no promise is recorded)"
+        )
+    return bad
+
+
+def _deref(node: Any, doc: dict[str, Any] | None) -> Any:
+    for _ in range(20):
+        if not (isinstance(node, dict) and "$ref" in node):
+            return node
+        if doc is None:
+            return None
+        cur: Any = doc
+        try:
+            for part in str(node["$ref"]).lstrip("#/").split("/"):
+                cur = cur[part]
+        except (KeyError, TypeError):
+            return None
+        node = cur
+    return None
+
+
+def _props(node: Any, doc: dict[str, Any] | None) -> dict[str, Any] | None:
+    """The properties a response schema lists, or None when it does not say (no properties,
+    additional properties allowed, an unresolved $ref, oneOf/anyOf): then nothing is flagged."""
+    node = _deref(node, doc)
+    if not isinstance(node, dict) or node.get("additionalProperties") not in (None, False):
+        return None
+    props: dict[str, Any] = {}
+    for part in node.get("allOf") or []:
+        sub = _props(part, doc)
+        if sub is None:
+            return None
+        props.update(sub)
+    if node.get("oneOf") or node.get("anyOf"):
+        return None
+    if isinstance(node.get("properties"), dict):
+        props.update(node["properties"])
+    return props or None
+
+
+def _placeholders(tpl: str) -> list[str]:
+    try:
+        parsed = list(string.Formatter().parse(tpl))
+    except ValueError:
+        return []
+    return [m.group(0) for _, name, _, _ in parsed if name and (m := re.match(r"\w+", name))]
+
+
+def responses(
+    spec: dict[str, Any], tools: dict[str, ToolDef], openapi: dict[str, Any] | None = None
+) -> list[str]:
+    """Response fields the workflow reads must be in the tool's 200 response, when that response
+    lists its properties. `openapi` resolves nested $refs (without it they count as unknown)."""
+    bad: list[str] = []
+    for tool, roles in RESPONSE_ROLES.items():
+        t = tools.get(tool)
+        top = _props(t.response, openapi) if t else None
+        if not top:
+            continue
+        rmap = _tf(spec, tool).get("response")
+        rmap = rmap if isinstance(rmap, dict) else {}
+        want = list(roles)
+        swap = str((spec.get("identity") or {}).get("swap_hint") or "")
+        if tool == "verify_identity" and swap:
+            want.append("hint")
+        for role in want:
+            name = str(rmap.get(role) or role)
+            if name in top:
+                continue
+            what = {
+                "ok": "says the call was carried out (true/false)",
+                "hint": "carries the hint, or set identity.swap_hint to '' if the tool has none",
+            }.get(role, f"holds {role}")
+            bad.append(
+                f"tool_fields.{tool}.response.{role}: {name!r} is not a field of the {tool} "
+                f"response {sorted(top)}; set it to the response field that {what}"
+            )
+        if tool == "verify_identity" and swap:
+            hint = _deref(top.get(str(rmap.get("hint") or "hint")), openapi)
+            enum = (
+                [str(e) for e in (hint or {}).get("enum") or []] if isinstance(hint, dict) else []
+            )
+            if enum and swap not in enum:
+                bad.append(f"identity.swap_hint {swap!r} is not a value of the hint field {enum}")
+    t = tools.get("get_account")
+    top = _props(t.response, openapi) if t else None
+    if not top:
+        return bad
+    pf = spec.get("product_fields") or {}
+    lst = str(pf.get("list") or "products")
+    props: dict[str, Any] | None = top
+    *path, last = lst.split(".")
+    for part in path:
+        props = _props((props or {}).get(part), openapi) if props else None
+    if not props:
+        return bad
+    if last not in props:
+        bad.append(
+            f"product_fields.list: {lst!r} is not a field of the get_account response "
+            f"{sorted(props)}; set it to the array of products"
+        )
+        return bad
+    arr = _deref(props[last], openapi)
+    items = _props(arr.get("items"), openapi) if isinstance(arr, dict) else None
+    if not items:
+        return bad
+    where = f"of the get_account {lst} items {sorted(items)}"
+    for role in ("product_id", "type", "past_due", "days_late"):
+        name = str(pf.get(role) or role)
+        if name not in items:
+            bad.append(
+                f"product_fields.{role}: {name!r} is not a field {where}; set it to the "
+                f"product field that holds {role}"
+            )
+    for ptype, name in (spec.get("floor_field") or {}).items():
+        if name and str(name) not in items:
+            bad.append(f"floor_field.{ptype}: {name!r} is not a field {where}")
+    for ptype, tpl in (spec.get("product_names") or {}).items():
+        for ph in _placeholders(str(tpl)):
+            if ph not in items:
+                bad.append(f"product_names.{ptype}: {{{ph}}} is not a field {where}")
+    return bad
 
 
 def _is_int(x: Any, lo: int | None = None) -> bool:
@@ -383,6 +639,13 @@ def structure(spec: dict[str, Any]) -> list[str]:
     for (_, hi1, n1), (lo2, _, n2) in itertools.pairwise(spans):
         if lo2 <= hi1:
             bad.append(f"bands {n1!r} and {n2!r} overlap")
+        elif lo2 > hi1 + 1:
+            # band_for finds no band for these days: no deadline, no attempts for the product
+            gap = f"{hi1 + 1}" if lo2 == hi1 + 2 else f"{hi1 + 1} to {lo2 - 1}"
+            bad.append(
+                f"bands {n1!r} and {n2!r} leave days_late {gap} without a band "
+                "(the next band's min_days_late must be the previous max_days_late + 1)"
+            )
     for k in ("notes", "notes_on_transfer"):
         if k in neg and not isinstance(neg.get(k), bool):
             bad.append(f"neg.{k} must be true or false")
@@ -590,7 +853,7 @@ def extract(
     msgs = [{"role": "user", "content": prompt}]
     reply = chat(trace, "extract the spec from the brief", msgs, deadline=deadline)
     spec = _parse(reply)
-    problems = check(spec, tools, brief) + grounding(spec, brief)
+    problems = check(spec, tools, brief, openapi) + grounding(spec, brief)
     if problems:
         trace.note(f"spec check: {len(problems)} problems: " + "; ".join(problems)[:800])
         msgs += [
@@ -609,7 +872,7 @@ def extract(
         spec = _parse(reply)
         for w in grounding(spec, brief):
             trace.note("spec warning (kept, check the brief): " + w)
-    for w in warnings(spec, brief):
+    for w in warnings(spec, brief) + [p for p, hard in bindings(spec, tools) if not hard]:
         trace.note("spec warning: " + w)
     for n in spec.get("notes") or []:
         trace.note("spec decision: " + str(n)[:300])
