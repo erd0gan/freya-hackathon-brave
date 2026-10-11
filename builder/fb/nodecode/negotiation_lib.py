@@ -1263,7 +1263,10 @@ def step(st, r, neg, cal, now, cfg):
             kind = "evasive"
         else:
             st["amount_date"] = r.get("date") or ""
-            st["say"] = st["last_ask"] = "Sorry, how much can you pay?"
+            # brief rule: never ask "how much can you pay?"; ask which amount they meant
+            st["say"] = st["last_ask"] = (
+                "Sorry, I did not catch the amount. Which amount do you mean?"
+            )
             return st
     if kind == "yes":
         if phase == "ask_today":
@@ -1531,8 +1534,10 @@ AMOUNT_WORDS = re.compile(
 )
 # The whole amount text names the floor (group 1) or the full amount (group 2).
 AMOUNT_IS = re.compile(
-    r"(?:just |only )?(?:(?:the )?(minimum|lowest|least)(?: payment| amount| i can(?: pay)?)?"
-    r"|(all of it|everything|in full|all|(?:the )?(?:full|whole)(?: amount| thing| lot)?))",
+    r"(?:just |only )?(?:(?:the |that |this |your )?(minimum|lowest|least)"
+    r"(?: payment| amount| i can(?: pay)?)?"
+    r"|(all of it|everything|in full|all|(?:the |that |this |your )?(?:full|whole)"
+    r"(?: amount| thing| lot)?))",
     re.I,
 )
 # A day text that points at the day on the table ('that day', 'then'), not a new day.

@@ -32,7 +32,8 @@ def test_unreadable_amount_with_a_day_is_asked_again(said):
         ],
         CFG_A,
     )
-    assert "much" in r.says[1].lower(), r.says
+    assert "which amount" in r.says[1].lower(), r.says
+    assert "how much" not in " ".join(r.says).lower(), r.says  # brief A rule 24
     assert promises(r) == [(200.0, "2026-10-16")]
 
 
@@ -43,10 +44,13 @@ def test_unreadable_amount_with_a_day_is_asked_again(said):
         ("minimum payment", 126.0),
         ("the lowest", 126.0),
         ("the least I can", 126.0),
+        ("that minimum amount", 126.0),  # A pieces PUB-06: was asked 'how much can you pay?'
+        ("this minimum payment", 126.0),
         ("all of it", 420.0),
         ("everything", 420.0),
         ("the full amount", 420.0),
         ("the whole thing", 420.0),
+        ("that full amount", 420.0),
         ("in full", 420.0),
     ],
 )
@@ -58,7 +62,7 @@ def test_minimum_and_full_words(said, want):
 def test_unreadable_amount_reasks_end():
     bad = {"kind": "offer", "amount": "half", "date": "Friday"}
     r = simulate(CASES["PUB-01"], [bad, bad, bad], CFG_A)
-    assert [s for s in r.says if "how much" in s.lower()] == [r.says[1], r.says[2]]
+    assert [s for s in r.says if "which amount" in s.lower()] == [r.says[1], r.says[2]]
     assert "Could you pay" in r.says[3], r.says  # a non-answer: the persuasion attempt
     assert not r.ledger["promises"]
 

@@ -191,7 +191,7 @@ def test_two_parts_that_read_both_ways_are_asked_again():
     r2 = {"kind": "offer", "amount": "250", "date": "Friday", "text": "250 on Friday."}
     again = {"kind": "offer", "amount": "1250", "text": "1250."}
     res = S.sim(_split_case(), [r1, r2, again, Y, Y, S.BYE], CFG_A)
-    assert res.says[2] == "Sorry, how much can you pay?", res.says
+    assert res.says[2] == "Sorry, I did not catch the amount. Which amount do you mean?", res.says
     assert [(p["amount"], p["date"]) for p in res.ledger["promises"]] == [(1250.0, "2026-10-16")]
 
 
