@@ -169,7 +169,22 @@ timelines), then a simulation check.
 - A pass needs 3/3 per case; a run where the persona hangs up after >10 cut turns is recorded
   as such (cause outside the agent), but still counts as a fail.
 
-## Blocker (11 Oct)
+## 6. Applied (11 Oct)
+
+| Commit | Findings | Change |
+|---|---|---|
+| `2060ec6` | T2 | identity turn cap 16/14 -> 60 |
+| `26a3ca2` | T5, T12, T15 | "both" / "all of them" read from the raw message; "p1, p2" -> first product; a date with a refusal in the same message is not applied to every product |
+| `c2e9a2e` | T8 | `close_call` fills an empty outcome from the state (promise / no_promise+refused / not_reached+unclear); bound field names |
+| `3cb9d46` | T4, T9, T10 | rotating short re-asks ("you were cut off" on a cut turn); "Do you confirm?" instead of the whole read-back; one more ask after a cut turn at "anything else"; support offer stays open uncounted; a cut `stop` / `evasive` counts nothing |
+| `ab8f89b` | T3, T13 | identity prompt: small talk / cut turn is neither answer nor refusal, short varied re-ask; protect line only for a refusal, once |
+| `9efb3a4` | T11 | engine library packed in code nodes, 63 KB -> 22 KB (L4) |
+| `8d1eb42` | T7 | "Let us go through them one at a time." after a no to all of them today |
+
+Open: T1 deterministic guard on `declines` (no misreading seen on the new agent: 29 + 16 cut
+turns at identity all `unclear`), T6 per-product refusal at the read-back, T14 `id_heard`.
+
+## Blocker (11 Oct, solved by another network)
 
 From this machine the bank mock (`freya-bank-mock.freyavoice.workers.dev`) is not reachable:
 HTTP gets `307 Location: http://10.106.7.14/` with `Via: 1.0 middlebox`, HTTPS fails the
