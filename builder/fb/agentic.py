@@ -161,6 +161,12 @@ Time: you must be finished, with the final version saved, by {deadline_utc} UTC.
      test data and the example conversations: several cards, the error customers, the
      no-data/empty fields, the follow-up actions, transfers and exits. Turns are in the
      documents' language.
+   Also test the requests that can come at any moment (a person/agent, someone else's card or
+   account, payment, an out-of-scope question, a complaint) both as the caller's very first
+   turn and right after an action has finished: each must take the exact path and sentence the
+   documents give it. A specific rule always beats a generic one (a request for a person is
+   never answered with the out-of-scope question), and a finished action never stops the
+   agent from handling what the caller says next.
    Fix what fails, save again. Prefer a working, tested simpler agent to an untested big one.
 6. Write `call_variables.json`: one example of the call variables (a real test customer) the
    builder uses for its own smoke test.
