@@ -107,20 +107,28 @@ def test_an_error_body_goes_to_the_other_provider(monkeypatch, tmp_path):
     assert llm.chat(Trace(tmp_path / "t.log", echo=False), "p", MSGS) == "from openrouter"
 
 
-def test_a_model_without_sampling_settings_is_asked_again_without_them(monkeypatch, tmp_path):
+def test_anthropic_requests_carry_no_temperature(monkeypatch, tmp_path):
     keys(monkeypatch, openrouter=False)
+    seen = []
+    monkeypatch.setattr(llm.urllib.request, "urlopen", fake([AN_OK], seen))
+    llm.chat(Trace(tmp_path / "t.log", echo=False), "p", MSGS, temperature=0.0)
+    assert "temperature" not in json.loads(seen[0].data)
+
+
+def test_an_openrouter_model_without_sampling_settings_is_asked_again(monkeypatch, tmp_path):
+    keys(monkeypatch, anthropic=False)
     seen = []
 
     def urlopen(req, timeout=0):
         seen.append(json.loads(req.data))
         if len(seen) == 1:
             raise urllib.error.HTTPError(
-                req.full_url, 400, "x", {}, io.BytesIO(b'{"error":"temperature is not supported"}')
+                req.full_url, 400, "x", {}, io.BytesIO(b'{"error":"temperature is deprecated"}')
             )
-        return Resp(json.dumps(AN_OK).encode())
+        return Resp(json.dumps(OR_OK).encode())
 
     monkeypatch.setattr(llm.urllib.request, "urlopen", urlopen)
-    assert llm.chat(Trace(tmp_path / "t.log", echo=False), "p", MSGS) == "from anthropic"
+    assert llm.chat(Trace(tmp_path / "t.log", echo=False), "p", MSGS) == "from openrouter"
     assert "temperature" in seen[0] and "temperature" not in seen[1]
 
 

@@ -80,8 +80,8 @@ def _request(
         }
         if system:
             body["system"] = system
-        if temperature is not None:
-            body["temperature"] = temperature
+        # no temperature: the current Claude models refuse it ("`temperature` is deprecated for
+        # this model", 400, measured 11 Oct)
         base = os.environ.get("ANTHROPIC_BASE_URL") or "https://api.anthropic.com"
         headers = {
             "x-api-key": os.environ.get("ANTHROPIC_API_KEY") or "",
